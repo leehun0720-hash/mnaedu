@@ -41,3 +41,6 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# Confidential business planning material — keep out of the public repo
+/docs/

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="600" viewBox="0 0 1600 600">
+  <title>TenAI Primary Logo</title>
+  <desc>Approved TenAI wordmark: A is five percent larger, leaning fourteen degrees right, optically baseline-corrected, and connected to n.</desc>
+  <g font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="270">
+    <text x="226" y="340" fill="#0B1220">Ten</text>
+    <text x="842" y="333" fill="#48BCEB" font-size="284" transform="skewX(-14)">A</text>
+    <text x="1065" y="340" fill="#48BCEB">I</text>
+  </g>
+  <text x="226" y="475" fill="#737B8C" textLength="965" lengthAdjust="spacing"
+        font-family="Arial, Helvetica, sans-serif" font-size="54">AX HUB PLATFORM</text>
+</svg>
