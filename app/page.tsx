@@ -480,7 +480,7 @@ export default function Home() {
       // Check if depth is achieved
       if (chatMessages.length >= 3) {
         setQualifiedFlag(true);
-        aiCounterQuestion += " 💡 [안내] 수강생님께서 리스크와 실전 한계 조건까지 깊이 있게 답변해 주셨습니다. 이 답안은 일요일에 생성되는 '주간 AI 요약 리포트'의 우수 답안 후보로 성보경 회장님께 전달하겠습니다.";
+        aiCounterQuestion += "[안내] 수강생님께서 리스크와 실전 한계 조건까지 깊이 있게 답변해 주셨습니다. 이 답안은 일요일에 생성되는 '주간 AI 요약 리포트'의 우수 답안 후보로 성보경 회장님께 전달하겠습니다.";
       }
 
       setChatMessages((prev) => [
@@ -598,7 +598,7 @@ export default function Home() {
         <div className="hero-grid">
           <div className="hero-copy">
             <p className="eyebrow">
-              <span /> FRONTIER M&amp;A ACADEMY · 제1회 주간 출제
+              <span /> Frontier M&amp;A Academy · 제1회
             </p>
             <h1>
               AI가 답할 수 없는<br />
@@ -630,7 +630,7 @@ export default function Home() {
 
           {/* Metadata & Operating Dojo Card Preview */}
           <aside className="verdict-container" style={{ margin: 0, borderRadius: "4px" }}>
-            <div className="verdict-eyebrow">WEEKLY EXAM METADATA</div>
+            <div className="verdict-eyebrow">금주의 평가 · Weekly Assessment</div>
             <h3 style={{ font: "700 24px var(--font-serif)", color: "#fff", margin: "0 0 16px" }}>
               제1회 M&amp;A 실전 평가
             </h3>
@@ -657,9 +657,9 @@ export default function Home() {
       </section>
 
       {/* 3-Tier Operating Architecture Section */}
-      <section className="section" style={{ background: "var(--paper-deep)", borderTop: "1px solid var(--line-color)", borderBottom: "1px solid var(--line-color)" }}>
+      <section className="section band-white band-hair">
         <div style={{ textAlign: "center", maxWidth: "800px", margin: "auto" }}>
-          <p className="section-index">3-TIER EDUCATIONAL DOJO</p>
+          <p className="section-index">운영 구조 <i>Operating Model</i></p>
 
           <h2 style={{ fontSize: "38px" }}>실전 사고를 완성하는 3층 하이브리드 퍼널</h2>
           <p style={{ fontSize: "15px", color: "var(--muted)", lineHeight: "1.8" }}>
@@ -687,10 +687,10 @@ export default function Home() {
       </section>
 
       {/* Learning Funnel & Permission Matrix (기획서 §2.1–2.2) */}
-      <section className="section" id="funnel">
+      <section className="section band-paper band-hair" id="funnel">
         <div className="section-heading">
           <div>
-            <p className="section-index">EDUCATIONAL FUNNEL & ACCESS CONTROL</p>
+            <p className="section-index">학사 과정 <i>Admissions &amp; Access</i></p>
             <h2>수강 여정 5단계와<br /><em>등급별 권한 구조</em></h2>
           </div>
           <p>
@@ -742,10 +742,10 @@ export default function Home() {
       </section>
 
       {/* Weekly Exam Section (SCR-01 §1.3) */}
-      <section className="section" id="exam">
+      <section className="section band-white band-hair" id="exam">
         <div className="section-heading">
           <div>
-            <p className="section-index">SCR-01 — WEEKLY EXAM · 제1회</p>
+            <p className="section-index">금주의 평가 <i>Weekly Assessment</i></p>
             <h2>금주의 문제<br /><em>회당 3문제 · 총 500회</em></h2>
           </div>
           <p>
@@ -783,10 +783,10 @@ export default function Home() {
       </section>
 
       {/* AI Socrates Interactive Dojo Section (SCR-02) */}
-      <section className="section" id="dojo">
+      <section className="section band-paper band-hair" id="dojo">
         <div className="section-heading">
           <div>
-            <p className="section-index">SCR-02 — INTERACTIVE AI DOJO</p>
+            <p className="section-index">AI 튜터링 <i>Socratic Tutoring</i></p>
             <h2>AI 소크라테스 조교<br /><em>&lsquo;서암(書巖)&rsquo; 전용 도장</em></h2>
           </div>
           <p>정답을 절대 직접 알려주지 않습니다. 수강생이 제출한 답안의 실전 리스크와 한계 조건을 찌르는 소크라테스식 반문을 24시간 제공합니다.</p>
@@ -800,7 +800,7 @@ export default function Home() {
             </div>
             <div className="dojo-header-right">
               {qualifiedFlag && (
-                <span className="dojo-flag-badge">★ 우수 답안 후보 등재</span>
+                <span className="dojo-flag-badge">우수 답안 후보 등재</span>
               )}
               <span className="dojo-engine">
                 <span className="partner-label">AI SYSTEM BY</span>
@@ -826,7 +826,7 @@ export default function Home() {
           </div>
 
           <div className="dojo-rules-bar">
-            <span>🛡️ 준수 수칙:</span>
+            <span className="rules-label">운영 수칙</span>
             <span>① 정답 절대 비공개</span>
             <span>② 1회 1반문 제기</span>
             <span>③ 실전 한계 파고들기</span>
@@ -840,7 +840,6 @@ export default function Home() {
                 className={`chat-msg ${msg.sender === "ai" ? "chat-msg-ai" : "chat-msg-student"}`}
               >
                 <div className="chat-sender">
-                  {msg.sender === "ai" ? "🔴 " : "👤 "}
                   {msg.name} · {msg.time}
                 </div>
                 <div className={`chat-bubble ${msg.sender === "ai" ? "chat-bubble-ai" : "chat-bubble-student"}`}>
@@ -851,7 +850,7 @@ export default function Home() {
 
             {isTyping && (
               <div className="chat-msg chat-msg-ai">
-                <div className="chat-sender">🔴 조교 서암 · 사고 중...</div>
+                <div className="chat-sender">조교 서암 · 사고 중&hellip;</div>
                 <div className="chat-bubble chat-bubble-ai">
                   <span className="typing-dots">
                     <span /><span /><span />
@@ -871,10 +870,10 @@ export default function Home() {
             />
             <div className="dojo-input-footer">
               <span className="dojo-hint">
-                💡 팁: 단순 교과서 정답보다 &ldquo;경영권 프리미엄 과다, PMI 실패&rdquo; 등 실전 리스크까지 기술해 보세요.
+                단순 교과서 정답보다 &ldquo;경영권 프리미엄 과다, PMI 실패&rdquo; 등 실전 리스크까지 기술해 보세요.
               </span>
               <button type="submit" className="button button-red" disabled={isTyping}>
-                답안 제출 및 AI 반문 받기 <span>▶</span>
+                답안 제출 및 AI 반문 받기 <span>→</span>
               </button>
             </div>
           </form>
@@ -882,10 +881,10 @@ export default function Home() {
       </section>
 
       {/* Discussion Thread & Chairman Verdict Section (SCR-03) */}
-      <section className="section" id="verdict" style={{ background: "var(--paper-bg)" }}>
+      <section className="section band-white band-hair" id="verdict">
         <div className="section-heading">
           <div>
-            <p className="section-index">SCR-03 — WEEKLY VERDICT & THREAD</p>
+            <p className="section-index">주간 판정 <i>Chairman&rsquo;s Verdict</i></p>
             <h2>수강생 토론 쓰레드 &<br /><em>주간 회장 판정관</em></h2>
           </div>
           <p>AI 조교가 종합한 주간 데이터 리포트를 토대로 성보경 회장이 직접 우수 답안을 선별하고 붉은 인영(`成甫京`)을 부여합니다.</p>
@@ -893,7 +892,7 @@ export default function Home() {
 
         {/* Chairman Verdict Card */}
         <div className="verdict-container">
-          <div className="verdict-eyebrow">WEEK 1 OFFICIAL VERDICT · 제1회 주간 판정문</div>
+          <div className="verdict-eyebrow">제1회 주간 판정문 · Official Verdict</div>
           <blockquote className="verdict-quote">
             “이번 주 제출된 답안들은 외적 성장의 5가지 장점을 나열하는 데는 충실했으나, <mark>그 장점이 실전 현장에서 무너지는 순간(프리미엄 과다, PMI 인력 이탈)</mark>을 정량적으로 짚어낸 답안은 단 둘뿐이었다.<br className="br-wide" />
             M&amp;A는 장점을 아는 게임이 아니라, <mark>장점이 사라지는 한계 조건</mark>을 통제하는 게임이다.”
@@ -925,7 +924,7 @@ export default function Home() {
         {/* Discussion Thread */}
         <div style={{ marginTop: "48px" }}>
           <h3 style={{ font: "700 22px var(--font-serif)", color: "var(--midnight-navy)", marginBottom: "20px" }}>
-            💬 금주의 수강생 토론 쓰레드 (논쟁 {comments.length}건)
+            금주의 수강생 토론 쓰레드 (논쟁 {comments.length}건)
           </h3>
 
           <form onSubmit={handleAddComment} style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
@@ -955,7 +954,7 @@ export default function Home() {
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                     {comment.isBest && (
                       <span className="best-badge">
-                        <span>★</span> 회장 선정 우수 답안
+                        회장 선정 우수 답안
                       </span>
                     )}
                     <span style={{ fontSize: "12px", color: "var(--label-ink)" }}>{comment.time}</span>
@@ -969,10 +968,10 @@ export default function Home() {
       </section>
 
       {/* Web Handbook Explorer Section (SCR-04) */}
-      <section className="section" id="handbook">
+      <section className="section band-paper band-hair" id="handbook">
         <div className="section-heading">
           <div>
-            <p className="section-index">SCR-04 — WEB HANDBOOK EXPLORER</p>
+            <p className="section-index">커리큘럼 <i>Curriculum &amp; Handbook</i></p>
             <h2>5대 트랙 구조화<br /><em>웹 핸드북 탐색기</em></h2>
           </div>
           <p>단순 PDF가 아닌 체크리스트 상태 저장 및 계약 조항 클릭 복사 코드 블록이 결합된 실무용 탐색기입니다.</p>
@@ -1023,7 +1022,7 @@ export default function Home() {
               <span style={{ font: "700 11px var(--font-label)", color: "var(--gold-ink)", letterSpacing: "0.1em" }}>
                 CHAPTER {selectedChapterIndex + 1} HANDBOOK
               </span>
-              <span style={{ fontSize: "12px", color: "#6b7280" }}>🔒 회원 전용 체크리스트 연동</span>
+              <span style={{ fontSize: "12px", color: "#6b7280" }}>회원 전용 · 체크리스트 연동</span>
             </div>
 
             <h3 style={{ font: "700 28px var(--font-serif)", color: "var(--midnight-navy)", margin: "0 0 16px" }}>
@@ -1059,7 +1058,7 @@ export default function Home() {
             {/* Interactive Checklist */}
             <div style={{ margin: "24px 0" }}>
               <h4 style={{ font: "700 15px var(--font-serif)", color: "var(--midnight-navy)", marginBottom: "12px" }}>
-                📋 실무 체크리스트(클릭하여 완료 상태 저장)
+                실무 체크리스트 (클릭하여 완료 상태 저장)
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {currentTrack.checklist.map((item, idx) => {
@@ -1112,7 +1111,7 @@ export default function Home() {
                   className="copy-btn"
                   onClick={() => handleCopyClause(currentTrack.sampleClause.code)}
                 >
-                  {copiedToast ? "✓ 복사 완료" : "조항 복사 📋"}
+                  {copiedToast ? "복사 완료" : "조항 복사"}
                 </button>
               </div>
               <div className="clause-code">{currentTrack.sampleClause.code}</div>
@@ -1122,10 +1121,10 @@ export default function Home() {
       </section>
 
       {/* Level Test & Offline Deal Lab Section (SCR-05) */}
-      <section className="section" id="leveltest" style={{ background: "var(--midnight-navy)", color: "#fff" }}>
+      <section className="section band-navy" id="leveltest">
         <div className="section-heading">
           <div>
-            <p className="section-index" style={{ color: "var(--heritage-gold)" }}>SCR-05 — LEVEL TEST & DEAL LAB</p>
+            <p className="section-index section-index--onDark">심화 과정 <i>Deal Lab Admission</i></p>
             <h2 style={{ color: "#fff" }}>레벨 테스트 &<br /><em style={{ color: "var(--heritage-gold)" }}>오프라인 Deal Lab 수강 자격</em></h2>
           </div>
           <p style={{ color: "var(--label-on-dark)" }}>
@@ -1161,8 +1160,8 @@ export default function Home() {
                 value={levelTestAnswer}
                 onChange={(e) => setLevelTestAnswer(e.target.value)}
               />
-              <button type="submit" className="button button-gold" style={{ width: "100%" }}>
-                레벨 테스트 자동 심사 받기 <span>▶</span>
+              <button type="submit" className="button button-gold on-dark" style={{ width: "100%" }}>
+                레벨 테스트 자동 심사 받기 <span>→</span>
               </button>
             </form>
 
@@ -1180,16 +1179,16 @@ export default function Home() {
                 </div>
                 <p style={{ fontSize: "13px", marginTop: "8px", color: "rgba(248,247,243,0.82)" }}>
                   {levelTestScore >= 80
-                    ? "🎉 축하합니다! 트랙 커트라인 80점을 통과하여 성보경 회장 주관 오프라인 Deal Lab 초대장이 발급되었습니다."
-                    : "⚠️ 실전 리스크 조항 설정이 다소 부족합니다. AI 조교 서암과의 소크라테스 문답을 통해 보완 후 재응시해 주십시오."}
+                    ? "축하합니다. 트랙 커트라인 80점을 통과하여 성보경 회장 주관 오프라인 Deal Lab 초대장이 발급되었습니다."
+                    : "실전 리스크 조항 설정이 다소 부족합니다. AI 조교 서암과의 소크라테스 문답을 통해 보완 후 재응시해 주십시오."}
                 </p>
                 {levelTestScore >= 80 && (
                   <button
                     onClick={() => setShowModal(true)}
-                    className="button button-red"
+                    className="button button-red on-dark"
                     style={{ marginTop: "12px", width: "100%" }}
                   >
-                    오프라인 Deal Lab 신청서 제출 <span>✉️</span>
+                    오프라인 Deal Lab 신청서 제출 <span>→</span>
                   </button>
                 )}
               </div>
@@ -1248,7 +1247,7 @@ export default function Home() {
             }}
           >
             <h3 style={{ font: "700 24px var(--font-serif)", color: "var(--midnight-navy)", margin: "0 0 12px" }}>
-              🏛️ 오프라인 Deal Lab 수강 신청
+              오프라인 Deal Lab 수강 신청
             </h3>
             <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "20px" }}>
               레벨 테스트 통과 자격 코드: <strong style={{ color: "var(--seal-red)" }}>DEAL-LAB-2026-PASS-88</strong>
@@ -1269,7 +1268,7 @@ export default function Home() {
                 className="button button-red"
                 style={{ flex: 1 }}
               >
-                신청서 최종 제출 <span>✓</span>
+                신청서 최종 제출 <span>→</span>
               </button>
               <button
                 onClick={() => setShowModal(false)}
