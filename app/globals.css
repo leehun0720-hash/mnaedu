@@ -60,10 +60,26 @@ body {
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.7;
+  /* keep-all stops Korean breaking mid-word; overflow-wrap is the escape
+     hatch so long latin terms (Master-Feeder, Locked-Box) can still break
+     instead of overflowing a narrow column. */
   word-break: keep-all;
+  overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
 }
 img { max-width: 100%; }
+
+/* Korean typesetting. text-wrap inherits, so `pretty` is set once on body to
+   catch every text container (including plain divs) and headings opt into
+   `balance` for evenly-filled lines. */
+body { text-wrap: pretty; }
+h1, h2, h3, h4 { text-wrap: balance; }
+
+/* Hard break that releases on narrow screens, where a forced break would
+   leave a stub line. Used in body copy only — headings keep their breaks. */
+@media (max-width: 767px) {
+  br.br-wide { display: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -403,7 +419,9 @@ textarea:focus-visible {
   font-size: 16.5px;
   line-height: 1.75;
   color: #4b5563;
-  max-width: 52ch;
+  /* px, not ch: the ch unit measures the latin "0" and badly underestimates
+     Korean glyph width, so a ch-based measure wraps far earlier than intended. */
+  max-width: 620px;
 }
 
 .hero-actions {
@@ -612,6 +630,7 @@ textarea:focus-visible {
   color: var(--midnight-navy);
 }
 .chat-bubble {
+  max-width: 74ch;
   padding: 18px 22px;
   border-radius: 4px;
   font-size: 14.5px;
@@ -778,6 +797,9 @@ textarea:focus-visible {
   font-size: 14px;
   line-height: 1.7;
   color: #374151;
+  /* Korean reads best at 40–50 characters per line; unconstrained this ran
+     to ~88 on a wide display. Cap the measure rather than the container. */
+  max-width: 72ch;
 }
 
 /* Web Handbook Explorer (SCR-04) */
@@ -1014,6 +1036,7 @@ textarea:focus-visible {
 }
 .exam-card.is-active .exam-select-cue { color: var(--seal-red); }
 .exam-notice {
+  max-width: 78ch;
   margin-top: 24px;
   padding: 18px 22px;
   background: var(--seal-soft);

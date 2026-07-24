@@ -9,7 +9,7 @@ const tracks = [
     number: "01",
     title: "우호적 M&A 전문가 과정",
     en: "FRIENDLY M&A TRACK",
-    description: "M&A 전략, 밸류에이션, 정밀실사, 딜 구조화, 계약 협상 및 PMI 화학적 결합 6대 핵심 업무를 다룹니다.",
+    description: "M&A 전략 수립부터 밸류에이션, 정밀실사, 딜 구조화, 계약 협상, PMI까지 6대 핵심 업무를 다룹니다.",
     modules: 12,
     curriculum: {
       competencies: [
@@ -56,7 +56,7 @@ const tracks = [
     number: "02",
     title: "적대적 M&A 전문가 과정",
     en: "HOSTILE M&A TRACK",
-    description: "스텔스 지분 매집, 의결권 확보, 포이즌필 무력화, 백기사 연대 분쇄 및 경영권 공격·방어 전술을 분석합니다.",
+    description: "스텔스 지분 매집과 의결권 확보, 포이즌필 무력화, 백기사 연대 분쇄까지 경영권 공격·방어 전술을 분석합니다.",
     modules: 14,
     curriculum: {
       competencies: [
@@ -67,7 +67,7 @@ const tracks = [
         "정보 수집력"
       ],
       knowledge: [
-        "자본시장법·상법·공정거래법 해부학적 지식",
+        "자본시장법·상법·공정거래법에 대한 해부학적 이해",
         "기업가치평가 및 LBO 자금조달 기법",
         "경영권 방어 및 공격 전술 응용 전략"
       ],
@@ -101,7 +101,7 @@ const tracks = [
     number: "03",
     title: "경영권투자 전문가 과정",
     en: "CONTROL INVESTMENT TRACK",
-    description: "딜 소싱, 정밀실사, SPA 매매계약 협상, Bolt-on 밸류업 및 투자자금 회수(Exit) 5단계를 전담합니다.",
+    description: "딜 소싱부터 정밀실사, SPA 협상, Bolt-on 밸류업, 투자자금 회수(Exit)까지 5단계를 전담합니다.",
     modules: 10,
     curriculum: {
       competencies: [
@@ -144,7 +144,7 @@ const tracks = [
     number: "04",
     title: "패밀리오피스 전문가 과정",
     en: "FAMILY OFFICE TRACK",
-    description: "초고액 자산가(UHNW) 가문 헌정 제정, 승계 구조화, 가문위원회 운영 및 자산 보호 CSO를 양성합니다.",
+    description: "가문 헌장 제정과 승계 구조화, 가문위원회 운영, 자산 보호를 총괄하는 가문 CSO를 양성합니다.",
     modules: 11,
     curriculum: {
       competencies: [
@@ -189,7 +189,7 @@ const tracks = [
     number: "05",
     title: "투자가클럽운영 전문가 과정",
     en: "INVESTOR CLUB TRACK",
-    description: "Series LLC/VCC/SPC 역외 설계, RWA 토큰화, ZKP 비밀선발, Alpha Inside 딜 소싱 네트워크를 구축합니다.",
+    description: "Series LLC·VCC·SPC 역외 설계와 RWA 토큰화, ZKP 비밀선발, Alpha Inside 딜 소싱 네트워크를 구축합니다.",
     modules: 9,
     curriculum: {
       competencies: [
@@ -215,7 +215,7 @@ const tracks = [
     },
     chapters: [
       { id: "c1", title: "01. Series LLC 및 SPC 역외 법인 구조화", done: true },
-      { id: "c2", title: "02. Master-Feeder 역외 절세 레퍼 래퍼", done: false },
+      { id: "c2", title: "02. Master-Feeder 구조와 역외 절세 래퍼", done: false },
       { id: "c3", title: "03. RWA 토큰화 및 ZKP 회원 검증", done: false },
       { id: "c4", title: "04. Capital Call 관리 및 ICSID 분쟁 방어", done: false },
     ],
@@ -224,7 +224,7 @@ const tracks = [
       code: `Feeder Fund는 운용 자금의 100%를 Cayman Master Fund에 투여하며, Master Fund가 개별 딜 SPC 주식을 취득함으로써 각 투자자의 법적 책임을 차단하고 다국적 조세조약 혜택을 도모한다.`
     },
     checklist: [
-      "케이맨/신가포르 VCC SPC 설립 및 법적 면책 요건",
+      "케이맨·싱가포르 VCC SPC 설립 및 법적 면책 요건",
       "Master-Feeder 구조에서의 Withholding Tax 차감 계산",
       "ZKP 영지식 증명을 통한 회원 암호화 선발 체계",
       "Capital Call 미이행 시 지분 몰수(Default) 조항"
@@ -310,7 +310,7 @@ const permissionMatrix = {
     { label: "메인 · 소개 페이지 열람", cells: ["O", "O", "O", "O"] },
     { label: "무료 워밍업 문제 풀이", cells: ["O", "O", "O", "O"] },
     { label: "웹 핸드북 열람", cells: ["1장 샘플", "1장 전체", "전체 · 체크 저장", "전체 열람"] },
-    { label: "정규 평가 문제 제출", cells: ["X", "X", "O (주 3문제)", "O"] },
+    { label: "정규 평가 문제 제출", cells: ["X", "X", "O(주 3문제)", "O"] },
     { label: "AI 조교 '서암' 실시간 문답", cells: ["X", "X", "O", "O"] },
     { label: "수강생 토론 댓글 작성", cells: ["X", "읽기 전용", "O", "O"] },
     { label: "주간 회장 판정문 열람", cells: ["요약만", "요약만", "전문 열람", "전문 열람"] },
@@ -340,24 +340,24 @@ const navItems = [
 const initialComments = [
   {
     id: 1,
-    user: "박현우 대표 (PEF 파트너)",
+    user: "박현우 대표(PEF 파트너)",
     time: "2시간 전",
     isBest: true,
     content: "M&A의 외적 성장 장점 5가지 중 '시간의 구매'가 가장 핵심이나, 경영권 프리미엄이 35%를 초과할 경우 인수 후 창출 가능한 밸류업 EBITDA 상승폭을 상쇄하게 됩니다. 따라서 정밀실사 단계에서 Lock-up 2년 조건 및 에스크로 20% 보상이 동반되지 않으면 승자의 저주로 이어집니다."
   },
   {
     id: 2,
-    user: "김진성 이사 (전략기획실)",
+    user: "김진성 이사(전략기획실)",
     time: "4시간 전",
     isBest: false,
     content: "시너지 효과(Synergy)를 기대할 때 가장 큰 한계는 기업 문화 간 화학적 결합(PMI) 실패입니다. 피인수기업 핵심 기술진의 이탈을 막을 스톡옵션 재할당 및 거버넌스 보장이 미비하면 외적 성장은 도리어 독이 됩니다."
   },
   {
     id: 3,
-    user: "최서연 이사 (패밀리오피스 CSO)",
+    user: "최서연 이사(패밀리오피스 CSO)",
     time: "1일 전",
     isBest: true,
-    content: "적대적 M&A 방어 측면에서 포이즌필이 무력화될 경우, 스텔스 지분 매집에 대응하기 위해서는 상법상 의결권 제한 주식 3% 룰을 우회하는 주주 연대 약정(Tag-along/Drag-along)의 사전에 정밀한 계약 수립이 필수적입니다."
+    content: "적대적 M&A 방어 측면에서 포이즌필이 무력화될 경우, 스텔스 지분 매집에 대응하기 위해서는 상법상 의결권 제한 주식 3% 룰을 우회하는 주주 연대 약정(Tag-along/Drag-along)을 사전에 정밀하게 수립해 두는 것이 필수적입니다."
   }
 ];
 
@@ -453,7 +453,7 @@ export default function Home() {
     const userText = inputAnswer;
     const newMsg = {
       sender: "student",
-      name: "수강생 (답안 제출)",
+      name: "수강생(답안 제출)",
       time: "방금 전",
       text: userText
     };
@@ -468,19 +468,19 @@ export default function Home() {
       const lower = userText.toLowerCase();
 
       if (lower.includes("시간") || lower.includes("단축") || lower.includes("buy")) {
-        aiCounterQuestion = "시간의 구매라는 장점에는 동의합니다. 하지만 타깃 기업을 빠르게 조급히 인수하기 위해 지불한 경영권 프리미엄이 40%를 넘어서고 인수금융 조달 금리가 상승하면, 시간 단축으로 얻는 수익보다 이자 비용이 더 커지는 리스크는 실전에서 어떻게 방어하시겠습니까?";
+        aiCounterQuestion = "시간의 구매라는 장점에는 동의합니다. 하지만 타깃 기업을 서둘러 인수하기 위해 지불한 경영권 프리미엄이 40%를 넘어서고 인수금융 조달 금리가 상승하면, 시간 단축으로 얻는 수익보다 이자 비용이 더 커지는 리스크는 실전에서 어떻게 방어하시겠습니까?";
       } else if (lower.includes("인재") || lower.includes("기술") || lower.includes("시너지")) {
         aiCounterQuestion = "인력 및 시너지 확보를 언급하셨습니다. 그런데 인수 계약 체결 후 PMI 1년 이내에 피인수기업의 핵심 인재 30%가 이탈한다면 수강생님은 결국 무엇을 산 셈이 됩니까? 이를 막기 위한 계약상 Lock-up 및 손해배상 청구 조항은 어떻게 구성하겠습니까?";
       } else if (lower.includes("시장") || lower.includes("점유율") || lower.includes("경쟁")) {
-        aiCounterQuestion = "시장 점유율 신속 확보 관점은 훌륭합니다. 하지만 경쟁당국의 공정거래 수기업 결합 심사에서 독과점 시정조치가 내려지거나 사업부 매각 명령이 내려지면 외적 성장 전략은 무산됩니다. 정밀실사 단계에서 이 규제 리스크를 어떻게 사전 검증하시겠습니까?";
+        aiCounterQuestion = "시장 점유율 신속 확보 관점은 훌륭합니다. 하지만 경쟁당국의 기업결합 심사에서 독과점 시정조치가 내려지거나 사업부 매각 명령이 내려지면 외적 성장 전략은 무산됩니다. 정밀실사 단계에서 이 규제 리스크를 어떻게 사전 검증하시겠습니까?";
       } else {
-        aiCounterQuestion = "제시해주신 장점 논리는 원론적으로 타당합니다. 그러나 이 전략이 실전 M&A 현장에서 '승자의 저주(Winner's Curse)'로 반전되는 결정적 순간은 언제라고 생각하십니까? 그 한계 조건 한 가지를 정량적으로 짚어보십시오.";
+        aiCounterQuestion = "제시해 주신 장점 논리는 원론적으로 타당합니다. 그러나 이 전략이 실전 M&A 현장에서 '승자의 저주(Winner's Curse)'로 반전되는 결정적 순간은 언제라고 생각하십니까? 그 한계 조건 한 가지를 정량적으로 짚어보십시오.";
       }
 
       // Check if depth is achieved
       if (chatMessages.length >= 3) {
         setQualifiedFlag(true);
-        aiCounterQuestion += " 💡 [안내] 수강생님께서 리스크와 실전 한계 조건까지 깊이 있게 답변해주셨습니다. 이 답안은 일요일 생성되는 '주간 AI 요약 리포트'의 우수답안 후보로 성보경 회장님께 전달하겠습니다.";
+        aiCounterQuestion += " 💡 [안내] 수강생님께서 리스크와 실전 한계 조건까지 깊이 있게 답변해 주셨습니다. 이 답안은 일요일에 생성되는 '주간 AI 요약 리포트'의 우수 답안 후보로 성보경 회장님께 전달하겠습니다.";
       }
 
       setChatMessages((prev) => [
@@ -504,7 +504,7 @@ export default function Home() {
     setComments((prev) => [
       {
         id: Date.now(),
-        user: "수강생 (신규 제출)",
+        user: "수강생(신규 제출)",
         time: "방금 전",
         isBest: false,
         content: newComment
@@ -605,8 +605,8 @@ export default function Home() {
               <em>마지막 10%</em>를 가르친다.
             </h1>
             <p className="hero-description">
-              ㈜프론티어 M&amp;A 성보경 회장의 40년 실전 자산(500회 / 1,500문제)과<br />
-              24시간 실시간 사고 단련 AI 소크라테스 조교 &lsquo;서암&rsquo;이 결합된 초프리미엄 과정.
+              ㈜프론티어 M&amp;A 성보경 회장의 40년 실전 자산(500회 · 1,500문제)과
+              24시간 사고를 단련하는 AI 소크라테스 조교 &lsquo;서암&rsquo;이 결합된 초프리미엄 과정.
             </p>
             <div className="hero-actions">
               <a className="button button-red" href="#exam">제1회 문제 풀기 <span>↗</span></a>
@@ -663,25 +663,25 @@ export default function Home() {
 
           <h2 style={{ fontSize: "38px" }}>실전 사고를 완성하는 3층 하이브리드 퍼널</h2>
           <p style={{ fontSize: "15px", color: "var(--muted)", lineHeight: "1.8" }}>
-            단순 정답 생성이 아닌 수강생의 논리적 허점을 파고드는 AI 조교와 주 1회 회장의 직인 판정으로 채점 리소스를 최적화하고 고품격 교육을 완성합니다.
+            AI 조교가 정답을 대신 말하지 않고 수강생의 논리적 허점을 파고듭니다. 회장은 주 1회 판정에만 집중해, 채점 부담은 줄이고 교육의 격은 지킵니다.
           </p>
         </div>
 
         <div className="tier-grid">
           <div className="tier-card">
             <span className="tier-badge">TIER 1 : STUDENT</span>
-            <h3>수강생 (Student)</h3>
-            <p>회차별 주관식 서술형 답안 제출 및 동료 수강생 간 토론 게시판 치열한 논쟁 참여</p>
+            <h3>수강생(Student)</h3>
+            <p>회차별 주관식 서술형 답안을 제출하고, 토론 게시판에서 동료 수강생과 치열하게 논쟁합니다.</p>
           </div>
           <div className="tier-card" style={{ borderColor: "var(--seal-red)" }}>
             <span className="tier-badge" style={{ background: "var(--seal-soft)", color: "var(--seal-red)" }}>TIER 2 : AI AGENT</span>
-            <h3>AI 조교 &lsquo;서암&rsquo; (Seoam)</h3>
-            <p>24시간 실시간 정답 비공개 소크라테스 반문 튜터링 및 주간 데이터 전수 분석 요약 보고서 생성</p>
+            <h3>AI 조교 &lsquo;서암&rsquo;(Seoam)</h3>
+            <p>정답을 공개하지 않는 소크라테스식 반문으로 24시간 튜터링하고, 주간 토론 데이터를 전수 분석해 요약 보고서를 생성합니다.</p>
           </div>
           <div className="tier-card" style={{ background: "var(--midnight-navy)", color: "#fff" }}>
             <span className="tier-badge" style={{ background: "var(--heritage-gold)", color: "var(--deep-navy)" }}>TIER 3 : MASTER</span>
-            <h3 style={{ color: "#fff" }}>성보경 회장 (Master)</h3>
-            <p style={{ color: "var(--label-on-dark)" }}>주 1회 AI 주간 리포트 검토 (15분 소요) → 금주의 우수 답안 선정 및 공식 인영(`成甫京`) 판정문 발행</p>
+            <h3 style={{ color: "#fff" }}>성보경 회장(Master)</h3>
+            <p style={{ color: "var(--label-on-dark)" }}>주 1회 AI 주간 리포트를 검토(15분 소요)한 뒤, 금주의 우수 답안을 선정하고 공식 인영(成甫京) 판정문을 발행합니다.</p>
           </div>
         </div>
       </section>
@@ -749,7 +749,7 @@ export default function Home() {
             <h2>금주의 문제<br /><em>회당 3문제 · 총 500회</em></h2>
           </div>
           <p>
-            문제를 선택하면 아래 AI 조교 &lsquo;서암&rsquo;의 도장이 해당 회차 문제로 전환됩니다. 회차당 3문제가 초·중·상급으로 출제되며, 트랙을 가로질러 실전 사고를 단련합니다.
+            문제를 선택하면 아래 AI 조교 &lsquo;서암&rsquo;의 도장이 해당 문제로 전환됩니다. 회차당 3문제가 초·중·상급으로 출제되며, 트랙을 가로질러 실전 사고를 단련합니다.
           </p>
         </div>
 
@@ -800,7 +800,7 @@ export default function Home() {
             </div>
             <div className="dojo-header-right">
               {qualifiedFlag && (
-                <span className="dojo-flag-badge">★ 우수답안 후보 등재</span>
+                <span className="dojo-flag-badge">★ 우수 답안 후보 등재</span>
               )}
               <span className="dojo-engine">
                 <span className="partner-label">AI SYSTEM BY</span>
@@ -871,7 +871,7 @@ export default function Home() {
             />
             <div className="dojo-input-footer">
               <span className="dojo-hint">
-                💡 팁: 단순 교과서 정답보다 &ldquo;경영권 프리미엄 과다, PMI 실패&rdquo; 등 실전 리스크까지 기술해보세요.
+                💡 팁: 단순 교과서 정답보다 &ldquo;경영권 프리미엄 과다, PMI 실패&rdquo; 등 실전 리스크까지 기술해 보세요.
               </span>
               <button type="submit" className="button button-red" disabled={isTyping}>
                 답안 제출 및 AI 반문 받기 <span>▶</span>
@@ -895,7 +895,7 @@ export default function Home() {
         <div className="verdict-container">
           <div className="verdict-eyebrow">WEEK 1 OFFICIAL VERDICT · 제1회 주간 판정문</div>
           <blockquote className="verdict-quote">
-            “이번 주 제출된 답안들은 외적 성장의 5가지 장점을 나열하는 데는 충실했으나, <mark>그 장점이 실전 현장에서 무너지는 순간(프리미엄 과다, PMI 인력 이탈)</mark>을 정량적으로 짚어낸 답안은 단 둘뿐이었다.<br />
+            “이번 주 제출된 답안들은 외적 성장의 5가지 장점을 나열하는 데는 충실했으나, <mark>그 장점이 실전 현장에서 무너지는 순간(프리미엄 과다, PMI 인력 이탈)</mark>을 정량적으로 짚어낸 답안은 단 둘뿐이었다.<br className="br-wide" />
             M&amp;A는 장점을 아는 게임이 아니라, <mark>장점이 사라지는 한계 조건</mark>을 통제하는 게임이다.”
           </blockquote>
 
@@ -925,13 +925,13 @@ export default function Home() {
         {/* Discussion Thread */}
         <div style={{ marginTop: "48px" }}>
           <h3 style={{ font: "700 22px var(--font-serif)", color: "var(--midnight-navy)", marginBottom: "20px" }}>
-            💬 금주의 수강생 토론 쓰레드 ({comments.length}개 논쟁)
+            💬 금주의 수강생 토론 쓰레드 (논쟁 {comments.length}건)
           </h3>
 
           <form onSubmit={handleAddComment} style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
             <input
               type="text"
-              placeholder="동료 수강생의 답안에 대한 논리적 반론이나 의견을 작성해보세요..."
+              placeholder="동료 수강생의 답안에 대한 논리적 반론이나 의견을 작성해 보세요..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               style={{
@@ -955,7 +955,7 @@ export default function Home() {
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                     {comment.isBest && (
                       <span className="best-badge">
-                        <span>★</span> 회장 선정 우수답변
+                        <span>★</span> 회장 선정 우수 답안
                       </span>
                     )}
                     <span style={{ fontSize: "12px", color: "var(--label-ink)" }}>{comment.time}</span>
@@ -1030,7 +1030,7 @@ export default function Home() {
               {currentTrack.chapters[selectedChapterIndex]?.title}
             </h3>
 
-            <p style={{ fontSize: "14.5px", lineHeight: "1.8", color: "#4b5563" }}>
+            <p style={{ fontSize: "14.5px", lineHeight: "1.8", color: "#4b5563", maxWidth: "70ch" }}>
               본 핸드북 챕터에서는 실전 M&amp;A 거래 진행 시 반드시 점검해야 할 법률 조항과 핵심 체크리스트를 구조화하여 제공합니다.
             </p>
 
@@ -1059,7 +1059,7 @@ export default function Home() {
             {/* Interactive Checklist */}
             <div style={{ margin: "24px 0" }}>
               <h4 style={{ font: "700 15px var(--font-serif)", color: "var(--midnight-navy)", marginBottom: "12px" }}>
-                📋 실무 체크리스트 (클릭하여 완료 상태 저장)
+                📋 실무 체크리스트(클릭하여 완료 상태 저장)
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {currentTrack.checklist.map((item, idx) => {
@@ -1176,12 +1176,12 @@ export default function Home() {
                 }}
               >
                 <div style={{ font: "700 18px var(--font-serif)", color: levelTestScore >= 80 ? "#34D399" : "#F87171" }}>
-                  심사 결과: {levelTestScore}점 / 100점 ({levelTestScore >= 80 ? "합격 (Deal Lab Eligible)" : "보완 필요"})
+                  심사 결과: {levelTestScore}점 / 100점({levelTestScore >= 80 ? "합격 (Deal Lab Eligible)" : "보완 필요"})
                 </div>
                 <p style={{ fontSize: "13px", marginTop: "8px", color: "rgba(248,247,243,0.82)" }}>
                   {levelTestScore >= 80
                     ? "🎉 축하합니다! 트랙 커트라인 80점을 통과하여 성보경 회장 주관 오프라인 Deal Lab 초대장이 발급되었습니다."
-                    : "⚠️ 실전 리스크 조항 설정이 다소 부족합니다. AI 조교 서암과의 소크라테스 문답을 통해 보완 후 재응시해주십시오."}
+                    : "⚠️ 실전 리스크 조항 설정이 다소 부족합니다. AI 조교 서암과의 소크라테스 문답을 통해 보완 후 재응시해 주십시오."}
                 </p>
                 {levelTestScore >= 80 && (
                   <button
@@ -1200,7 +1200,7 @@ export default function Home() {
           <div style={{ background: "var(--deep-navy)", padding: "36px", border: "1px solid var(--heritage-gold)" }}>
             <span style={{ font: "700 11px var(--font-label)", color: "var(--heritage-gold)" }}>OFFLINE INTENSIVE DEAL LAB</span>
             <h3 style={{ font: "700 26px var(--font-serif)", color: "#fff", margin: "16px 0" }}>
-              소수정예 모의 협상 도장 (Deal Lab)
+              소수정예 모의 협상 도장(Deal Lab)
             </h3>
             <p style={{ fontSize: "14.5px", color: "var(--label-on-dark)", lineHeight: "1.8", marginBottom: "24px" }}>
               미창석유 등 40년간의 비공개 실전 사례를 바탕으로 1:1~10:1 소수정예 모의 협상 및 딜 테이킹 세션을 성보경 회장이 직접 진행합니다.
@@ -1213,7 +1213,7 @@ export default function Home() {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                 <span style={{ color: "var(--label-on-dark)" }}>다음 코호트 정원</span>
-                <strong style={{ color: "#fff" }}>최대 10명 (선착순 승인)</strong>
+                <strong style={{ color: "#fff" }}>최대 10명(선착순 승인)</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                 <span style={{ color: "var(--label-on-dark)" }}>주관 및 장소</span>
@@ -1255,8 +1255,8 @@ export default function Home() {
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-              <input type="text" placeholder="성함 (예: 홍길동)" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
-              <input type="text" placeholder="소속 / 직함 (예: XX자산운용 대표이사)" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
+              <input type="text" placeholder="성함(예: 홍길동)" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
+              <input type="text" placeholder="소속 / 직함(예: XX자산운용 대표이사)" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
               <input type="email" placeholder="이메일 주소" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
             </div>
 
@@ -1304,8 +1304,8 @@ export default function Home() {
               </span>
             </div>
             <p className="footer-statement">
-              기업의 결합을 설계하고, 더 높은 가치를 세웁니다.<br />
-              대한민국 M&amp;A 1세대 성보경 회장의 40년 실전 자산 기반 AI 하이브리드 아카데미.
+              기업의 결합을 설계하고, 더 높은 가치를 세웁니다.<br className="br-wide" />
+              대한민국 M&amp;A 1세대 성보경 회장의 40년 실전 자산에 기반한 AI 하이브리드 아카데미입니다.
             </p>
           </div>
 
@@ -1333,7 +1333,7 @@ export default function Home() {
               />
             </a>
             <p className="partner-note">
-              AI 소크라테스 조교 &lsquo;서암&rsquo;과 주간 리포트 엔진을<br />주식회사 텐에이아이가 설계·운영합니다.
+              AI 소크라테스 조교 &lsquo;서암&rsquo;과 주간 리포트 엔진을<br className="br-wide" />주식회사 텐에이아이가 설계·운영합니다.
             </p>
           </div>
         </div>
