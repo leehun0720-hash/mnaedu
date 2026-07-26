@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // 5 Tracks Data from Master Plan
 const tracks = [
@@ -365,6 +365,42 @@ export default function Home() {
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
   const currentTrack = tracks[selectedTrackIndex];
 
+  // Hero video pauses for viewers who ask for reduced motion
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => {
+      const v = heroVideoRef.current;
+      if (!v) return;
+      if (mq.matches) v.pause();
+      else void v.play().catch(() => {});
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  // Content settles in as each band enters the viewport
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const targets = document.querySelectorAll<HTMLElement>(
+      ".section-heading, .tier-grid, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .dojo-container, .verdict-container, .thread-container, .track-grid, .handbook-window, .leveltest-grid"
+    );
+    targets.forEach((el) => el.setAttribute("data-reveal", ""));
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-in");
+          io.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -12% 0px", threshold: 0.08 }
+    );
+    targets.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   // Header condenses once the hero has scrolled past
   const [isScrolled, setIsScrolled] = useState(false);
   useEffect(() => {
@@ -539,7 +575,7 @@ export default function Home() {
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized; avoids coupling to a deploy-target image loader */}
           <img
             className="brand-symbol"
-            src="/logo-frontier-symbol.png"
+            src={isScrolled ? "/logo-frontier-symbol.png" : "/logo-frontier-symbol-white.png"}
             alt=""
             width={44}
             height={38}
@@ -593,71 +629,65 @@ export default function Home() {
         </a>
       </nav>
 
-      {/* Hero Section (SCR-01) */}
+      {/* Hero — full-viewport cinematic video statement */}
       <section className="hero" id="top">
-        <div className="hero-grid">
-          <div className="hero-copy">
-            <p className="eyebrow">
-              <span /> Frontier M&amp;A Academy · 제1회
-            </p>
-            <h1>
-              AI가 답할 수 없는<br />
-              <em>마지막 10%</em>를 가르친다.
-            </h1>
-            <p className="hero-description">
-              ㈜프론티어 M&amp;A 성보경 회장의 40년 실전 자산(500회 · 1,500문제)과
-              24시간 사고를 단련하는 AI 소크라테스 조교 &lsquo;서암&rsquo;이 결합된 초프리미엄 과정.
-            </p>
-            <div className="hero-actions">
-              <a className="button button-red" href="#exam">제1회 문제 풀기 <span>↗</span></a>
-              <a className="button button-gold" href="#handbook">5대 트랙 핸드북 <span>↓</span></a>
+        <div className="hero-media" aria-hidden="true">
+          <video
+            ref={heroVideoRef}
+            className="hero-video"
+            src="/hero-lecture.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+          />
+          <div className="hero-scrim" />
+        </div>
+
+        <div className="hero-inner">
+          <p className="hero-eyebrow">
+            <span /> Frontier M&amp;A Academy
+          </p>
+          <h1>
+            AI가 답할 수 없는<br />
+            <em>마지막 10%</em>를 가르친다.
+          </h1>
+          <p className="hero-description">
+            ㈜프론티어 M&amp;A 성보경 회장의 40년 실전 자산(500회 · 1,500문제)과
+            24시간 사고를 단련하는 AI 소크라테스 조교 &lsquo;서암&rsquo;이 결합된 초프리미엄 과정.
+          </p>
+          <div className="hero-actions">
+            <a className="button button-red on-dark" href="#exam">제1회 문제 풀기 <span>↗</span></a>
+            <a className="button button-gold on-dark" href="#handbook">5대 트랙 핸드북 <span>↓</span></a>
+          </div>
+        </div>
+
+        <div className="hero-bar">
+          <div className="hero-proof">
+            <div>
+              <strong>500회</strong>
+              <span>TOTAL EXAMS · 1,500 QUESTIONS</span>
             </div>
-            <div className="hero-proof">
-              <div>
-                <strong>500회</strong>
-                <span>TOTAL EXAMS<br />1,500 QUESTIONS</span>
-              </div>
-              <div>
-                <strong>3-TIER</strong>
-                <span>STUDENT - AI - MASTER<br />OPERATING DOJO</span>
-              </div>
-              <div>
-                <strong>1:10</strong>
-                <span>OFFLINE DEAL LAB<br />QUALIFICATION</span>
-              </div>
+            <div>
+              <strong>3-TIER</strong>
+              <span>STUDENT · AI · MASTER</span>
+            </div>
+            <div>
+              <strong>1:10</strong>
+              <span>OFFLINE DEAL LAB</span>
             </div>
           </div>
-
-          {/* Metadata & Operating Dojo Card Preview */}
-          <aside className="verdict-container" style={{ margin: 0, borderRadius: "4px" }}>
-            <div className="verdict-eyebrow">금주의 평가 · Weekly Assessment</div>
-            <h3 style={{ font: "700 24px var(--font-serif)", color: "#fff", margin: "0 0 16px" }}>
-              제1회 M&amp;A 실전 평가
-            </h3>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
-              <span className="tier-badge" style={{ background: "var(--seal-red)", color: "#fff" }}>출제: 주 3문제</span>
-              <span className="tier-badge">전체 회차: 500회</span>
-              <span className="tier-badge" style={{ background: "var(--heritage-gold)", color: "var(--deep-navy)" }}>난이도: 중급</span>
-            </div>
-            <p style={{ fontSize: "14px", lineHeight: "1.7", color: "rgba(248,247,243,0.82)" }}>
-              &ldquo;정답은 공개되지 않습니다. 교과서적 지식을 나열하는 답안보다, 실전에서 그 장점과 전략이 무너지는 한계 조건까지 사고한 답안이 높이 평가됩니다.&rdquo;
-            </p>
-            <div className="verdict-footer" style={{ marginTop: "24px" }}>
-              <div className="verdict-author">
-                <span style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>성보경 회장</span>
-                <span style={{ fontSize: "13px", color: "var(--label-on-dark)" }}>㈜프론티어 M&amp;A 대표출제자</span>
-              </div>
-              <div className="stamp-seal">
-                <span>成 甫</span>
-                <span>京 印</span>
-              </div>
-            </div>
-          </aside>
+          <a className="scroll-cue" href="#funnel" aria-label="아래로 스크롤">
+            <span>SCROLL</span>
+            <i aria-hidden="true" />
+          </a>
         </div>
       </section>
 
       {/* 3-Tier Operating Architecture Section */}
       <section className="section band-white band-hair">
+        <span className="section-marker" aria-hidden="true">STRUCTURE</span>
         <div style={{ textAlign: "center", maxWidth: "800px", margin: "auto" }}>
           <p className="section-index">운영 구조 <i>Operating Model</i></p>
 
@@ -688,6 +718,7 @@ export default function Home() {
 
       {/* Learning Funnel & Permission Matrix (기획서 §2.1–2.2) */}
       <section className="section band-paper band-hair" id="funnel">
+        <span className="section-marker" aria-hidden="true">ADMISSIONS</span>
         <div className="section-heading">
           <div>
             <p className="section-index">학사 과정 <i>Admissions &amp; Access</i></p>
@@ -743,6 +774,7 @@ export default function Home() {
 
       {/* Weekly Exam Section (SCR-01 §1.3) */}
       <section className="section band-white band-hair" id="exam">
+        <span className="section-marker" aria-hidden="true">ASSESSMENT</span>
         <div className="section-heading">
           <div>
             <p className="section-index">금주의 평가 <i>Weekly Assessment</i></p>
@@ -780,10 +812,35 @@ export default function Home() {
         <p className="exam-notice">
           <strong>출제자 안내 —</strong> 정답은 공개되지 않습니다. 교과서적 지식을 나열하는 답안보다, 실전에서 그 장점과 전략이 무너지는 한계 조건까지 사고한 답안이 높이 평가됩니다.
         </p>
+
+        {/* Weekly assessment dossier — the chairman's framing for this round */}
+        <aside className="verdict-container exam-dossier">
+          <div className="verdict-eyebrow">금주의 평가 · Weekly Assessment</div>
+          <h3 className="dossier-title">제1회 M&amp;A 실전 평가</h3>
+          <div className="dossier-tags">
+            <span className="tier-badge">출제: 주 3문제</span>
+            <span className="tier-badge">전체 회차: 500회</span>
+            <span className="tier-badge">난이도: 초·중·상급</span>
+          </div>
+          <p className="dossier-quote">
+            &ldquo;정답은 공개되지 않습니다. 교과서적 지식을 나열하는 답안보다, 실전에서 그 장점과 전략이 무너지는 한계 조건까지 사고한 답안이 높이 평가됩니다.&rdquo;
+          </p>
+          <div className="verdict-footer">
+            <div className="verdict-author">
+              <span style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>성보경 회장</span>
+              <span style={{ fontSize: "13px", color: "var(--label-on-dark)" }}>㈜프론티어 M&amp;A 대표출제자</span>
+            </div>
+            <div className="stamp-seal">
+              <span>成 甫</span>
+              <span>京 印</span>
+            </div>
+          </div>
+        </aside>
       </section>
 
       {/* AI Socrates Interactive Dojo Section (SCR-02) */}
       <section className="section band-paper band-hair" id="dojo">
+        <span className="section-marker" aria-hidden="true">TUTORING</span>
         <div className="section-heading">
           <div>
             <p className="section-index">AI 튜터링 <i>Socratic Tutoring</i></p>
@@ -882,6 +939,7 @@ export default function Home() {
 
       {/* Discussion Thread & Chairman Verdict Section (SCR-03) */}
       <section className="section band-white band-hair" id="verdict">
+        <span className="section-marker" aria-hidden="true">VERDICT</span>
         <div className="section-heading">
           <div>
             <p className="section-index">주간 판정 <i>Chairman&rsquo;s Verdict</i></p>
@@ -969,6 +1027,7 @@ export default function Home() {
 
       {/* Web Handbook Explorer Section (SCR-04) */}
       <section className="section band-paper band-hair" id="handbook">
+        <span className="section-marker" aria-hidden="true">CURRICULUM</span>
         <div className="section-heading">
           <div>
             <p className="section-index">커리큘럼 <i>Curriculum &amp; Handbook</i></p>
@@ -1122,6 +1181,7 @@ export default function Home() {
 
       {/* Level Test & Offline Deal Lab Section (SCR-05) */}
       <section className="section band-navy" id="leveltest">
+        <span className="section-marker" aria-hidden="true">DEAL LAB</span>
         <div className="section-heading">
           <div>
             <p className="section-index section-index--onDark">심화 과정 <i>Deal Lab Admission</i></p>

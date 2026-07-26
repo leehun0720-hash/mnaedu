@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Noto_Sans_KR, Noto_Serif_KR, Inter } from "next/font/google";
+import { Noto_Sans_KR, Noto_Serif_KR, Inter, Big_Shoulders } from "next/font/google";
 import "./globals.css";
 
 // Typeface roles follow both BI/CI guidelines:
@@ -8,6 +8,8 @@ import "./globals.css";
 const sans = Noto_Sans_KR({ variable: "--font-sans", subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 const serif = Noto_Serif_KR({ variable: "--font-serif", subsets: ["latin"], weight: ["400", "600", "700", "900"] });
 const label = Inter({ variable: "--font-label", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+// Oversized condensed display face for the giant section markers.
+const display = Big_Shoulders({ variable: "--font-display", subsets: ["latin"], weight: ["600", "700", "800"] });
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -34,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body className={`${sans.variable} ${serif.variable} ${label.variable}`}>{children}</body>
+      <body className={`${sans.variable} ${serif.variable} ${label.variable} ${display.variable}`}>{children}</body>
     </html>
   );
 }

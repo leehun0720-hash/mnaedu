@@ -39,6 +39,8 @@
   --font-sans:  var(--font-sans), "Pretendard", "Noto Sans KR", -apple-system, sans-serif;
   --font-serif: var(--font-serif), "Noto Serif KR", Georgia, serif;
   --font-label: var(--font-label), "Inter", "Pretendard", sans-serif;
+  /* Oversized condensed display face for the giant section markers */
+  --font-display: var(--font-display), "Oswald", "Arial Narrow", sans-serif;
 
   /* — Logo clear space: X = half the wordmark cap height (Frontier §04) — */
   --logo-clear-space: 10px;
@@ -355,19 +357,101 @@ textarea:focus-visible {
 }
 .stamp-seal span { display: block; }
 
-/* Hero — clean editorial split: confident headline, solid navy dossier card */
+/* ==========================================================================
+   HERO — full-viewport cinematic statement over lecture footage
+   ========================================================================== */
 .hero {
-  background: var(--paper-bg);
-  padding: calc(var(--header-h) + 92px) clamp(24px, 6vw, 70px) clamp(72px, 8vw, 120px);
-  border-bottom: 1px solid var(--line-color);
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--header-h) + 64px) clamp(24px, 6vw, 70px) 0;
+  background: var(--deep-navy);
+  color: var(--warm-white);
+  overflow: hidden;
 }
-.hero-grid {
+.hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Layered scrim: darkens toward the type side and the lower bar so the
+   headline and stat strip hold contrast over any frame of the footage. */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(6, 27, 53, 0.62) 0%, rgba(6, 27, 53, 0.42) 38%, rgba(6, 27, 53, 0.94) 100%),
+    linear-gradient(90deg, rgba(6, 27, 53, 0.88) 0%, rgba(6, 27, 53, 0.55) 52%, rgba(6, 27, 53, 0.2) 100%);
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   max-width: 1240px;
-  margin: auto;
-  display: grid;
-  grid-template-columns: 1.08fr 0.92fr;
-  gap: clamp(40px, 5vw, 88px);
+  margin-inline: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: 56px;
+}
+.hero-eyebrow {
+  display: inline-flex;
   align-items: center;
+  gap: 12px;
+  margin: 0;
+  font: 600 11px/1.4 var(--font-label);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--heritage-soft);
+}
+.hero-eyebrow span {
+  width: 34px;
+  height: 1.5px;
+  background: var(--heritage-gold);
+}
+.hero .hero-description { color: rgba(248, 247, 243, 0.78); }
+
+/* Lower bar — proof stats plus scroll cue, pinned to the fold */
+.hero-bar {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 26px 0 34px;
+  border-top: 1px solid rgba(248, 247, 243, 0.22);
+}
+.scroll-cue {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font: 600 9.5px var(--font-label);
+  letter-spacing: 0.24em;
+  color: rgba(248, 247, 243, 0.72);
+  flex-shrink: 0;
+}
+.scroll-cue i {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(180deg, var(--heritage-gold), transparent);
+  animation: cueDrop 2s ease-in-out infinite;
+}
+@keyframes cueDrop {
+  0%, 100% { transform: scaleY(0.4); transform-origin: top; opacity: 0.5; }
+  50% { transform: scaleY(1); transform-origin: top; opacity: 1; }
 }
 
 /* Section eyebrows — editorial category label, Korean lead + English descriptor */
@@ -406,10 +490,11 @@ textarea:focus-visible {
 /* Display headings — large, tight, confident (editorial). Korean serif for
    authority per guideline §06; a single red accent is reserved for the hero. */
 .hero h1 {
-  font: 700 clamp(44px, 6vw, 82px)/1.04 var(--font-serif);
-  letter-spacing: -0.02em;
-  margin: 28px 0 24px;
-  color: var(--midnight-navy);
+  font: 700 clamp(40px, 6.4vw, 96px)/1.02 var(--font-serif);
+  letter-spacing: -0.03em;
+  margin: 26px 0 22px;
+  color: var(--warm-white);
+  text-shadow: 0 2px 30px rgba(6, 27, 53, 0.45);
 }
 .section h2 {
   font: 700 clamp(30px, 3.6vw, 46px)/1.18 var(--font-serif);
@@ -420,7 +505,7 @@ textarea:focus-visible {
 /* Section headings stay monochrome; the em only lifts a phrase tonally */
 .hero h1 em {
   font-style: normal;
-  color: var(--seal-red);
+  color: var(--heritage-soft);
 }
 .section h2 em {
   font-style: normal;
@@ -499,23 +584,23 @@ textarea:focus-visible {
 
 .hero-proof {
   display: flex;
-  gap: 40px;
-  padding-top: 28px;
-  border-top: 1px solid var(--line-color);
+  flex-wrap: wrap;
+  gap: 20px clamp(32px, 5vw, 72px);
 }
 .hero-proof div {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
 }
 .hero-proof strong {
-  font: 700 28px var(--font-serif);
-  color: var(--midnight-navy);
+  font: 700 clamp(30px, 3.4vw, 46px)/1 var(--font-display);
+  letter-spacing: 0.01em;
+  color: var(--warm-white);
 }
 .hero-proof span {
-  font: 600 9px/1.5 var(--font-label);
-  letter-spacing: 0.12em;
-  color: var(--muted);
+  font: 600 9.5px/1.5 var(--font-label);
+  letter-spacing: 0.16em;
+  color: rgba(248, 247, 243, 0.58);
 }
 
 /* 3-Tier Operating Architecture Cards */
@@ -1342,6 +1427,108 @@ textarea:focus-visible {
   color: rgba(248, 247, 243, 0.42);
 }
 
+
+/* ==========================================================================
+   OVERSIZED SECTION MARKERS
+   The signature device: each band carries a huge condensed English word set
+   behind its heading, giving the page an editorial, institutional scale.
+   ========================================================================== */
+.section {
+  position: relative;
+  overflow-x: clip;
+}
+.section > *:not(.section-marker) {
+  position: relative;
+  z-index: 1;
+}
+.section > .section-marker {
+  position: absolute;
+  top: clamp(18px, 2.6vw, 40px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1240px, calc(100% - 2 * clamp(24px, 6vw, 70px)));
+  max-width: none;
+  margin: 0;
+  z-index: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(72px, 15vw, 208px);
+  line-height: 0.78;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  color: rgba(8, 38, 77, 0.055);
+}
+.band-navy > .section-marker { color: rgba(248, 247, 243, 0.07); }
+
+/* ==========================================================================
+   HEADER OVER THE HERO — transparent at rest, solid once scrolled
+   ========================================================================== */
+.site-header[data-scrolled="false"] {
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom-color: transparent;
+}
+.site-header[data-scrolled="false"] .brand-name { color: var(--warm-white); }
+.site-header[data-scrolled="false"] .brand-descriptor { color: rgba(248, 247, 243, 0.6); }
+.site-header[data-scrolled="false"] .primary-nav { color: rgba(248, 247, 243, 0.88); }
+.site-header[data-scrolled="false"] .primary-nav a:hover { color: var(--white); }
+.site-header[data-scrolled="false"] .header-login {
+  background: rgba(248, 247, 243, 0.1);
+  border-color: rgba(248, 247, 243, 0.42);
+  color: var(--warm-white);
+}
+.site-header[data-scrolled="false"] .header-login:hover {
+  background: var(--warm-white);
+  color: var(--deep-navy);
+}
+.site-header[data-scrolled="false"] .nav-toggle { border-color: rgba(248, 247, 243, 0.42); }
+.site-header[data-scrolled="false"] .nav-toggle-bars span { background: var(--warm-white); }
+
+/* ==========================================================================
+   WEEKLY ASSESSMENT DOSSIER (moved out of the hero into the exam band)
+   ========================================================================== */
+.exam-dossier { margin-top: 40px; }
+.dossier-title {
+  font: 700 clamp(22px, 2.2vw, 28px) var(--font-serif);
+  letter-spacing: -0.01em;
+  color: var(--white);
+  margin: 0 0 18px;
+}
+.dossier-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.dossier-quote {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: rgba(248, 247, 243, 0.8);
+  max-width: 72ch;
+  margin: 0 0 26px;
+}
+
+/* ==========================================================================
+   SCROLL REVEAL — content settles in as each band enters the viewport
+   ========================================================================== */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .scroll-cue i { animation: none; }
+}
+
 /* Responsiveness */
 /* ==========================================================================
    RESPONSIVE SYSTEM
@@ -1361,7 +1548,6 @@ textarea:focus-visible {
   .track-card:nth-child(3n) { border-right: 1px solid var(--line-color); }
   .funnel-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .section-heading { grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; }
-  .hero-grid { gap: 4vw; }
 }
 
 /* — 태블릿 세로: 인라인 내비 → 드로어 — */
@@ -1369,7 +1555,6 @@ textarea:focus-visible {
   .primary-nav { display: none; }
   .nav-toggle { display: inline-flex; }
 
-  .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .section-heading { grid-template-columns: minmax(0, 1fr); align-items: start; gap: 20px; }
   .handbook-window { grid-template-columns: minmax(0, 1fr); }
   .leveltest-grid { grid-template-columns: minmax(0, 1fr); }
@@ -1398,9 +1583,13 @@ textarea:focus-visible {
 /* — 모바일 가로 · 대형 폰 — */
 @media (max-width: 767px) {
   .section { padding: 68px clamp(20px, 5vw, 32px); }
-  .hero { padding: calc(var(--header-h) + 48px) 20px 64px; min-height: 0; }
-  .hero:before { display: none; }
-  .hero h1 { font-size: clamp(32px, 8.5vw, 42px); }
+  .hero { padding: calc(var(--header-h) + 40px) 20px 0; min-height: 100svh; }
+  .hero-inner { padding-bottom: 36px; }
+  .hero h1 { font-size: clamp(32px, 8.6vw, 46px); }
+  .hero-bar { flex-direction: column; align-items: flex-start; gap: 20px; padding: 20px 0 28px; }
+  .scroll-cue { flex-direction: row; align-items: center; gap: 12px; }
+  .scroll-cue i { width: 34px; height: 1px; background: linear-gradient(90deg, var(--heritage-gold), transparent); }
+  .section > .section-marker { font-size: clamp(56px, 17vw, 96px); }
   .hero-description { font-size: 15.5px; }
   .hero-actions { flex-direction: column; align-items: stretch; gap: 12px; margin: 28px 0 36px; }
   .hero-actions .button { width: 100%; }
@@ -1434,7 +1623,7 @@ textarea:focus-visible {
   .brand-name { font-size: 15px; }
 
   .section { padding: 56px 18px; }
-  .hero { padding: calc(var(--header-h) + 36px) 18px 52px; }
+  .hero { padding: calc(var(--header-h) + 32px) 18px 0; }
   .button { min-width: 0; padding: 16px 20px; }
   .verdict-container { padding: 28px 20px; }
   .handbook-content { padding: 24px 18px; }
