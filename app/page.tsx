@@ -365,6 +365,26 @@ export default function Home() {
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
   const currentTrack = tracks[selectedTrackIndex];
 
+  // Opening curtain: holds ~3s, lifts over 0.9s, then unmounts.
+  // Rendered on the server too, so the page never flashes before it appears.
+  const [loader, setLoader] = useState<"loading" | "exiting" | "done">("loading");
+  useEffect(() => {
+    const lift = setTimeout(() => setLoader("exiting"), 3000);
+    const clear = setTimeout(() => setLoader("done"), 3900);
+    return () => {
+      clearTimeout(lift);
+      clearTimeout(clear);
+    };
+  }, []);
+  useEffect(() => {
+    if (loader === "done") return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [loader]);
+
   // Hero video pauses for viewers who ask for reduced motion
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -569,6 +589,31 @@ export default function Home() {
 
   return (
     <main>
+      {/* Without JS the curtain would never lift, so hide it outright */}
+      <noscript>
+        <style>{`.loader{display:none!important}`}</style>
+      </noscript>
+
+      {/* Opening curtain — holds for ~3s, then lifts to reveal the page */}
+      {loader !== "done" && (
+        <div className="loader" data-state={loader} role="status" aria-label="페이지를 준비하는 중입니다">
+          <div className="loader-inner">
+            {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
+            <img
+              className="loader-mark"
+              src="/logo-frontier-symbol-white.png"
+              alt=""
+              width={51}
+              height={44}
+              aria-hidden="true"
+            />
+            <p className="loader-word">FRONTIER M&amp;A ACADEMY</p>
+            <p className="loader-line">기업의 결합을 설계하고,<br />더 높은 가치를 세웁니다</p>
+            <div className="loader-track" aria-hidden="true"><span /></div>
+          </div>
+        </div>
+      )}
+
       {/* Header (BI/CI Compliance) */}
       <header className="site-header" data-scrolled={isScrolled}>
         <a className="brand-lockup" href="#top" aria-label="프론티어 M&A 아카데미 홈">
@@ -703,13 +748,13 @@ export default function Home() {
             <h3>수강생(Student)</h3>
             <p>회차별 주관식 서술형 답안을 제출하고, 토론 게시판에서 동료 수강생과 치열하게 논쟁합니다.</p>
           </div>
-          <div className="tier-card" style={{ borderColor: "var(--seal-red)" }}>
-            <span className="tier-badge" style={{ background: "var(--seal-soft)", color: "var(--seal-red)" }}>TIER 2 : AI AGENT</span>
+          <div className="tier-card" style={{ borderColor: "var(--ember)" }}>
+            <span className="tier-badge" style={{ background: "var(--ember-soft)", color: "var(--ember-ink)" }}>TIER 2 : AI AGENT</span>
             <h3>AI 조교 &lsquo;서암&rsquo;(Seoam)</h3>
             <p>정답을 공개하지 않는 소크라테스식 반문으로 24시간 튜터링하고, 주간 토론 데이터를 전수 분석해 요약 보고서를 생성합니다.</p>
           </div>
-          <div className="tier-card" style={{ background: "var(--midnight-navy)", color: "#fff" }}>
-            <span className="tier-badge" style={{ background: "var(--heritage-gold)", color: "var(--deep-navy)" }}>TIER 3 : MASTER</span>
+          <div className="tier-card" style={{ background: "var(--ink-strong)", color: "#fff" }}>
+            <span className="tier-badge" style={{ background: "var(--heritage-gold)", color: "var(--ground)" }}>TIER 3 : MASTER</span>
             <h3 style={{ color: "#fff" }}>성보경 회장(Master)</h3>
             <p style={{ color: "var(--label-on-dark)" }}>주 1회 AI 주간 리포트를 검토(15분 소요)한 뒤, 금주의 우수 답안을 선정하고 공식 인영(成甫京) 판정문을 발행합니다.</p>
           </div>
@@ -877,7 +922,7 @@ export default function Home() {
 
           <div style={{ padding: "16px 24px", background: "var(--warm-white)", borderBottom: "1px solid var(--line-color)" }}>
             <span className="exam-track-label">{currentExam.trackLabel} · {currentExam.level}</span>
-            <p style={{ font: "600 14.5px/1.7 var(--font-serif)", color: "var(--midnight-navy)", margin: "8px 0 0" }}>
+            <p style={{ font: "600 14.5px/1.7 var(--font-serif)", color: "var(--ink-strong)", margin: "8px 0 0" }}>
               [문제] {currentExam.prompt}
             </p>
           </div>
@@ -981,7 +1026,7 @@ export default function Home() {
 
         {/* Discussion Thread */}
         <div style={{ marginTop: "48px" }}>
-          <h3 style={{ font: "700 22px var(--font-serif)", color: "var(--midnight-navy)", marginBottom: "20px" }}>
+          <h3 style={{ font: "700 22px var(--font-serif)", color: "var(--ink-strong)", marginBottom: "20px" }}>
             금주의 수강생 토론 쓰레드 (논쟁 {comments.length}건)
           </h3>
 
@@ -1081,14 +1126,14 @@ export default function Home() {
               <span style={{ font: "700 11px var(--font-label)", color: "var(--gold-ink)", letterSpacing: "0.1em" }}>
                 CHAPTER {selectedChapterIndex + 1} HANDBOOK
               </span>
-              <span style={{ fontSize: "12px", color: "#6b7280" }}>회원 전용 · 체크리스트 연동</span>
+              <span style={{ fontSize: "12px", color: "var(--muted)" }}>회원 전용 · 체크리스트 연동</span>
             </div>
 
-            <h3 style={{ font: "700 28px var(--font-serif)", color: "var(--midnight-navy)", margin: "0 0 16px" }}>
+            <h3 style={{ font: "700 28px var(--font-serif)", color: "var(--ink-strong)", margin: "0 0 16px" }}>
               {currentTrack.chapters[selectedChapterIndex]?.title}
             </h3>
 
-            <p style={{ fontSize: "14.5px", lineHeight: "1.8", color: "#4b5563", maxWidth: "70ch" }}>
+            <p style={{ fontSize: "14.5px", lineHeight: "1.8", color: "#4A3E38", maxWidth: "70ch" }}>
               본 핸드북 챕터에서는 실전 M&amp;A 거래 진행 시 반드시 점검해야 할 법률 조항과 핵심 체크리스트를 구조화하여 제공합니다.
             </p>
 
@@ -1116,7 +1161,7 @@ export default function Home() {
 
             {/* Interactive Checklist */}
             <div style={{ margin: "24px 0" }}>
-              <h4 style={{ font: "700 15px var(--font-serif)", color: "var(--midnight-navy)", marginBottom: "12px" }}>
+              <h4 style={{ font: "700 15px var(--font-serif)", color: "var(--ink-strong)", marginBottom: "12px" }}>
                 실무 체크리스트 (클릭하여 완료 상태 저장)
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -1142,8 +1187,8 @@ export default function Home() {
                         style={{
                           width: "18px",
                           height: "18px",
-                          border: "1px solid var(--midnight-navy)",
-                          background: isChecked ? "var(--midnight-navy)" : "transparent",
+                          border: "1px solid var(--ink-strong)",
+                          background: isChecked ? "var(--ink-strong)" : "transparent",
                           color: "#fff",
                           display: "grid",
                           placeItems: "center",
@@ -1153,7 +1198,7 @@ export default function Home() {
                       >
                         {isChecked ? "✓" : ""}
                       </span>
-                      <span style={{ textDecoration: isChecked ? "line-through" : "none", color: isChecked ? "#6b7280" : "inherit" }}>
+                      <span style={{ textDecoration: isChecked ? "line-through" : "none", color: isChecked ? "var(--muted)" : "inherit" }}>
                         {item}
                       </span>
                     </button>
@@ -1180,21 +1225,21 @@ export default function Home() {
       </section>
 
       {/* Level Test & Offline Deal Lab Section (SCR-05) */}
-      <section className="section band-navy" id="leveltest">
+      <section className="section band-ember" id="leveltest">
         <span className="section-marker" aria-hidden="true">DEAL LAB</span>
         <div className="section-heading">
           <div>
             <p className="section-index section-index--onDark">심화 과정 <i>Deal Lab Admission</i></p>
-            <h2 style={{ color: "#fff" }}>레벨 테스트 &<br /><em style={{ color: "var(--heritage-gold)" }}>오프라인 Deal Lab 수강 자격</em></h2>
+            <h2 style={{ color: "#fff" }}>레벨 테스트 &<br /><em>오프라인 Deal Lab 수강 자격</em></h2>
           </div>
-          <p style={{ color: "var(--label-on-dark)" }}>
+          <p>
             온라인 정규 테스트(80점 이상)를 통과한 인원에게만 성보경 회장 주관 1:1~10:1 소수정예 오프라인 Deal Lab 모의 협상 참석 자격이 부여됩니다.
           </p>
         </div>
 
         <div className="leveltest-grid">
           {/* Level Test Simulator */}
-          <div style={{ background: "var(--slate-ink)", padding: "36px", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ background: "var(--ink)", padding: "36px", border: "1px solid rgba(255,255,255,0.1)" }}>
             <span style={{ font: "700 11px var(--font-label)", color: "var(--heritage-gold)" }}>ONLINE LEVEL TEST SIMULATION</span>
             <h3 style={{ font: "700 22px var(--font-serif)", margin: "16px 0", color: "#fff" }}>
               [서술형 평가] 정밀실사 미인지 우발채무 발생 시 협상 및 계약 구조화 방안
@@ -1209,7 +1254,7 @@ export default function Home() {
                   width: "100%",
                   minHeight: "100px",
                   padding: "14px",
-                  background: "var(--deep-navy)",
+                  background: "var(--ground)",
                   border: "1px solid rgba(255,255,255,0.2)",
                   color: "#fff",
                   fontFamily: "var(--font-sans)",
@@ -1230,11 +1275,13 @@ export default function Home() {
                 style={{
                   marginTop: "20px",
                   padding: "20px",
-                  background: levelTestScore >= 80 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                  border: `1px solid ${levelTestScore >= 80 ? "#10B981" : "#EF4444"}`
+                  /* Amber, not red, for "needs work": red is now the brand colour
+                     and would read as identity rather than a status. */
+                  background: levelTestScore >= 80 ? "rgba(16, 185, 129, 0.15)" : "rgba(240, 180, 41, 0.16)",
+                  border: `1px solid ${levelTestScore >= 80 ? "#10B981" : "#F0B429"}`
                 }}
               >
-                <div style={{ font: "700 18px var(--font-serif)", color: levelTestScore >= 80 ? "#34D399" : "#F87171" }}>
+                <div style={{ font: "700 18px var(--font-serif)", color: levelTestScore >= 80 ? "#34D399" : "#F5C451" }}>
                   심사 결과: {levelTestScore}점 / 100점({levelTestScore >= 80 ? "합격 (Deal Lab Eligible)" : "보완 필요"})
                 </div>
                 <p style={{ fontSize: "13px", marginTop: "8px", color: "rgba(248,247,243,0.82)" }}>
@@ -1256,7 +1303,7 @@ export default function Home() {
           </div>
 
           {/* Deal Lab Qualification Info */}
-          <div style={{ background: "var(--deep-navy)", padding: "36px", border: "1px solid var(--heritage-gold)" }}>
+          <div style={{ background: "var(--ground)", padding: "36px", border: "1px solid var(--heritage-gold)" }}>
             <span style={{ font: "700 11px var(--font-label)", color: "var(--heritage-gold)" }}>OFFLINE INTENSIVE DEAL LAB</span>
             <h3 style={{ font: "700 26px var(--font-serif)", color: "#fff", margin: "16px 0" }}>
               소수정예 모의 협상 도장(Deal Lab)
@@ -1289,7 +1336,7 @@ export default function Home() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(6, 24, 53, 0.85)",
+            background: "rgba(23, 17, 15, 0.85)",
             backdropFilter: "blur(6px)",
             display: "grid",
             placeItems: "center",
@@ -1306,11 +1353,11 @@ export default function Home() {
               boxShadow: "0 20px 50px rgba(0,0,0,0.5)"
             }}
           >
-            <h3 style={{ font: "700 24px var(--font-serif)", color: "var(--midnight-navy)", margin: "0 0 12px" }}>
+            <h3 style={{ font: "700 24px var(--font-serif)", color: "var(--ink-strong)", margin: "0 0 12px" }}>
               오프라인 Deal Lab 수강 신청
             </h3>
             <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "20px" }}>
-              레벨 테스트 통과 자격 코드: <strong style={{ color: "var(--seal-red)" }}>DEAL-LAB-2026-PASS-88</strong>
+              레벨 테스트 통과 자격 코드: <strong style={{ color: "var(--ember)" }}>DEAL-LAB-2026-PASS-88</strong>
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
@@ -1333,7 +1380,7 @@ export default function Home() {
               <button
                 onClick={() => setShowModal(false)}
                 className="button button-gold"
-                style={{ background: "var(--paper-deep)", color: "var(--slate-ink)" }}
+                style={{ background: "var(--paper-deep)", color: "var(--ink)" }}
               >
                 닫기
               </button>

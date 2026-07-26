@@ -1,39 +1,49 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   BRAND TOKENS
-   Frontier M&A BI/CI Guidelines v2.0 §05 · TenAI BI/CI Guidelines v2.0 §05
-   Frontier owns the authority layer (navy/gold); TenAI owns the AI layer (blue).
+   BRAND TOKENS — EMBER SYSTEM
+   The chairman's seal red (인영) is promoted from accent to the lead colour,
+   and the dark grounds move from Midnight Navy to a warm near-black. This is
+   a deliberate departure from Frontier BI/CI §05, which specifies Midnight
+   Navy at 70%; the navy-dominant scheme read as static. Heritage Gold and the
+   seal red lineage are retained so the brand story still holds.
+   TenAI keeps its own AI-layer blue per TenAI §05.
    ========================================================================== */
 :root {
-  /* — Frontier M&A · primary palette (guideline §05) — */
-  --midnight-navy: #08264D;  /* Frontier Midnight Navy */
-  --deep-navy:     #061B35;  /* Deep Navy */
-  --heritage-gold: #C49A3A;  /* Heritage Gold — accent only, see GOLD DISCIPLINE */
-  --gold-ink:      #7A5E1E;  /* gold-family TEXT on light grounds — 5.6:1 */
-  --warm-white:    #F8F7F3;  /* Warm White */
+  /* — Core energy: seal red, intensified — */
+  --ember:         #D8341A;  /* primary fills; white text 4.7:1 */
+  --ember-press:   #C22B14;  /* gradient end / pressed; white 5.8:1 */
+  --ember-ink:     #A32410;  /* ember TEXT on light grounds — 6.8:1 */
+  --ember-glow:    #FF7A33;  /* accent on DARK grounds only — 6.1:1+ */
+  --ember-on-dark: #F0705A;  /* the seal itself on dark — 6.4:1 */
+  --ember-soft:    #FBEAE5;  /* tint background */
 
-  /* — Frontier · extended neutrals derived from the primaries — */
-  --slate-ink:     #1B2A41;
+  /* — Grounds: warm near-black replaces navy — */
+  --ink-strong:    #241A17;  /* headings & solid dark surfaces on light */
+  --ink:           #2A201D;  /* secondary dark surfaces */
+  --ground:        #17110F;  /* deepest ground: hero scrim, footer, verdict */
+
+  /* — Heritage — */
+  --heritage-gold: #C49A3A;  /* accent only, see GOLD DISCIPLINE */
   --heritage-soft: #E5C26B;
-  --seal-red:      #BF3B2B;
-  --seal-on-dark:  #E0705F;  /* chairman seal on navy grounds — 4.5:1+ */
-  --seal-soft:     #F8ECE9;
+  --gold-ink:      #7A5E1E;  /* gold-family TEXT on light grounds — 5.6:1 */
+
+  /* — Paper — */
+  --warm-white:    #F8F7F3;
   --paper-bg:      #F7F5F0;
   --paper-deep:    #EFECE4;
   --line-color:    #D8D3C8;
-  --muted:         #5C6472;
   --white:         #ffffff;
 
-  /* — TenAI · AI system layer (guideline §05) — */
+  /* — Warm neutrals (were cool blue-greys) — */
+  --muted:         #655A53;  /* body secondary on light — 6.1:1 */
+  --label-ink:     #655A53;  /* labels on light grounds */
+  --label-on-dark: #A99C94;  /* labels on dark grounds — 6.0:1+ */
+
+  /* — TenAI · AI system layer (TenAI guideline §05) — */
   --ten-navy:      #0B1220;
   --ai-blue:       #48BCEB;
   --platform-gray: #737B8C;  /* brand value — graphics/logo contexts */
-
-  /* Accessible text derivatives of Platform Gray (WCAG AA at small sizes).
-     The brand value itself only reaches 3.9:1 on Warm White. */
-  --label-ink:     #5C6472;  /* labels on light grounds  — 5.1:1+ */
-  --label-on-dark: #9AA2B1;  /* labels on navy grounds   — 5.9:1+ */
 
   /* — Typography roles (Frontier §06 · TenAI §06) — */
   --font-sans:  var(--font-sans), "Pretendard", "Noto Sans KR", -apple-system, sans-serif;
@@ -58,7 +68,7 @@ html {
 body {
   margin: 0;
   background: var(--paper-bg);
-  color: var(--slate-ink);
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.7;
@@ -97,6 +107,95 @@ button { color: inherit; cursor: pointer; }
 main { overflow: hidden; }
 
 /* ==========================================================================
+   OPENING CURTAIN
+   A deliberately slow, weighty hold before the page is revealed: the mark
+   settles, the brand line surfaces, a hairline fills, then the whole plate
+   lifts away. Staged delays do the work — nothing spins.
+   ========================================================================== */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(90% 70% at 50% 108%, rgba(216, 52, 26, 0.30) 0%, rgba(216, 52, 26, 0) 62%),
+    radial-gradient(70% 50% at 50% -10%, rgba(196, 154, 58, 0.14) 0%, rgba(196, 154, 58, 0) 60%),
+    var(--ground);
+  transition: transform 0.9s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.9s ease;
+}
+.loader[data-state="exiting"] {
+  transform: translateY(-101%);
+  opacity: 0.92;
+}
+.loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 520px;
+}
+.loader-mark {
+  height: 46px;
+  width: auto;
+  opacity: 0;
+  animation: curtainMark 1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+.loader-word {
+  margin: 22px 0 0;
+  font: 600 11px var(--font-label);
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: var(--heritage-soft);
+  opacity: 0;
+  animation: curtainRise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+}
+.loader-line {
+  margin: 26px 0 0;
+  font: 400 clamp(16px, 2.2vw, 21px)/1.85 var(--font-serif);
+  letter-spacing: 0.01em;
+  color: rgba(248, 247, 243, 0.9);
+  opacity: 0;
+  animation: curtainRise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.95s forwards;
+}
+.loader-track {
+  position: relative;
+  width: min(240px, 60vw);
+  height: 1px;
+  margin-top: 44px;
+  background: rgba(248, 247, 243, 0.16);
+  overflow: hidden;
+}
+.loader-track span {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--heritage-gold), var(--ember-glow));
+  animation: curtainFill 2.9s cubic-bezier(0.35, 0, 0.15, 1) 0.15s forwards;
+}
+@keyframes curtainMark {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes curtainRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes curtainFill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+/* Reduced motion: keep the hold and the reveal, drop the staging */
+@media (prefers-reduced-motion: reduce) {
+  .loader-mark, .loader-word, .loader-line { opacity: 1; animation: none; }
+  .loader-track span { transform: scaleX(1); animation: none; }
+  .loader { transition: opacity 0.4s ease; }
+  .loader[data-state="exiting"] { transform: none; opacity: 0; }
+}
+
+/* ==========================================================================
    SITE HEADER — Frontier horizontal lockup, top-left (guideline §10 WEBSITE)
    ========================================================================== */
 .site-header {
@@ -119,7 +218,7 @@ main { overflow: hidden; }
 .site-header[data-scrolled="true"] {
   background: rgba(248, 247, 243, 0.97);
   border-bottom-color: var(--line-color);
-  box-shadow: 0 4px 24px rgba(8, 38, 77, 0.06);
+  box-shadow: 0 4px 24px rgba(36, 26, 23, 0.06);
 }
 
 /* — Frontier primary horizontal lockup: symbol + wordmark + descriptor —
@@ -149,7 +248,7 @@ main { overflow: hidden; }
 .brand-name {
   font: 700 16px/1 var(--font-label);
   letter-spacing: 0.04em;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   white-space: nowrap;
 }
 .brand-descriptor {
@@ -164,7 +263,7 @@ main { overflow: hidden; }
   gap: clamp(18px, 2.2vw, 32px);
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--slate-ink);
+  color: var(--ink);
 }
 .primary-nav a {
   position: relative;
@@ -183,7 +282,7 @@ main { overflow: hidden; }
   transform-origin: left;
   transition: transform 0.25s ease;
 }
-.primary-nav a:hover { color: var(--midnight-navy); }
+.primary-nav a:hover { color: var(--ink-strong); }
 .primary-nav a:hover::after { transform: scaleX(1); }
 
 .header-actions {
@@ -199,10 +298,10 @@ main { overflow: hidden; }
   font-weight: 700;
   padding: 11px 20px;
   color: var(--white);
-  background: var(--midnight-navy);
+  background: var(--ink-strong);
   transition: background 0.2s ease;
 }
-.header-login:hover { background: var(--deep-navy); }
+.header-login:hover { background: var(--ground); }
 .header-login span { color: var(--heritage-gold); }
 .text-link span {
   color: var(--heritage-gold);
@@ -252,7 +351,7 @@ main { overflow: hidden; }
 .nav-toggle-bars span {
   display: block;
   height: 1.5px;
-  background: var(--midnight-navy);
+  background: var(--ink-strong);
   transition: transform 0.25s ease, opacity 0.2s ease;
 }
 .nav-toggle-bars[data-open="true"] span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
@@ -263,7 +362,7 @@ main { overflow: hidden; }
   position: fixed;
   inset: 0;
   z-index: 55;
-  background: rgba(6, 27, 53, 0.5);
+  background: rgba(23, 17, 15, 0.5);
   backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
@@ -279,7 +378,7 @@ main { overflow: hidden; }
   z-index: 60;
   width: min(88vw, 340px);
   padding: calc(var(--header-h) + 16px) 28px 40px;
-  background: var(--deep-navy);
+  background: var(--ground);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -341,8 +440,8 @@ textarea:focus-visible {
   justify-content: center;
   width: 68px;
   height: 68px;
-  border: 3px double var(--seal-on-dark);
-  color: var(--seal-on-dark);
+  border: 3px double var(--ember-on-dark);
+  color: var(--ember-on-dark);
   font-family: var(--font-serif);
   font-weight: 900;
   font-size: 15px;
@@ -350,8 +449,8 @@ textarea:focus-visible {
   padding: 4px;
   letter-spacing: 0.1em;
   transform: rotate(6deg);
-  background: rgba(224, 112, 95, 0.08);
-  box-shadow: 0 0 14px rgba(224, 112, 95, 0.18);
+  background: rgba(240, 112, 90, 0.08);
+  box-shadow: 0 0 14px rgba(240, 112, 90, 0.18);
   user-select: none;
   border-radius: 2px;
 }
@@ -366,7 +465,7 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   padding: calc(var(--header-h) + 64px) clamp(24px, 6vw, 70px) 0;
-  background: var(--deep-navy);
+  background: var(--ground);
   color: var(--warm-white);
   overflow: hidden;
 }
@@ -387,8 +486,10 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(6, 27, 53, 0.62) 0%, rgba(6, 27, 53, 0.42) 38%, rgba(6, 27, 53, 0.94) 100%),
-    linear-gradient(90deg, rgba(6, 27, 53, 0.88) 0%, rgba(6, 27, 53, 0.55) 52%, rgba(6, 27, 53, 0.2) 100%);
+    /* ember cast from the lower left — gives the footage heat and direction */
+    radial-gradient(120% 90% at 4% 96%, rgba(216, 52, 26, 0.42) 0%, rgba(216, 52, 26, 0) 55%),
+    linear-gradient(180deg, rgba(23, 17, 15, 0.60) 0%, rgba(23, 17, 15, 0.38) 38%, rgba(23, 17, 15, 0.94) 100%),
+    linear-gradient(90deg, rgba(23, 17, 15, 0.88) 0%, rgba(23, 17, 15, 0.55) 52%, rgba(23, 17, 15, 0.18) 100%);
 }
 .hero-inner {
   position: relative;
@@ -461,7 +562,7 @@ textarea:focus-visible {
   gap: 12px;
   font: 600 11px/1.4 var(--font-label);
   letter-spacing: 0.2em;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
 }
 .eyebrow span {
   width: 30px;
@@ -475,7 +576,7 @@ textarea:focus-visible {
   margin: 0;
   font: 700 12px/1.4 var(--font-label);
   letter-spacing: 0.02em;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
 }
 .section-index i {
   font: 400 11px var(--font-label);
@@ -494,13 +595,13 @@ textarea:focus-visible {
   letter-spacing: -0.03em;
   margin: 26px 0 22px;
   color: var(--warm-white);
-  text-shadow: 0 2px 30px rgba(6, 27, 53, 0.45);
+  text-shadow: 0 2px 30px rgba(23, 17, 15, 0.45);
 }
 .section h2 {
   font: 700 clamp(30px, 3.6vw, 46px)/1.18 var(--font-serif);
   letter-spacing: -0.015em;
   margin: 20px 0;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
 }
 /* Section headings stay monochrome; the em only lifts a phrase tonally */
 .hero h1 em {
@@ -509,14 +610,14 @@ textarea:focus-visible {
 }
 .section h2 em {
   font-style: normal;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
 }
 
 /* Body — Regular 400, leading 150–175% (guideline §06) */
 .hero-description {
   font-size: 16.5px;
   line-height: 1.75;
-  color: #4b5563;
+  color: #4A3E38;
   /* px, not ch: the ch unit measures the latin "0" and badly underestimates
      Korean glyph width, so a ch-based measure wraps far earlier than intended. */
   max-width: 620px;
@@ -546,39 +647,43 @@ textarea:focus-visible {
 .button:hover span { transform: translateX(3px); }
 /* Primary — solid navy, confident and on-brand. Reads on light grounds. */
 .button-red {
-  background: var(--midnight-navy);
-  color: var(--warm-white);
+  background: linear-gradient(135deg, var(--ember) 0%, var(--ember-press) 100%);
+  color: var(--white);
+  box-shadow: 0 8px 22px rgba(216, 52, 26, 0.26);
 }
-.button-red:hover { background: var(--deep-navy); }
-.button-red span { color: var(--heritage-soft); }
+.button-red:hover {
+  background: linear-gradient(135deg, var(--ember-press) 0%, var(--ember-ink) 100%);
+  box-shadow: 0 10px 26px rgba(216, 52, 26, 0.34);
+}
+.button-red span { color: rgba(255, 255, 255, 0.85); }
 /* Secondary — outlined, quiet */
 .button-gold {
   background: transparent;
-  color: var(--midnight-navy);
-  border-color: rgba(8, 38, 77, 0.28);
+  color: var(--ember-ink);
+  border-color: rgba(216, 52, 26, 0.42);
 }
 .button-gold:hover {
-  background: var(--midnight-navy);
-  color: var(--warm-white);
-  border-color: var(--midnight-navy);
+  background: var(--ember-ink);
+  color: var(--white);
+  border-color: var(--ember-ink);
 }
 /* On dark grounds the fill inverts to warm gold so the CTA still carries */
 .on-dark.button-red,
 .mobile-nav-cta.button-red {
   background: var(--heritage-gold);
-  color: var(--deep-navy);
+  color: var(--ground);
 }
 .on-dark.button-red:hover,
 .mobile-nav-cta.button-red:hover { background: var(--heritage-soft); }
 .on-dark.button-red span,
-.mobile-nav-cta.button-red span { color: var(--deep-navy); }
+.mobile-nav-cta.button-red span { color: var(--ground); }
 .on-dark.button-gold {
   color: var(--warm-white);
   border-color: rgba(248, 247, 243, 0.4);
 }
 .on-dark.button-gold:hover {
   background: var(--warm-white);
-  color: var(--deep-navy);
+  color: var(--ground);
   border-color: var(--warm-white);
 }
 
@@ -618,8 +723,8 @@ textarea:focus-visible {
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 .tier-card:hover {
-  border-color: var(--midnight-navy);
-  box-shadow: 0 18px 44px rgba(8, 38, 77, 0.07);
+  border-color: var(--ink-strong);
+  box-shadow: 0 18px 44px rgba(36, 26, 23, 0.07);
 }
 .tier-badge {
   display: inline-block;
@@ -633,7 +738,8 @@ textarea:focus-visible {
 }
 /* On dark grounds the plain outlined badge inverts for legibility */
 .verdict-container .tier-badge,
-.band-navy .tier-badge {
+.band-dark .tier-badge,
+.band-ember .tier-badge {
   border-color: rgba(248, 247, 243, 0.32);
   color: var(--warm-white);
   margin-bottom: 0;
@@ -641,7 +747,7 @@ textarea:focus-visible {
 .tier-card h3 {
   font: 700 23px var(--font-serif);
   letter-spacing: -0.01em;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   margin: 0 0 14px;
 }
 .tier-card p {
@@ -655,13 +761,13 @@ textarea:focus-visible {
 .dojo-container {
   background: var(--white);
   border: 1px solid var(--line-color);
-  box-shadow: 0 20px 50px rgba(6, 24, 53, 0.08);
+  box-shadow: 0 20px 50px rgba(23, 17, 15, 0.08);
   margin-top: 40px;
   border-radius: 2px;
   overflow: hidden;
 }
 .dojo-header {
-  background: var(--slate-ink);
+  background: var(--ink);
   color: var(--white);
   padding: 18px 24px;
   display: flex;
@@ -723,7 +829,7 @@ textarea:focus-visible {
   font: 700 10px var(--font-label);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   padding-right: 4px;
 }
 .dojo-rules-bar > span:not(.rules-label) {
@@ -774,14 +880,14 @@ textarea:focus-visible {
 }
 .chat-sender {
   font: 700 11px var(--font-label);
-  color: var(--slate-ink);
+  color: var(--ink);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .chat-msg-student .chat-sender {
   justify-content: flex-end;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
 }
 .chat-bubble {
   max-width: 74ch;
@@ -793,18 +899,18 @@ textarea:focus-visible {
 .chat-bubble-ai {
   background: var(--white);
   border: 1px solid var(--line-color);
-  color: var(--slate-ink);
+  color: var(--ink);
 }
 .chat-bubble-student {
-  background: var(--slate-ink);
+  background: var(--ink);
   color: var(--white);
 }
 .socratic-highlight {
   margin-top: 10px;
   padding: 10px 14px;
-  background: var(--seal-soft);
-  border-left: 3px solid var(--seal-red);
-  color: var(--seal-red);
+  background: var(--ember-soft);
+  border-left: 3px solid var(--ember);
+  color: var(--ember);
   font-weight: 600;
   font-size: 13px;
 }
@@ -824,12 +930,12 @@ textarea:focus-visible {
   border: 1px solid var(--line-color);
   background: var(--paper-bg);
   font: 400 14px var(--font-sans);
-  color: var(--slate-ink);
+  color: var(--ink);
   resize: vertical;
   outline: none;
 }
 .dojo-textarea:focus {
-  border-color: var(--midnight-navy);
+  border-color: var(--ink-strong);
   background: var(--white);
 }
 .dojo-input-footer {
@@ -864,11 +970,11 @@ textarea:focus-visible {
 
 /* Discussion Thread & Verdict Section (SCR-03) */
 .verdict-container {
-  background: var(--deep-navy);
+  background: var(--ground);
   color: var(--white);
   padding: 48px clamp(24px, 5vw, 64px);
   position: relative;
-  box-shadow: 0 24px 60px rgba(6, 24, 53, 0.22);
+  box-shadow: 0 24px 60px rgba(23, 17, 15, 0.22);
   margin-top: 44px;
   border: 1px solid rgba(196, 154, 58, 0.24);
 }
@@ -880,7 +986,7 @@ textarea:focus-visible {
 }
 .verdict-quote {
   font: 600 clamp(20px, 2.6vw, 30px)/1.5 var(--font-serif);
-  color: #f3f4f6;
+  color: var(--warm-white);
   margin: 0 0 32px;
   position: relative;
   z-index: 2;
@@ -933,7 +1039,7 @@ textarea:focus-visible {
 .thread-user {
   font-weight: 700;
   font-size: 14px;
-  color: var(--slate-ink);
+  color: var(--ink);
 }
 .best-badge {
   display: inline-flex;
@@ -957,7 +1063,7 @@ textarea:focus-visible {
 .thread-body {
   font-size: 14px;
   line-height: 1.7;
-  color: #374151;
+  color: #3F332E;
   /* Korean reads best at 40–50 characters per line; unconstrained this ran
      to ~88 on a wide display. Cap the measure rather than the container. */
   max-width: 72ch;
@@ -969,11 +1075,11 @@ textarea:focus-visible {
   grid-template-columns: 240px 1fr;
   background: var(--white);
   min-height: 560px;
-  box-shadow: 0 24px 56px rgba(34, 48, 68, 0.08);
+  box-shadow: 0 24px 56px rgba(42, 32, 29, 0.08);
   border: 1px solid var(--line-color);
 }
 .handbook-window aside {
-  background: var(--slate-ink);
+  background: var(--ink);
   color: var(--white);
   padding: 32px 24px;
 }
@@ -1030,7 +1136,7 @@ textarea:focus-visible {
 }
 .clause-title {
   font: 700 12px var(--font-label);
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   letter-spacing: 0.05em;
 }
 .copy-btn {
@@ -1038,19 +1144,19 @@ textarea:focus-visible {
   border: 1px solid var(--line-color);
   font: 700 11px var(--font-label);
   padding: 6px 12px;
-  color: var(--slate-ink);
+  color: var(--ink);
   transition: all 0.2s ease;
 }
 .copy-btn:hover {
-  background: var(--midnight-navy);
+  background: var(--ink-strong);
   color: var(--white);
-  border-color: var(--midnight-navy);
+  border-color: var(--ink-strong);
 }
 .clause-code {
   font-family: var(--font-label);
   font-size: 13px;
   line-height: 1.7;
-  color: #1f2937;
+  color: #2E2420;
   white-space: pre-wrap;
 }
 
@@ -1066,7 +1172,25 @@ textarea:focus-visible {
 /* Editorial background bands */
 .band-white { background: var(--white); }
 .band-paper { background: var(--paper-bg); }
-.band-navy { background: var(--deep-navy); color: var(--warm-white); }
+.band-dark { background: var(--ground); color: var(--warm-white); }
+/* Full ember ground — the climax band, carries the Deal Lab call to action */
+.band-ember {
+  background:
+    radial-gradient(120% 120% at 88% 8%, rgba(255, 122, 51, 0.22) 0%, rgba(255, 122, 51, 0) 58%),
+    linear-gradient(150deg, var(--ember-ink) 0%, #7E1A0B 100%);
+  color: var(--warm-white);
+}
+/* Text roles tuned for the ember ground, which sits lighter than --ground */
+.band-ember .section-index--onDark { color: var(--white); }
+.band-ember .section-index--onDark i,
+.band-ember .cycle-when { color: #FFE9C7; }
+.band-ember .section-heading > p,
+.band-ember .funnel-desc { color: rgba(255, 255, 255, 0.9); }
+.band-ember h2 em { color: #FFE9C7; }
+.band-ember .tier-badge {
+  border-color: rgba(255, 255, 255, 0.42);
+  color: var(--white);
+}
 .band-hair { border-top: 1px solid var(--line-color); }
 
 .section-heading {
@@ -1103,15 +1227,15 @@ textarea:focus-visible {
 }
 .track-card:first-child { border-left: 1px solid var(--line-color); }
 .track-card:hover, .track-card.is-selected {
-  background: var(--midnight-navy);
+  background: var(--ink-strong);
   transform: translateY(-6px);
-  box-shadow: 0 18px 38px rgba(8, 38, 77, 0.18);
+  box-shadow: 0 18px 38px rgba(36, 26, 23, 0.18);
   color: var(--white);
 }
 .track-number {
   display: block;
   font: 700 14px var(--font-serif);
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   margin-bottom: 36px;
 }
 /* Selected/hovered track cards invert to navy — labels must follow */
@@ -1167,12 +1291,12 @@ textarea:focus-visible {
   transition: 0.25s ease;
 }
 .exam-card:hover {
-  border-top-color: var(--midnight-navy);
-  box-shadow: 0 14px 34px rgba(8, 38, 77, 0.08);
+  border-top-color: var(--ink-strong);
+  box-shadow: 0 14px 34px rgba(36, 26, 23, 0.08);
 }
 .exam-card.is-active {
-  border-top-color: var(--seal-red);
-  box-shadow: 0 14px 36px rgba(8, 38, 77, 0.12);
+  border-top-color: var(--ember);
+  box-shadow: 0 14px 36px rgba(36, 26, 23, 0.12);
 }
 .exam-tags {
   display: flex;
@@ -1188,11 +1312,11 @@ textarea:focus-visible {
   color: var(--label-ink);
 }
 .exam-tag.level-elementary { border-color: #B8D2C1; color: #2F6B45; }
-.exam-tag.level-intermediate { border-color: #E4B7AF; color: var(--seal-red); }
-.exam-tag.level-advanced { background: var(--midnight-navy); border-color: var(--midnight-navy); color: var(--heritage-soft); }
+.exam-tag.level-intermediate { border-color: #E4B7AF; color: var(--ember); }
+.exam-tag.level-advanced { background: var(--ink-strong); border-color: var(--ink-strong); color: var(--heritage-soft); }
 .exam-prompt {
   font: 600 15.5px/1.75 var(--font-serif);
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   margin: 0;
   flex: 1;
 }
@@ -1211,13 +1335,13 @@ textarea:focus-visible {
   letter-spacing: 0.06em;
   color: var(--muted);
 }
-.exam-card.is-active .exam-select-cue { color: var(--seal-red); }
+.exam-card.is-active .exam-select-cue { color: var(--ember); }
 .exam-notice {
   max-width: 78ch;
   margin-top: 24px;
   padding: 18px 22px;
-  background: var(--seal-soft);
-  border-left: 3px solid var(--seal-red);
+  background: var(--ember-soft);
+  border-left: 3px solid var(--ember);
   font-size: 13.5px;
   line-height: 1.75;
   color: #7a2c20;
@@ -1237,7 +1361,7 @@ textarea:focus-visible {
   position: relative;
 }
 .funnel-step[data-gate="true"] {
-  background: var(--midnight-navy);
+  background: var(--ink-strong);
   border-color: var(--heritage-gold);
 }
 .funnel-step[data-gate="true"] .funnel-name { color: var(--white); }
@@ -1250,7 +1374,7 @@ textarea:focus-visible {
 }
 .funnel-name {
   font: 700 17px var(--font-serif);
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   margin: 12px 0 8px;
 }
 .funnel-desc {
@@ -1279,7 +1403,7 @@ textarea:focus-visible {
   text-align: center;
 }
 .matrix-table thead th {
-  background: var(--midnight-navy);
+  background: var(--ink-strong);
   color: var(--white);
   font: 700 11px var(--font-label);
   letter-spacing: 0.08em;
@@ -1287,7 +1411,7 @@ textarea:focus-visible {
 .matrix-table tbody th {
   text-align: left;
   font-weight: 600;
-  color: var(--slate-ink);
+  color: var(--ink);
   background: var(--warm-white);
   white-space: nowrap;
 }
@@ -1310,7 +1434,7 @@ textarea:focus-visible {
 .curriculum-col h5 {
   font: 700 11px var(--font-label);
   letter-spacing: 0.12em;
-  color: var(--midnight-navy);
+  color: var(--ink-strong);
   margin: 0 0 14px;
   padding-bottom: 10px;
   border-bottom: 1.5px solid var(--heritage-gold);
@@ -1325,7 +1449,7 @@ textarea:focus-visible {
 .curriculum-col li {
   font-size: 13px;
   line-height: 1.65;
-  color: #4b5563;
+  color: #4A3E38;
 }
 
 /* Weekly operating cycle strip */
@@ -1338,7 +1462,7 @@ textarea:focus-visible {
   margin-top: 32px;
 }
 .cycle-cell {
-  background: var(--deep-navy);
+  background: var(--ground);
   padding: 22px 20px;
 }
 .cycle-when {
@@ -1369,7 +1493,7 @@ textarea:focus-visible {
    SITE FOOTER — dark ground, inverse logo treatment (Frontier §07)
    ========================================================================== */
 .site-footer {
-  background: var(--deep-navy);
+  background: var(--ground);
   color: var(--white);
   padding: 80px clamp(24px, 6vw, 70px) 0;
 }
@@ -1459,9 +1583,10 @@ textarea:focus-visible {
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
-  color: rgba(8, 38, 77, 0.055);
+  color: rgba(36, 26, 23, 0.055);
 }
-.band-navy > .section-marker { color: rgba(248, 247, 243, 0.07); }
+.band-dark > .section-marker { color: rgba(248, 247, 243, 0.07); }
+.band-ember > .section-marker { color: rgba(255, 255, 255, 0.13); }
 
 /* ==========================================================================
    HEADER OVER THE HERO — transparent at rest, solid once scrolled
@@ -1482,7 +1607,7 @@ textarea:focus-visible {
 }
 .site-header[data-scrolled="false"] .header-login:hover {
   background: var(--warm-white);
-  color: var(--deep-navy);
+  color: var(--ground);
 }
 .site-header[data-scrolled="false"] .nav-toggle { border-color: rgba(248, 247, 243, 0.42); }
 .site-header[data-scrolled="false"] .nav-toggle-bars span { background: var(--warm-white); }
