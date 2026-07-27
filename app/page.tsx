@@ -372,8 +372,8 @@ export default function Home() {
   const barRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const open = setTimeout(() => setLoader("exiting"), 3000);
-    const clear = setTimeout(() => setLoader("done"), 4100);
+    const open = setTimeout(() => setLoader("exiting"), 1800);
+    const clear = setTimeout(() => setLoader("done"), 2900);
     return () => {
       clearTimeout(open);
       clearTimeout(clear);
@@ -391,11 +391,7 @@ export default function Home() {
       count.textContent = String(Math.round(v * 100)).padStart(3, "0");
       bar.style.transform = `scaleX(${v})`;
     };
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      paint(1);
-      return;
-    }
-    const DURATION = 2800;
+    const DURATION = 1600;
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
@@ -419,21 +415,16 @@ export default function Home() {
   // Hero video pauses for viewers who ask for reduced motion
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const apply = () => {
       const v = heroVideoRef.current;
       if (!v) return;
-      if (mq.matches) v.pause();
-      else void v.play().catch(() => {});
+      void v.play().catch(() => {});
     };
     apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
   }, []);
 
   // Content settles in as each band enters the viewport
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const targets = document.querySelectorAll<HTMLElement>(
       ".section-heading, .tier-grid, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .dojo-container, .verdict-container, .thread-container, .track-grid, .handbook-window, .leveltest-grid"
     );
@@ -620,6 +611,13 @@ export default function Home() {
 
   return (
     <main>
+      {/* Prevent FOUC by ensuring the loader covers the screen immediately before external CSS loads */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .loader { position: fixed; inset: 0; z-index: 9999; background: #17110F; display: grid; place-items: center; }
+        .loader-door { position: absolute; top: 0; bottom: 0; width: 50.2%; background: #17110F; }
+        .loader-door--l { left: 0; }
+        .loader-door--r { right: 0; }
+      `}} />
       {/* Without JS the curtain would never lift, so hide it outright */}
       <noscript>
         <style>{`.loader{display:none!important}`}</style>

@@ -93,14 +93,6 @@ h1, h2, h3, h4 { text-wrap: balance; }
   br.br-wide { display: none; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 button, a { font: inherit; }
 a { color: inherit; text-decoration: none; }
 button { color: inherit; cursor: pointer; }
@@ -300,18 +292,7 @@ main { overflow: hidden; }
   text-align: right;
 }
 
-/* Reduced motion: hold and reveal remain, staging and the stamp do not */
-@media (prefers-reduced-motion: reduce) {
-  .loader-mark, .loader-word span, .loader-line, .loader-meter,
-  .loader-seal { opacity: 1; animation: none; }
-  .loader-mark--l, .loader-mark--r { transform: none; }
-  .loader-mark { opacity: 0.22; }
-  .loader-seal { transform: translate(-50%, -50%) rotate(6deg); }
-  .loader-seam { animation: none; opacity: 0.4; }
-  .loader-door { transition: opacity 0.4s ease; }
-  .loader[data-state="exiting"] .loader-door { transform: none; opacity: 0; }
-  .loader[data-state="exiting"] .loader-inner { transform: none; }
-}
+
 
 @keyframes seamWarm {
   0%   { opacity: 0; }
