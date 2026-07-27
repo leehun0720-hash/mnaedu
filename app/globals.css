@@ -107,10 +107,11 @@ button { color: inherit; cursor: pointer; }
 main { overflow: hidden; }
 
 /* ==========================================================================
-   OPENING CURTAIN
-   A deliberately slow, weighty hold before the page is revealed: the mark
-   settles, the brand line surfaces, a hairline fills, then the whole plate
-   lifts away. Staged delays do the work — nothing spins.
+   OPENING SEQUENCE
+   결합 → 검증 → 인장 → 개문.
+   The two halves of the mark converge, a count runs to 100, the chairman's
+   seal presses down, and the plate parts like a deal-room door. Staged
+   delays carry the weight — nothing spins.
    ========================================================================== */
 .loader {
   position: fixed;
@@ -119,51 +120,167 @@ main { overflow: hidden; }
   display: grid;
   place-items: center;
   padding: 32px;
-  background:
+  overflow: hidden;
+}
+/* The two leaves carry one continuous field, so the seam is invisible
+   until they part. */
+.loader-door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.2%;
+  background-image:
     radial-gradient(90% 70% at 50% 108%, rgba(216, 52, 26, 0.30) 0%, rgba(216, 52, 26, 0) 62%),
     radial-gradient(70% 50% at 50% -10%, rgba(196, 154, 58, 0.14) 0%, rgba(196, 154, 58, 0) 60%),
-    var(--ground);
-  transition: transform 0.9s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.9s ease;
+    linear-gradient(var(--ground), var(--ground));
+  background-size: 100vw 100%;
+  background-repeat: no-repeat;
+  transition: transform 1.05s cubic-bezier(0.76, 0, 0.24, 1);
 }
-.loader[data-state="exiting"] {
-  transform: translateY(-101%);
-  opacity: 0.92;
+.loader-door--l { left: 0;  background-position: 0 0; }
+.loader-door--r { right: 0; background-position: -50vw 0; }
+.loader[data-state="exiting"] .loader-door--l { transform: translateX(-100%); }
+.loader[data-state="exiting"] .loader-door--r { transform: translateX(100%); }
+
+/* Hairline seam that warms just before the doors release */
+.loader-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, rgba(255, 122, 51, 0.5), transparent);
+  opacity: 0;
+  animation: seamWarm 1.2s ease-in-out 1.9s forwards;
 }
+.loader[data-state="exiting"] .loader-seam { opacity: 0; transition: opacity 0.3s ease; }
+
 .loader-inner {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   max-width: 520px;
+  transition: opacity 0.55s ease, transform 0.9s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.loader[data-state="exiting"] .loader-inner {
+  opacity: 0;
+  transform: translateY(-16px) scale(0.98);
+}
+
+/* — 결합: the halves slide together, then dim as the seal lands — */
+.loader-markwrap {
+  position: relative;
+  width: 51px;
+  height: 46px;
 }
 .loader-mark {
+  position: absolute;
+  inset: 0;
   height: 46px;
-  width: auto;
+  width: 51px;
   opacity: 0;
-  animation: curtainMark 1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
 }
+.loader-mark--l {
+  clip-path: inset(0 50% 0 0);
+  animation:
+    mergeFromLeft 1.05s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards,
+    markDim 0.45s ease 2.5s forwards;
+}
+.loader-mark--r {
+  clip-path: inset(0 0 0 50%);
+  animation:
+    mergeFromRight 1.05s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards,
+    markDim 0.45s ease 2.5s forwards;
+}
+@keyframes mergeFromLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes mergeFromRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes markDim { to { opacity: 0.22; } }
+
+/* — 인장: the seal presses down once the count completes — */
+.loader-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  border: 2px double var(--ember-on-dark);
+  border-radius: 2px;
+  color: var(--ember-on-dark);
+  font: 900 13px/1.15 var(--font-serif);
+  letter-spacing: 0.08em;
+  background: rgba(216, 52, 26, 0.1);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(2.1) rotate(-16deg);
+  animation: sealPress 0.5s cubic-bezier(0.2, 1.4, 0.35, 1) 2.52s forwards;
+}
+.loader-seal span { display: block; }
+@keyframes sealPress {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(2.1) rotate(-16deg); }
+  60%  { opacity: 1; }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(6deg); }
+}
+
+/* — Wordmark, letter by letter — */
 .loader-word {
-  margin: 22px 0 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 26px 0 0;
   font: 600 11px var(--font-label);
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
+  letter-spacing: 0.4em;
+  text-indent: 0.4em;
   color: var(--heritage-soft);
-  opacity: 0;
-  animation: curtainRise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
 }
+.loader-word span {
+  opacity: 0;
+  transform: translateY(9px);
+  animation: letterRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(0.95s + var(--i) * 26ms);
+  white-space: pre;
+}
+@keyframes letterRise {
+  to { opacity: 1; transform: none; }
+}
+
 .loader-line {
   margin: 26px 0 0;
   font: 400 clamp(16px, 2.2vw, 21px)/1.85 var(--font-serif);
-  letter-spacing: 0.01em;
   color: rgba(248, 247, 243, 0.9);
   opacity: 0;
-  animation: curtainRise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.95s forwards;
+  animation: curtainRise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.55s forwards;
+}
+@keyframes curtainRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* — Meter and count, both driven by one rAF in the component — */
+.loader-meter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 44px;
+  opacity: 0;
+  animation: curtainRise 0.8s ease 0.5s forwards;
 }
 .loader-track {
   position: relative;
-  width: min(240px, 60vw);
+  width: min(220px, 54vw);
   height: 1px;
-  margin-top: 44px;
   background: rgba(248, 247, 243, 0.16);
   overflow: hidden;
 }
@@ -173,26 +290,33 @@ main { overflow: hidden; }
   transform-origin: left;
   transform: scaleX(0);
   background: linear-gradient(90deg, var(--heritage-gold), var(--ember-glow));
-  animation: curtainFill 2.9s cubic-bezier(0.35, 0, 0.15, 1) 0.15s forwards;
 }
-@keyframes curtainMark {
-  from { opacity: 0; transform: translateY(10px) scale(0.96); }
-  to   { opacity: 1; transform: none; }
+.loader-count {
+  font: 600 12px var(--font-label);
+  letter-spacing: 0.14em;
+  color: rgba(248, 247, 243, 0.72);
+  font-variant-numeric: tabular-nums;
+  min-width: 3.4ch;
+  text-align: right;
 }
-@keyframes curtainRise {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes curtainFill {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-/* Reduced motion: keep the hold and the reveal, drop the staging */
+
+/* Reduced motion: hold and reveal remain, staging and the stamp do not */
 @media (prefers-reduced-motion: reduce) {
-  .loader-mark, .loader-word, .loader-line { opacity: 1; animation: none; }
-  .loader-track span { transform: scaleX(1); animation: none; }
-  .loader { transition: opacity 0.4s ease; }
-  .loader[data-state="exiting"] { transform: none; opacity: 0; }
+  .loader-mark, .loader-word span, .loader-line, .loader-meter,
+  .loader-seal { opacity: 1; animation: none; }
+  .loader-mark--l, .loader-mark--r { transform: none; }
+  .loader-mark { opacity: 0.22; }
+  .loader-seal { transform: translate(-50%, -50%) rotate(6deg); }
+  .loader-seam { animation: none; opacity: 0.4; }
+  .loader-door { transition: opacity 0.4s ease; }
+  .loader[data-state="exiting"] .loader-door { transform: none; opacity: 0; }
+  .loader[data-state="exiting"] .loader-inner { transform: none; }
+}
+
+@keyframes seamWarm {
+  0%   { opacity: 0; }
+  55%  { opacity: 1; }
+  100% { opacity: 0.55; }
 }
 
 /* ==========================================================================

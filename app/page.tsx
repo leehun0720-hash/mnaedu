@@ -368,13 +368,44 @@ export default function Home() {
   // Opening curtain: holds ~3s, lifts over 0.9s, then unmounts.
   // Rendered on the server too, so the page never flashes before it appears.
   const [loader, setLoader] = useState<"loading" | "exiting" | "done">("loading");
+  const countRef = useRef<HTMLSpanElement>(null);
+  const barRef = useRef<HTMLSpanElement>(null);
+
   useEffect(() => {
-    const lift = setTimeout(() => setLoader("exiting"), 3000);
-    const clear = setTimeout(() => setLoader("done"), 3900);
+    const open = setTimeout(() => setLoader("exiting"), 3000);
+    const clear = setTimeout(() => setLoader("done"), 4100);
     return () => {
-      clearTimeout(lift);
+      clearTimeout(open);
       clearTimeout(clear);
     };
+  }, []);
+
+  // Count and meter share one rAF so they can never drift apart. Written
+  // straight to the DOM — this component is large, and re-rendering it 60
+  // times a second to move a number would be wasteful.
+  useEffect(() => {
+    const count = countRef.current;
+    const bar = barRef.current;
+    if (!count || !bar) return;
+    const paint = (v: number) => {
+      count.textContent = String(Math.round(v * 100)).padStart(3, "0");
+      bar.style.transform = `scaleX(${v})`;
+    };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      paint(1);
+      return;
+    }
+    const DURATION = 2800;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / DURATION);
+      // Decelerating, so it settles into 100 rather than snapping there
+      paint(1 - Math.pow(1 - p, 2.2));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
   useEffect(() => {
     if (loader === "done") return;
@@ -594,22 +625,41 @@ export default function Home() {
         <style>{`.loader{display:none!important}`}</style>
       </noscript>
 
-      {/* Opening curtain — holds for ~3s, then lifts to reveal the page */}
+      {/* Opening sequence: the two halves of the mark converge (결합), the
+          count runs to 100, the chairman's seal presses down, and the plate
+          parts like a deal-room door. */}
       {loader !== "done" && (
         <div className="loader" data-state={loader} role="status" aria-label="페이지를 준비하는 중입니다">
+          <div className="loader-door loader-door--l" aria-hidden="true" />
+          <div className="loader-door loader-door--r" aria-hidden="true" />
+          <div className="loader-seam" aria-hidden="true" />
+
           <div className="loader-inner">
-            {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
-            <img
-              className="loader-mark"
-              src="/logo-frontier-symbol-white.png"
-              alt=""
-              width={51}
-              height={44}
-              aria-hidden="true"
-            />
-            <p className="loader-word">FRONTIER M&amp;A ACADEMY</p>
+            <div className="loader-markwrap" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
+              <img className="loader-mark loader-mark--l" src="/logo-frontier-symbol-white.png" alt="" width={51} height={44} />
+              {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
+              <img className="loader-mark loader-mark--r" src="/logo-frontier-symbol-white.png" alt="" width={51} height={44} />
+              <span className="loader-seal">
+                <span>成 甫</span>
+                <span>京 印</span>
+              </span>
+            </div>
+
+            <p className="loader-word" aria-hidden="true">
+              {"FRONTIER M&A ACADEMY".split("").map((ch, i) => (
+                <span key={i} style={{ ["--i" as string]: i }}>
+                  {ch === " " ? " " : ch}
+                </span>
+              ))}
+            </p>
+
             <p className="loader-line">기업의 결합을 설계하고,<br />더 높은 가치를 세웁니다</p>
-            <div className="loader-track" aria-hidden="true"><span /></div>
+
+            <div className="loader-meter" aria-hidden="true">
+              <div className="loader-track"><span ref={barRef} /></div>
+              <span className="loader-count" ref={countRef}>000</span>
+            </div>
           </div>
         </div>
       )}
