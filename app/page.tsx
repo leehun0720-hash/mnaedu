@@ -7,7 +7,8 @@ const tracks = [
   {
     id: 1,
     number: "01",
-    title: "우호적 M&A 전문가 과정",
+    title: "우호적 M&A",
+    hook: "기업을 사고파는 정석",
     en: "FRIENDLY M&A TRACK",
     description: "M&A 전략 수립부터 밸류에이션, 정밀실사, 딜 구조화, 계약 협상, PMI까지 6대 핵심 업무를 다룹니다.",
     modules: 12,
@@ -54,7 +55,8 @@ const tracks = [
   {
     id: 2,
     number: "02",
-    title: "적대적 M&A 전문가 과정",
+    title: "적대적 M&A",
+    hook: "원하지 않는 상대를 인수하는 법",
     en: "HOSTILE M&A TRACK",
     description: "스텔스 지분 매집과 의결권 확보, 포이즌필 무력화, 백기사 연대 분쇄까지 경영권 공격·방어 전술을 분석합니다.",
     modules: 14,
@@ -99,7 +101,8 @@ const tracks = [
   {
     id: 3,
     number: "03",
-    title: "경영권투자 전문가 과정",
+    title: "경영권 투자",
+    hook: "지분으로 회사를 지배하는 구조",
     en: "CONTROL INVESTMENT TRACK",
     description: "딜 소싱부터 정밀실사, SPA 협상, Bolt-on 밸류업, 투자자금 회수(Exit)까지 5단계를 전담합니다.",
     modules: 10,
@@ -142,7 +145,8 @@ const tracks = [
   {
     id: 4,
     number: "04",
-    title: "패밀리오피스 전문가 과정",
+    title: "패밀리오피스",
+    hook: "가문의 부를 3대까지 지키는 설계",
     en: "FAMILY OFFICE TRACK",
     description: "가문 헌장 제정과 승계 구조화, 가문위원회 운영, 자산 보호를 총괄하는 가문 CSO를 양성합니다.",
     modules: 11,
@@ -187,7 +191,8 @@ const tracks = [
   {
     id: 5,
     number: "05",
-    title: "투자가클럽운영 전문가 과정",
+    title: "투자클럽 운영",
+    hook: "돈과 딜이 모이는 폐쇄 네트워크",
     en: "INVESTOR CLUB TRACK",
     description: "Series LLC·VCC·SPC 역외 설계와 RWA 토큰화, ZKP 비밀선발, Alpha Inside 딜 소싱 네트워크를 구축합니다.",
     modules: 9,
@@ -236,130 +241,83 @@ const tracks = [
 const weeklyExams = [
   {
     no: 1,
-    trackLabel: "TRACK 01 · 우호적 M&A",
+    trackLabel: "우호적 M&A",
     level: "중급",
     levelClass: "level-intermediate",
     type: "주관식 서술형",
     prompt:
-      "M&A를 활용한 외적 성장(Buy)이 내적 성장(Build) 대비 갖는 장점 5가지를 설명하고, 각 장점이 실전에서 무너지는 조건을 함께 제시하십시오.",
-    dojoOpening:
-      "어서 오십시오. 프론티어 M&A 아카데미 수석 조교 '서암'입니다. 제1회 문제 1: <M&A 외적 성장(Buy)이 내적 성장(Build) 대비 갖는 5가지 장점>에 대한 수강생님의 실전 사고 답안을 입력해 주십시오. 정답은 알려드리지 않으며, 실전에서 그 논리가 무너지는 조건까지 되묻겠습니다."
+      "M&A를 활용한 외적 성장(Buy)이 내적 성장(Build) 대비 갖는 장점 5가지를 설명하고, 각 장점이 실전에서 무너지는 조건을 함께 제시하십시오."
   },
   {
     no: 2,
-    trackLabel: "TRACK 02 · 적대적 M&A",
+    trackLabel: "적대적 M&A",
     level: "상급",
     levelClass: "level-advanced",
     type: "주관식 서술형",
     prompt:
-      "대상회사가 포이즌필을 발동한 상황에서 이를 무력화할 법적·전술적 논거를 구성하고, 백기사 연대가 형성될 경우의 대응 시나리오를 서술하십시오.",
-    dojoOpening:
-      "제1회 문제 2를 담당하는 조교 '서암'입니다. 포이즌필 무력화 논거와 백기사 연대 대응 시나리오에 대한 답안을 제출해 주십시오. 상법·자본시장법상 근거와 함께, 그 전술이 실패하는 조건까지 사고하신 답안을 기대합니다."
+      "대상회사가 포이즌필을 발동한 상황에서 이를 무력화할 법적·전술적 논거를 구성하고, 백기사 연대가 형성될 경우의 대응 시나리오를 서술하십시오."
   },
   {
     no: 3,
-    trackLabel: "TRACK 03 · 경영권투자",
+    trackLabel: "경영권 투자",
     level: "초급",
     levelClass: "level-elementary",
     type: "주관식 서술형",
     prompt:
-      "SPA 가격조정 방식인 Locked-Box와 Closing Accounts의 구조적 차이를 설명하고, 매수인 관점에서 각 방식이 부담하는 리스크를 비교하십시오.",
-    dojoOpening:
-      "제1회 문제 3을 담당하는 조교 '서암'입니다. Locked-Box와 Closing Accounts의 구조적 차이 및 매수인 리스크에 대한 답안을 제출해 주십시오. 정의 나열에 그치지 마시고, 어느 조건에서 어느 방식이 불리해지는지까지 짚어 주십시오."
+      "SPA 가격조정 방식인 Locked-Box와 Closing Accounts의 구조적 차이를 설명하고, 매수인 관점에서 각 방식이 부담하는 리스크를 비교하십시오."
   }
 ];
 
-// 학습 퍼널 5단계 (기획서 §2.1)
+// 수강 여정 — 온라인은 선발 관문이고, 본체는 오프라인이다
 const funnelSteps = [
   {
     index: "STEP 01",
-    name: "비회원 · 무료회원",
-    desc: "메인 열람, 무료 워밍업 문제 풀이, 공개 웹 핸드북 1장 체험",
+    name: "무료 워밍업",
+    desc: "공개 문제로 지금 수준을 가늠합니다. 가입 없이 바로 응시할 수 있습니다.",
     gate: false
   },
   {
     index: "STEP 02",
-    name: "유료 회원",
-    desc: "5개 트랙 핸드북 전체 열람, 주간 3문제 제출, 체크리스트 저장",
+    name: "온라인 과정",
+    desc: "5대 과정의 강의노트와 문제를 풀며 실전 개념을 쌓습니다.",
     gate: false
   },
   {
     index: "STEP 03",
-    name: "AI 조교 문답",
-    desc: "정답 비공개 소크라테스 반문으로 24시간 실전 사고 단련",
-    gate: false
-  },
-  {
-    index: "STEP 04",
-    name: "레벨 테스트",
-    desc: "트랙별 서술형 정규 테스트 응시 · 커트라인 80점",
+    name: "선발 테스트",
+    desc: "과정별 서술형 평가. 통과한 인원만 다음 단계로 넘어갑니다.",
     gate: true
   },
   {
-    index: "STEP 05",
-    name: "오프라인 Deal Lab",
-    desc: "성보경 회장 주관 1:1~10:1 소수정예 모의 협상 참가",
+    index: "STEP 04",
+    name: "오프라인 정예 과정",
+    desc: "성보경 회장이 직접 진행하는 소수정예 토론. 이 과정이 본체입니다.",
     gate: false
   }
 ];
 
-// 등급별 권한 매트릭스 (기획서 §2.2)
+// 단계별로 열리는 범위
 const permissionMatrix = {
-  columns: ["비회원", "무료 회원", "유료 회원", "오프라인 자격자"],
+  columns: ["비회원", "무료 회원", "온라인 수강생", "선발 통과자"],
   rows: [
-    { label: "메인 · 소개 페이지 열람", cells: ["O", "O", "O", "O"] },
-    { label: "무료 워밍업 문제 풀이", cells: ["O", "O", "O", "O"] },
-    { label: "웹 핸드북 열람", cells: ["1장 샘플", "1장 전체", "전체 · 체크 저장", "전체 열람"] },
-    { label: "정규 평가 문제 제출", cells: ["X", "X", "O(주 3문제)", "O"] },
-    { label: "AI 조교 '서암' 실시간 문답", cells: ["X", "X", "O", "O"] },
-    { label: "수강생 토론 댓글 작성", cells: ["X", "읽기 전용", "O", "O"] },
-    { label: "주간 회장 판정문 열람", cells: ["요약만", "요약만", "전문 열람", "전문 열람"] },
-    { label: "오프라인 Deal Lab 신청", cells: ["X", "X", "X", "O"] }
+    { label: "과정 소개 열람", cells: ["O", "O", "O", "O"] },
+    { label: "무료 워밍업 문제", cells: ["O", "O", "O", "O"] },
+    { label: "강의노트 열람", cells: ["1장 샘플", "1장 전체", "전체 · 체크 저장", "전체 열람"] },
+    { label: "과정별 문제 풀이", cells: ["X", "X", "O", "O"] },
+    { label: "선발 테스트 응시", cells: ["X", "X", "O", "응시 완료"] },
+    { label: "오프라인 정예 과정", cells: ["X", "X", "X", "O"] },
+    { label: "투자클럽 · 딜 네트워크", cells: ["X", "X", "X", "심사 후 초대"] }
   ]
 };
-
-// 주간 운영 사이클
-const weeklyCycle = [
-  { when: "월요일", what: "주간 3문제 출제", who: "성보경 회장 · 비공개 출제 의도 등록" },
-  { when: "월 – 토", what: "답안 제출 & 소크라테스 문답", who: "수강생 ↔ AI 조교 '서암' · 24시간" },
-  { when: "토요일 밤", what: "토론 데이터 전수 분석", who: "AI 엔진 · 우수 후보 5건 선별" },
-  { when: "일요일 아침", what: "AI 리포트 → 회장 판정", who: "회장 검토 15분 · 인영 발행" }
-];
 
 // Primary navigation — shared by the inline bar and the mobile drawer
 const navItems = [
   { href: "#funnel", label: "수강 여정" },
-  { href: "#exam", label: "금주의 문제" },
-  { href: "#dojo", label: "AI 조교 서암" },
-  { href: "#verdict", label: "회장 판정관" },
-  { href: "#handbook", label: "웹 핸드북" },
-  { href: "#leveltest", label: "레벨 테스트" }
+  { href: "#courses", label: "5대 과정" },
+  { href: "#exam", label: "선발 테스트" },
+  { href: "#offline", label: "오프라인 과정" }
 ];
 
-// Mock Discussion Thread Data
-const initialComments = [
-  {
-    id: 1,
-    user: "박현우 대표(PEF 파트너)",
-    time: "2시간 전",
-    isBest: true,
-    content: "M&A의 외적 성장 장점 5가지 중 '시간의 구매'가 가장 핵심이나, 경영권 프리미엄이 35%를 초과할 경우 인수 후 창출 가능한 밸류업 EBITDA 상승폭을 상쇄하게 됩니다. 따라서 정밀실사 단계에서 Lock-up 2년 조건 및 에스크로 20% 보상이 동반되지 않으면 승자의 저주로 이어집니다."
-  },
-  {
-    id: 2,
-    user: "김진성 이사(전략기획실)",
-    time: "4시간 전",
-    isBest: false,
-    content: "시너지 효과(Synergy)를 기대할 때 가장 큰 한계는 기업 문화 간 화학적 결합(PMI) 실패입니다. 피인수기업 핵심 기술진의 이탈을 막을 스톡옵션 재할당 및 거버넌스 보장이 미비하면 외적 성장은 도리어 독이 됩니다."
-  },
-  {
-    id: 3,
-    user: "최서연 이사(패밀리오피스 CSO)",
-    time: "1일 전",
-    isBest: true,
-    content: "적대적 M&A 방어 측면에서 포이즌필이 무력화될 경우, 스텔스 지분 매집에 대응하기 위해서는 상법상 의결권 제한 주식 3% 룰을 우회하는 주주 연대 약정(Tag-along/Drag-along)을 사전에 정밀하게 수립해 두는 것이 필수적입니다."
-  }
-];
 
 export default function Home() {
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
@@ -480,7 +438,7 @@ export default function Home() {
   // Content settles in as each band enters the viewport
   useEffect(() => {
     const targets = document.querySelectorAll<HTMLElement>(
-      ".section-heading, .tier-grid, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .dojo-container, .verdict-container, .thread-container, .track-grid, .handbook-window, .leveltest-grid"
+      ".section-heading, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .verdict-container, .track-grid, .handbook-window, .leveltest-grid"
     );
     targets.forEach((el) => el.setAttribute("data-reveal", ""));
     const io = new IntersectionObserver(
@@ -526,41 +484,10 @@ export default function Home() {
     };
   }, [isNavOpen]);
 
-  // Weekly Exam selection — drives which question the AI Dojo is proctoring
+  // Which gate question is on screen
   const [selectedExamIndex, setSelectedExamIndex] = useState(0);
-  const currentExam = weeklyExams[selectedExamIndex];
 
-  // AI Socrates Dojo Chat State
-  const [chatMessages, setChatMessages] = useState([
-    {
-      sender: "ai",
-      name: "조교 서암(書巖)",
-      time: "실시간",
-      text: weeklyExams[0].dojoOpening
-    }
-  ]);
-
-  // Selecting a different weekly question restarts the dojo session for that question
-  const handleSelectExam = (index: number) => {
-    setSelectedExamIndex(index);
-    setChatMessages([
-      {
-        sender: "ai",
-        name: "조교 서암(書巖)",
-        time: "실시간",
-        text: weeklyExams[index].dojoOpening
-      }
-    ]);
-    setInputAnswer("");
-    setQualifiedFlag(false);
-  };
-  const [inputAnswer, setInputAnswer] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [qualifiedFlag, setQualifiedFlag] = useState(false);
-
-  // Discussion Thread State
-  const [comments, setComments] = useState(initialComments);
-  const [newComment, setNewComment] = useState("");
+  const handleSelectExam = (index: number) => setSelectedExamIndex(index);
 
   // Web Handbook Interactive State
   const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
@@ -576,75 +503,6 @@ export default function Home() {
   const [levelTestScore, setLevelTestScore] = useState<number | null>(null);
   const [levelTestAnswer, setLevelTestAnswer] = useState("");
   const [showModal, setShowModal] = useState(false);
-
-  // AI Socrates Response Handler (System Prompt Engine logic implementation)
-  const handleSendAnswer = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputAnswer.trim() || isTyping) return;
-
-    const userText = inputAnswer;
-    const newMsg = {
-      sender: "student",
-      name: "수강생(답안 제출)",
-      time: "방금 전",
-      text: userText
-    };
-
-    setChatMessages((prev) => [...prev, newMsg]);
-    setInputAnswer("");
-    setIsTyping(true);
-
-    // Simulate AI Socratic counter-question based on prompt rules
-    setTimeout(() => {
-      let aiCounterQuestion = "";
-      const lower = userText.toLowerCase();
-
-      if (lower.includes("시간") || lower.includes("단축") || lower.includes("buy")) {
-        aiCounterQuestion = "시간의 구매라는 장점에는 동의합니다. 하지만 타깃 기업을 서둘러 인수하기 위해 지불한 경영권 프리미엄이 40%를 넘어서고 인수금융 조달 금리가 상승하면, 시간 단축으로 얻는 수익보다 이자 비용이 더 커지는 리스크는 실전에서 어떻게 방어하시겠습니까?";
-      } else if (lower.includes("인재") || lower.includes("기술") || lower.includes("시너지")) {
-        aiCounterQuestion = "인력 및 시너지 확보를 언급하셨습니다. 그런데 인수 계약 체결 후 PMI 1년 이내에 피인수기업의 핵심 인재 30%가 이탈한다면 수강생님은 결국 무엇을 산 셈이 됩니까? 이를 막기 위한 계약상 Lock-up 및 손해배상 청구 조항은 어떻게 구성하겠습니까?";
-      } else if (lower.includes("시장") || lower.includes("점유율") || lower.includes("경쟁")) {
-        aiCounterQuestion = "시장 점유율 신속 확보 관점은 훌륭합니다. 하지만 경쟁당국의 기업결합 심사에서 독과점 시정조치가 내려지거나 사업부 매각 명령이 내려지면 외적 성장 전략은 무산됩니다. 정밀실사 단계에서 이 규제 리스크를 어떻게 사전 검증하시겠습니까?";
-      } else {
-        aiCounterQuestion = "제시해 주신 장점 논리는 원론적으로 타당합니다. 그러나 이 전략이 실전 M&A 현장에서 '승자의 저주(Winner's Curse)'로 반전되는 결정적 순간은 언제라고 생각하십니까? 그 한계 조건 한 가지를 정량적으로 짚어보십시오.";
-      }
-
-      // Check if depth is achieved
-      if (chatMessages.length >= 3) {
-        setQualifiedFlag(true);
-        aiCounterQuestion += "[안내] 수강생님께서 리스크와 실전 한계 조건까지 깊이 있게 답변해 주셨습니다. 이 답안은 일요일에 생성되는 '주간 AI 요약 리포트'의 우수 답안 후보로 성보경 회장님께 전달하겠습니다.";
-      }
-
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: "ai",
-          name: "조교 서암(書巖)",
-          time: "방금 전",
-          text: aiCounterQuestion
-        }
-      ]);
-      setIsTyping(false);
-    }, 1200);
-  };
-
-  // Add Comment Handler
-  const handleAddComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-
-    setComments((prev) => [
-      {
-        id: Date.now(),
-        user: "수강생(신규 제출)",
-        time: "방금 전",
-        isBest: false,
-        content: newComment
-      },
-      ...prev
-    ]);
-    setNewComment("");
-  };
 
   // Copy Clause Handler
   const handleCopyClause = (codeText: string) => {
@@ -740,7 +598,7 @@ export default function Home() {
         </nav>
 
         <div className="header-actions">
-          <a className="header-login" href="#dojo">AI 도장 입장 <span>↗</span></a>
+          <a className="header-login" href="#exam">선발 테스트 <span>↗</span></a>
           <button
             type="button"
             className="nav-toggle"
@@ -771,8 +629,8 @@ export default function Home() {
             <i aria-hidden="true">→</i>
           </a>
         ))}
-        <a className="button button-red mobile-nav-cta" href="#dojo" onClick={() => setIsNavOpen(false)}>
-          AI 도장 입장 <span>↗</span>
+        <a className="button button-red mobile-nav-cta" href="#exam" onClick={() => setIsNavOpen(false)}>
+          선발 테스트 <span>↗</span>
         </a>
       </nav>
 
@@ -802,11 +660,11 @@ export default function Home() {
           </h1>
           <p className="hero-description">
             ㈜프론티어 M&amp;A 성보경 회장의 40년 실전 자산(500회 · 1,500문제)과
-            24시간 사고를 단련하는 AI 소크라테스 조교 &lsquo;서암&rsquo;이 결합된 초프리미엄 과정.
+            온라인에서 가려내고, 오프라인에서 실제 딜을 다루는 소수정예 과정.
           </p>
           <div className="hero-actions">
             <a className="button button-red on-dark" href="#exam">제1회 문제 풀기 <span>↗</span></a>
-            <a className="button button-gold on-dark" href="#handbook">5대 트랙 핸드북 <span>↓</span></a>
+            <a className="button button-gold on-dark" href="#courses">5대 과정 보기 <span>↓</span></a>
           </div>
         </div>
 
@@ -843,47 +701,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3-Tier Operating Architecture Section */}
-      <section className="section band-white band-hair">
-        <span className="section-marker" aria-hidden="true">STRUCTURE</span>
-        <div style={{ textAlign: "center", maxWidth: "800px", margin: "auto" }}>
-          <p className="section-index">운영 구조 <i>Operating Model</i></p>
-
-          <h2 style={{ fontSize: "38px" }}>실전 사고를 완성하는 3층 하이브리드 퍼널</h2>
-          <p style={{ fontSize: "15px", color: "var(--muted)", lineHeight: "1.8" }}>
-            AI 조교가 정답을 대신 말하지 않고 수강생의 논리적 허점을 파고듭니다. 회장은 주 1회 판정에만 집중해, 채점 부담은 줄이고 교육의 격은 지킵니다.
-          </p>
-        </div>
-
-        <div className="tier-grid">
-          <div className="tier-card">
-            <span className="tier-badge">TIER 1 : STUDENT</span>
-            <h3>수강생(Student)</h3>
-            <p>회차별 주관식 서술형 답안을 제출하고, 토론 게시판에서 동료 수강생과 치열하게 논쟁합니다.</p>
-          </div>
-          <div className="tier-card" style={{ borderColor: "var(--ember)" }}>
-            <span className="tier-badge" style={{ background: "var(--ember-soft)", color: "var(--ember-ink)" }}>TIER 2 : AI AGENT</span>
-            <h3>AI 조교 &lsquo;서암&rsquo;(Seoam)</h3>
-            <p>정답을 공개하지 않는 소크라테스식 반문으로 24시간 튜터링하고, 주간 토론 데이터를 전수 분석해 요약 보고서를 생성합니다.</p>
-          </div>
-          <div className="tier-card" style={{ background: "var(--ink-strong)", color: "#fff" }}>
-            <span className="tier-badge" style={{ background: "var(--heritage-gold)", color: "var(--ground)" }}>TIER 3 : MASTER</span>
-            <h3 style={{ color: "#fff" }}>성보경 회장(Master)</h3>
-            <p style={{ color: "var(--label-on-dark)" }}>주 1회 AI 주간 리포트를 검토(15분 소요)한 뒤, 금주의 우수 답안을 선정하고 공식 인영(成甫京) 판정문을 발행합니다.</p>
-          </div>
-        </div>
-      </section>
-
       {/* Learning Funnel & Permission Matrix (기획서 §2.1–2.2) */}
       <section className="section band-paper band-hair" id="funnel">
         <span className="section-marker" aria-hidden="true">ADMISSIONS</span>
         <div className="section-heading">
           <div>
-            <p className="section-index">학사 과정 <i>Admissions &amp; Access</i></p>
-            <h2>수강 여정 5단계와<br /><em>등급별 권한 구조</em></h2>
+            <p className="section-index">수강 여정 <i>Admissions</i></p>
+            <h2>온라인은 관문이고,<br /><em>본체는 오프라인입니다</em></h2>
           </div>
           <p>
-            온라인이 기초 교육과 수준 검증(필터링)을 담당하고, 검증된 인원만 오프라인 심화 과정으로 연결됩니다. 레벨 테스트가 유일한 관문(Gate)입니다.
+            온라인 과정은 실무를 가르치는 곳이 아니라, 오프라인에 앉을 사람을 가려내는 자리입니다. 선발 테스트를 통과한 인원만 성보경 회장이 직접 진행하는 소수정예 토론으로 넘어갑니다.
           </p>
         </div>
 
@@ -899,10 +726,10 @@ export default function Home() {
 
         <div className="matrix-scroll">
           <table className="matrix-table">
-            <caption className="sr-only">회원 등급별 기능 접근 권한 매트릭스</caption>
+            <caption className="sr-only">단계별로 열리는 범위</caption>
             <thead>
               <tr>
-                <th scope="col" style={{ textAlign: "left" }}>기능 / 등급</th>
+                <th scope="col" style={{ textAlign: "left" }}>제공 범위 / 단계</th>
                 {permissionMatrix.columns.map((col) => (
                   <th key={col} scope="col">{col}</th>
                 ))}
@@ -930,268 +757,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Weekly Exam Section (SCR-01 §1.3) */}
-      <section className="section band-white band-hair" id="exam">
-        <span className="section-marker" aria-hidden="true">ASSESSMENT</span>
+      {/* The five programmes, named plainly and shown up front */}
+      <section className="section band-white band-hair" id="courses">
+        <span className="section-marker" aria-hidden="true">PROGRAMS</span>
         <div className="section-heading">
           <div>
-            <p className="section-index">금주의 평가 <i>Weekly Assessment</i></p>
-            <h2>금주의 문제<br /><em>회당 3문제 · 총 500회</em></h2>
+            <p className="section-index">5대 과정 <i>Programs</i></p>
+            <h2>다섯 개의 과정,<br /><em>한국에 없던 실전</em></h2>
           </div>
-          <p>
-            문제를 선택하면 아래 AI 조교 &lsquo;서암&rsquo;의 도장이 해당 문제로 전환됩니다. 회차당 3문제가 초·중·상급으로 출제되며, 트랙을 가로질러 실전 사고를 단련합니다.
-          </p>
-        </div>
-
-        <div className="exam-grid">
-          {weeklyExams.map((exam, idx) => (
-            <button
-              key={exam.no}
-              type="button"
-              className={`exam-card ${selectedExamIndex === idx ? "is-active" : ""}`}
-              onClick={() => handleSelectExam(idx)}
-              aria-pressed={selectedExamIndex === idx}
-            >
-              <span className="exam-track-label">{exam.trackLabel}</span>
-              <div className="exam-tags">
-                <span className="exam-tag">제1회 · 문제 {exam.no}</span>
-                <span className={`exam-tag ${exam.levelClass}`}>{exam.level}</span>
-                <span className="exam-tag">{exam.type}</span>
-              </div>
-              <p className="exam-prompt">[문제] {exam.prompt}</p>
-              <span className="exam-select-cue">
-                {selectedExamIndex === idx ? "AI 도장에서 진행 중" : "이 문제로 도장 열기"}
-                <i style={{ fontStyle: "normal" }}>{selectedExamIndex === idx ? "●" : "→"}</i>
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <p className="exam-notice">
-          <strong>출제자 안내 —</strong> 정답은 공개되지 않습니다. 교과서적 지식을 나열하는 답안보다, 실전에서 그 장점과 전략이 무너지는 한계 조건까지 사고한 답안이 높이 평가됩니다.
-        </p>
-
-        {/* Weekly assessment dossier — the chairman's framing for this round */}
-        <aside className="verdict-container exam-dossier">
-          <div className="verdict-eyebrow">금주의 평가 · Weekly Assessment</div>
-          <h3 className="dossier-title">제1회 M&amp;A 실전 평가</h3>
-          <div className="dossier-tags">
-            <span className="tier-badge">출제: 주 3문제</span>
-            <span className="tier-badge">전체 회차: 500회</span>
-            <span className="tier-badge">난이도: 초·중·상급</span>
-          </div>
-          <p className="dossier-quote">
-            &ldquo;정답은 공개되지 않습니다. 교과서적 지식을 나열하는 답안보다, 실전에서 그 장점과 전략이 무너지는 한계 조건까지 사고한 답안이 높이 평가됩니다.&rdquo;
-          </p>
-          <div className="verdict-footer">
-            <div className="verdict-author">
-              <span style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>성보경 회장</span>
-              <span style={{ fontSize: "13px", color: "var(--label-on-dark)" }}>㈜프론티어 M&amp;A 대표출제자</span>
-            </div>
-            <div className="stamp-seal">
-              <span>成 甫</span>
-              <span>京 印</span>
-            </div>
-          </div>
-        </aside>
-      </section>
-
-      {/* AI Socrates Interactive Dojo Section (SCR-02) */}
-      <section className="section band-paper band-hair" id="dojo">
-        <span className="section-marker" aria-hidden="true">TUTORING</span>
-        <div className="section-heading">
-          <div>
-            <p className="section-index">AI 튜터링 <i>Socratic Tutoring</i></p>
-            <h2>AI 소크라테스 조교<br /><em>&lsquo;서암(書巖)&rsquo; 전용 도장</em></h2>
-          </div>
-          <p>정답을 절대 직접 알려주지 않습니다. 수강생이 제출한 답안의 실전 리스크와 한계 조건을 찌르는 소크라테스식 반문을 24시간 제공합니다.</p>
-        </div>
-
-        <div className="dojo-container">
-          <div className="dojo-header">
-            <div className="dojo-header-left">
-              <div className="dojo-status-dot" />
-              <h4>조교 서암(書巖) · 제1회 문제 {currentExam.no} 담당 · 실시간 운영 중</h4>
-            </div>
-            <div className="dojo-header-right">
-              {qualifiedFlag && (
-                <span className="dojo-flag-badge">우수 답안 후보 등재</span>
-              )}
-              <span className="dojo-engine">
-                <span className="partner-label">AI SYSTEM BY</span>
-                {/* Wordmark-only form at ≥100px — the full signature may not go
-                    below 180px (TenAI guideline §04) */}
-                {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
-                <img
-                  className="partner-logo-sm"
-                  src="/logo-tenai-wordmark-dark.png"
-                  alt="TenAI"
-                  width={116}
-                  height={33}
-                />
-              </span>
-            </div>
-          </div>
-
-          <div style={{ padding: "16px 24px", background: "var(--warm-white)", borderBottom: "1px solid var(--line-color)" }}>
-            <span className="exam-track-label">{currentExam.trackLabel} · {currentExam.level}</span>
-            <p style={{ font: "600 14.5px/1.7 var(--font-serif)", color: "var(--ink-strong)", margin: "8px 0 0" }}>
-              [문제] {currentExam.prompt}
-            </p>
-          </div>
-
-          <div className="dojo-rules-bar">
-            <span className="rules-label">운영 수칙</span>
-            <span>① 정답 절대 비공개</span>
-            <span>② 1회 1반문 제기</span>
-            <span>③ 실전 한계 파고들기</span>
-            <span>④ 주간 보고서 연동</span>
-          </div>
-
-          <div className="dojo-chat-box">
-            {chatMessages.map((msg, index) => (
-              <div
-                key={index}
-                className={`chat-msg ${msg.sender === "ai" ? "chat-msg-ai" : "chat-msg-student"}`}
-              >
-                <div className="chat-sender">
-                  {msg.name} · {msg.time}
-                </div>
-                <div className={`chat-bubble ${msg.sender === "ai" ? "chat-bubble-ai" : "chat-bubble-student"}`}>
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-
-            {isTyping && (
-              <div className="chat-msg chat-msg-ai">
-                <div className="chat-sender">조교 서암 · 사고 중&hellip;</div>
-                <div className="chat-bubble chat-bubble-ai">
-                  <span className="typing-dots">
-                    <span /><span /><span />
-                  </span>{" "}
-                  수강생 답안의 논리적 허점 및 실전 리스크 반문을 구성하고 있습니다...
-                </div>
-              </div>
-            )}
-          </div>
-
-          <form className="dojo-input-area" onSubmit={handleSendAnswer}>
-            <textarea
-              className="dojo-textarea"
-              placeholder="예: M&A 외적 성장은 신규 사업 진입 시 시간의 구매(Time to Market) 효과가 있어 내적 성장 대비 속도가 빠르고 인재와 핵심 기술을 일괄 확보할 수 있습니다..."
-              value={inputAnswer}
-              onChange={(e) => setInputAnswer(e.target.value)}
-            />
-            <div className="dojo-input-footer">
-              <span className="dojo-hint">
-                단순 교과서 정답보다 &ldquo;경영권 프리미엄 과다, PMI 실패&rdquo; 등 실전 리스크까지 기술해 보세요.
-              </span>
-              <button type="submit" className="button button-red" disabled={isTyping}>
-                답안 제출 및 AI 반문 받기 <span>→</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* Discussion Thread & Chairman Verdict Section (SCR-03) */}
-      <section className="section band-white band-hair" id="verdict">
-        <span className="section-marker" aria-hidden="true">VERDICT</span>
-        <div className="section-heading">
-          <div>
-            <p className="section-index">주간 판정 <i>Chairman&rsquo;s Verdict</i></p>
-            <h2>수강생 토론 쓰레드 &<br /><em>주간 회장 판정관</em></h2>
-          </div>
-          <p>AI 조교가 종합한 주간 데이터 리포트를 토대로 성보경 회장이 직접 우수 답안을 선별하고 붉은 인영(`成甫京`)을 부여합니다.</p>
-        </div>
-
-        {/* Chairman Verdict Card */}
-        <div className="verdict-container">
-          <div className="verdict-eyebrow">제1회 주간 판정문 · Official Verdict</div>
-          <blockquote className="verdict-quote">
-            “이번 주 제출된 답안들은 외적 성장의 5가지 장점을 나열하는 데는 충실했으나, <mark>그 장점이 실전 현장에서 무너지는 순간(프리미엄 과다, PMI 인력 이탈)</mark>을 정량적으로 짚어낸 답안은 단 둘뿐이었다.<br className="br-wide" />
-            M&amp;A는 장점을 아는 게임이 아니라, <mark>장점이 사라지는 한계 조건</mark>을 통제하는 게임이다.”
-          </blockquote>
-
-          <div className="verdict-footer">
-            <div className="verdict-author">
-              <span style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>성보경 · ㈜프론티어 M&amp;A 회장</span>
-              <span style={{ fontSize: "13px", color: "var(--label-on-dark)" }}>40년 실전 자산 총괄출제 및 주간 최종 판정자</span>
-            </div>
-            <div className="stamp-seal">
-              <span>成 甫</span>
-              <span>京 印</span>
-            </div>
-          </div>
-
-          {/* Weekly operating cycle — 출제부터 판정까지 */}
-          <div className="cycle-strip">
-            {weeklyCycle.map((c) => (
-              <div key={c.when} className="cycle-cell">
-                <span className="cycle-when">{c.when}</span>
-                <h4 className="cycle-what">{c.what}</h4>
-                <p className="cycle-who">{c.who}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Discussion Thread */}
-        <div style={{ marginTop: "48px" }}>
-          <h3 style={{ font: "700 22px var(--font-serif)", color: "var(--ink-strong)", marginBottom: "20px" }}>
-            금주의 수강생 토론 쓰레드 (논쟁 {comments.length}건)
-          </h3>
-
-          <form onSubmit={handleAddComment} style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-            <input
-              type="text"
-              placeholder="동료 수강생의 답안에 대한 논리적 반론이나 의견을 작성해 보세요..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              style={{
-                flex: 1,
-                padding: "14px 18px",
-                border: "1px solid var(--line-color)",
-                background: "var(--white)",
-                fontSize: "14px"
-              }}
-            />
-            <button type="submit" className="button button-gold">
-              토론 참여 <span>+</span>
-            </button>
-          </form>
-
-          <div className="thread-container">
-            {comments.map((comment) => (
-              <div key={comment.id} className="thread-card">
-                <div className="thread-header">
-                  <span className="thread-user">{comment.user}</span>
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    {comment.isBest && (
-                      <span className="best-badge">
-                        회장 선정 우수 답안
-                      </span>
-                    )}
-                    <span style={{ fontSize: "12px", color: "var(--label-ink)" }}>{comment.time}</span>
-                  </div>
-                </div>
-                <div className="thread-body">{comment.content}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Web Handbook Explorer Section (SCR-04) */}
-      <section className="section band-paper band-hair" id="handbook">
-        <span className="section-marker" aria-hidden="true">CURRICULUM</span>
-        <div className="section-heading">
-          <div>
-            <p className="section-index">커리큘럼 <i>Curriculum &amp; Handbook</i></p>
-            <h2>5대 트랙 구조화<br /><em>웹 핸드북 탐색기</em></h2>
-          </div>
-          <p>단순 PDF가 아닌 체크리스트 상태 저장 및 계약 조항 클릭 복사 코드 블록이 결합된 실무용 탐색기입니다.</p>
+          <p>차등의결권, TRS, 역외 구조처럼 국내 강의에서 다루지 않는 설계 기법을 실제 사례로 풉니다. 과정을 눌러 커리큘럼과 계약 조항 예시를 확인하십시오.</p>
         </div>
 
         {/* Track Selection Buttons */}
@@ -1206,10 +780,10 @@ export default function Home() {
               }}
             >
               <span className="track-number">{t.number}</span>
-              <span className="track-en">{t.en}</span>
               <strong>{t.title}</strong>
+              <span className="track-hook">{t.hook}</span>
               <p>{t.description}</p>
-              <span className="track-meta">{t.modules} MODULES <i>↗</i></span>
+              <span className="track-meta">{t.modules}개 모듈 <i>↗</i></span>
             </button>
           ))}
         </div>
@@ -1337,16 +911,82 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Level Test & Offline Deal Lab Section (SCR-05) */}
-      <section className="section band-ember" id="leveltest">
-        <span className="section-marker" aria-hidden="true">DEAL LAB</span>
+      {/* The gate: online exists to filter for the offline programme */}
+      <section className="section band-paper band-hair" id="exam">
+        <span className="section-marker" aria-hidden="true">ASSESSMENT</span>
         <div className="section-heading">
           <div>
-            <p className="section-index section-index--onDark">심화 과정 <i>Deal Lab Admission</i></p>
-            <h2 style={{ color: "#fff" }}>레벨 테스트 &<br /><em>오프라인 Deal Lab 수강 자격</em></h2>
+            <p className="section-index">선발 테스트 <i>Entrance Assessment</i></p>
+            <h2>여기서 걸러집니다<br /><em>과정별 · 초·중·상급</em></h2>
           </div>
           <p>
-            온라인 정규 테스트(80점 이상)를 통과한 인원에게만 성보경 회장 주관 1:1~10:1 소수정예 오프라인 Deal Lab 모의 협상 참석 자격이 부여됩니다.
+성보경 회장이 40년간 쌓은 실전 사례에서 뽑아낸 문제입니다. 과정별로 초·중·상급이 출제되며, 여기서 통과한 인원만 오프라인 정예 과정으로 넘어갑니다.
+          </p>
+        </div>
+
+        <div className="exam-grid">
+          {weeklyExams.map((exam, idx) => (
+            <button
+              key={exam.no}
+              type="button"
+              className={`exam-card ${selectedExamIndex === idx ? "is-active" : ""}`}
+              onClick={() => handleSelectExam(idx)}
+              aria-pressed={selectedExamIndex === idx}
+            >
+              <span className="exam-track-label">{exam.trackLabel}</span>
+              <div className="exam-tags">
+                <span className="exam-tag">예시 문제 {exam.no}</span>
+                <span className={`exam-tag ${exam.levelClass}`}>{exam.level}</span>
+                <span className="exam-tag">{exam.type}</span>
+              </div>
+              <p className="exam-prompt">[문제] {exam.prompt}</p>
+              <span className="exam-select-cue">
+                {selectedExamIndex === idx ? "선택한 문제" : "문제 자세히 보기"}
+                <i style={{ fontStyle: "normal" }}>{selectedExamIndex === idx ? "●" : "→"}</i>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <p className="exam-notice">
+          <strong>출제자 안내 —</strong> 정답은 공개되지 않습니다. 교과서에 적힌 내용을 옮겨 적은 답안이 아니라, 그 논리가 실전에서 무너지는 조건까지 짚어낸 답안을 평가합니다.
+        </p>
+
+        {/* Weekly assessment dossier — the chairman's framing for this round */}
+        <aside className="verdict-container exam-dossier">
+          <div className="verdict-eyebrow">금주의 평가 · Weekly Assessment</div>
+          <h3 className="dossier-title">제1회 M&amp;A 실전 평가</h3>
+          <div className="dossier-tags">
+            <span className="tier-badge">출제: 주 3문제</span>
+            <span className="tier-badge">전체 회차: 500회</span>
+            <span className="tier-badge">난이도: 초·중·상급</span>
+          </div>
+          <p className="dossier-quote">
+            &ldquo;정답은 공개되지 않습니다. 교과서적 지식을 나열하는 답안보다, 실전에서 그 장점과 전략이 무너지는 한계 조건까지 사고한 답안이 높이 평가됩니다.&rdquo;
+          </p>
+          <div className="verdict-footer">
+            <div className="verdict-author">
+              <span style={{ fontWeight: 700, fontSize: "16px", color: "#fff" }}>성보경 회장</span>
+              <span style={{ fontSize: "13px", color: "var(--label-on-dark)" }}>㈜프론티어 M&amp;A 대표출제자</span>
+            </div>
+            <div className="stamp-seal">
+              <span>成 甫</span>
+              <span>京 印</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      {/* Offline programme — the gate is online, the programme is here */}
+      <section className="section band-ember" id="offline">
+        <span className="section-marker" aria-hidden="true">OFFLINE</span>
+        <div className="section-heading">
+          <div>
+            <p className="section-index section-index--onDark">오프라인 과정 <i>The Real Program</i></p>
+            <h2 style={{ color: "#fff" }}>통과한 사람만<br /><em>이 방에 앉습니다</em></h2>
+          </div>
+          <p>
+실무는 온라인에 올리지 않습니다. 선발 테스트를 통과한 인원만 성보경 회장이 직접 진행하는 토론식 정예 과정에 참여하며, 자산가와 자산관리자가 같은 자리에서 딜을 다룹니다.
           </p>
         </div>
 
@@ -1379,7 +1019,7 @@ export default function Home() {
                 onChange={(e) => setLevelTestAnswer(e.target.value)}
               />
               <button type="submit" className="button button-gold on-dark" style={{ width: "100%" }}>
-                레벨 테스트 자동 심사 받기 <span>→</span>
+                선발 테스트 채점받기 <span>→</span>
               </button>
             </form>
 
@@ -1395,12 +1035,12 @@ export default function Home() {
                 }}
               >
                 <div style={{ font: "700 18px var(--font-serif)", color: levelTestScore >= 80 ? "#34D399" : "#F5C451" }}>
-                  심사 결과: {levelTestScore}점 / 100점({levelTestScore >= 80 ? "합격 (Deal Lab Eligible)" : "보완 필요"})
+                  심사 결과: {levelTestScore}점 / 100점({levelTestScore >= 80 ? "통과" : "보완 필요"})
                 </div>
                 <p style={{ fontSize: "13px", marginTop: "8px", color: "rgba(248,247,243,0.82)" }}>
                   {levelTestScore >= 80
-                    ? "축하합니다. 트랙 커트라인 80점을 통과하여 성보경 회장 주관 오프라인 Deal Lab 초대장이 발급되었습니다."
-                    : "실전 리스크 조항 설정이 다소 부족합니다. AI 조교 서암과의 소크라테스 문답을 통해 보완 후 재응시해 주십시오."}
+                    ? "통과하셨습니다. 성보경 회장이 진행하는 오프라인 정예 과정에 지원하실 수 있습니다."
+                    : "실전 리스크 조항 설정이 부족합니다. 온라인 과정에서 해당 대목을 보완한 뒤 다시 응시해 주십시오."}
                 </p>
                 {levelTestScore >= 80 && (
                   <button
@@ -1408,35 +1048,35 @@ export default function Home() {
                     className="button button-red on-dark"
                     style={{ marginTop: "12px", width: "100%" }}
                   >
-                    오프라인 Deal Lab 신청서 제출 <span>→</span>
+                    오프라인 과정 지원하기 <span>→</span>
                   </button>
                 )}
               </div>
             )}
           </div>
 
-          {/* Deal Lab Qualification Info */}
+          {/* What the offline programme actually is */}
           <div style={{ background: "var(--ground)", padding: "36px", border: "1px solid var(--heritage-gold)" }}>
-            <span style={{ font: "700 11px var(--font-label)", color: "var(--heritage-gold)" }}>OFFLINE INTENSIVE DEAL LAB</span>
+            <span style={{ font: "700 11px var(--font-label)", color: "var(--heritage-soft)" }}>OFFLINE PROGRAM</span>
             <h3 style={{ font: "700 26px var(--font-serif)", color: "#fff", margin: "16px 0" }}>
-              소수정예 모의 협상 도장(Deal Lab)
+소수정예 토론 과정
             </h3>
             <p style={{ fontSize: "14.5px", color: "var(--label-on-dark)", lineHeight: "1.8", marginBottom: "24px" }}>
-              미창석유 등 40년간의 비공개 실전 사례를 바탕으로 1:1~10:1 소수정예 모의 협상 및 딜 테이킹 세션을 성보경 회장이 직접 진행합니다.
+공개된 적 없는 40년치 실전 사례를 놓고 토론합니다. 강의가 아니라 실제 딜을 다루는 자리이므로, 참여 인원과 논의 내용은 외부에 공개되지 않습니다.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "14px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                 <span style={{ color: "var(--label-on-dark)" }}>수강 자격 요건</span>
-                <strong style={{ color: "var(--heritage-gold)" }}>레벨 테스트 80점 이상</strong>
+                <strong style={{ color: "var(--heritage-soft)" }}>선발 테스트 통과</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                <span style={{ color: "var(--label-on-dark)" }}>다음 코호트 정원</span>
-                <strong style={{ color: "#fff" }}>최대 10명(선착순 승인)</strong>
+                <span style={{ color: "var(--label-on-dark)" }}>정원</span>
+                <strong style={{ color: "#fff" }}>소수정예 · 심사 후 확정</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                <span style={{ color: "var(--label-on-dark)" }}>주관 및 장소</span>
-                <strong style={{ color: "#fff" }}>성보경 회장 / 여의도 딜 룸</strong>
+                <span style={{ color: "var(--label-on-dark)" }}>주관</span>
+                <strong style={{ color: "#fff" }}>성보경 회장 직접 진행</strong>
               </div>
             </div>
           </div>
@@ -1467,10 +1107,10 @@ export default function Home() {
             }}
           >
             <h3 style={{ font: "700 24px var(--font-serif)", color: "var(--ink-strong)", margin: "0 0 12px" }}>
-              오프라인 Deal Lab 수강 신청
+              오프라인 정예 과정 지원
             </h3>
             <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "20px" }}>
-              레벨 테스트 통과 자격 코드: <strong style={{ color: "var(--ember)" }}>DEAL-LAB-2026-PASS-88</strong>
+              선발 테스트를 통과하셨습니다. 아래 정보를 남겨주시면 심사 후 개별 안내드립니다.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
@@ -1482,7 +1122,7 @@ export default function Home() {
             <div style={{ display: "flex", gap: "12px" }}>
               <button
                 onClick={() => {
-                  alert("오프라인 Deal Lab 수강 신청서가 제출되었습니다. 검토 후 안내 연락드리겠습니다.");
+                  alert("오프라인 정예 과정 지원서가 제출되었습니다. 검토 후 안내 연락드리겠습니다.");
                   setShowModal(false);
                 }}
                 className="button button-red"
@@ -1532,10 +1172,9 @@ export default function Home() {
             <span className="footer-nav-title">과정 안내</span>
             <a href="#funnel">수강 여정</a>
             <a href="#exam">금주의 문제</a>
-            <a href="#dojo">AI 조교 서암</a>
-            <a href="#verdict">회장 판정</a>
-            <a href="#handbook">웹 핸드북</a>
-            <a href="#leveltest">레벨 테스트</a>
+            <a href="#courses">5대 과정</a>
+            <a href="#exam">선발 테스트</a>
+            <a href="#offline">오프라인 과정</a>
           </nav>
 
           {/* TenAI signature — dark background version at ≥180px (TenAI §04·§08) */}
@@ -1552,7 +1191,7 @@ export default function Home() {
               />
             </a>
             <p className="partner-note">
-              AI 소크라테스 조교 &lsquo;서암&rsquo;과 주간 리포트 엔진을<br className="br-wide" />주식회사 텐에이아이가 설계·운영합니다.
+              플랫폼 설계와 운영을<br className="br-wide" />주식회사 텐에이아이가 맡고 있습니다.
             </p>
           </div>
         </div>
