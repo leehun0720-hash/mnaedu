@@ -372,6 +372,27 @@ export default function Home() {
   const barRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    // Full sequence on the first view of a session only; afterwards it would
+    // just be a toll on the way back in. sessionStorage (not localStorage) so
+    // a fresh visit another day still gets the opening.
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem("fma-intro-seen") === "1";
+    } catch {
+      // Private mode or blocked storage — fall through and play it.
+    }
+    if (seen) {
+      // Next tick rather than inline, so this stays a scheduled transition
+      // like the others. The inline flag has already hidden the curtain, so
+      // nothing is visible in the meantime.
+      const skip = setTimeout(() => setLoader("done"), 0);
+      return () => clearTimeout(skip);
+    }
+    try {
+      sessionStorage.setItem("fma-intro-seen", "1");
+    } catch {
+      /* not fatal */
+    }
     const open = setTimeout(() => setLoader("exiting"), 5000);
     const clear = setTimeout(() => setLoader("done"), 6100);
     return () => {
@@ -384,6 +405,9 @@ export default function Home() {
   // straight to the DOM — this component is large, and re-rendering it 60
   // times a second to move a number would be wasteful.
   useEffect(() => {
+    // Only while the curtain is actually up: a returning visitor unmounts it
+    // on the first tick, and there is nothing to drive.
+    if (loader !== "loading") return;
     const count = countRef.current;
     const bar = barRef.current;
     if (!count || !bar) return;
@@ -393,16 +417,29 @@ export default function Home() {
     };
     const DURATION = 4600;
     const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
+    const paintAt = (now: number) => {
       const p = Math.min(1, (now - start) / DURATION);
       // Decelerating, so it settles into 100 rather than snapping there
       paint(1 - Math.pow(1 - p, 2.2));
-      if (p < 1) raf = requestAnimationFrame(tick);
+      return p;
+    };
+    let raf = 0;
+    const tick = (now: number) => {
+      if (paintAt(now) < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    // The doors are on a timer, but rAF stalls whenever the window is
+    // occluded or backgrounded — which would strand the count at 000 while
+    // they opened anyway. This keeps it moving; both read the same clock, so
+    // they cannot disagree.
+    const poll = window.setInterval(() => {
+      if (paintAt(performance.now()) >= 1) window.clearInterval(poll);
+    }, 200);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearInterval(poll);
+    };
+  }, [loader]);
   useEffect(() => {
     if (loader === "done") return;
     const prev = document.body.style.overflow;

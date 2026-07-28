@@ -105,6 +105,10 @@ main { overflow: hidden; }
    seal presses down, and the plate parts like a deal-room door. Staged
    delays carry the weight — nothing spins.
    ========================================================================== */
+/* Returning visitor: the inline flag in the layout hides the curtain before
+   first paint, so it never flashes while React catches up and unmounts it. */
+.intro-seen .loader { display: none; }
+
 .loader {
   position: fixed;
   inset: 0;
