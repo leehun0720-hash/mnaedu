@@ -1,14 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-label="Frontier Group">
   <title>Frontier Group</title>
-  <desc>Hexagram of two overlapping equilateral triangles with a central upward chevron.</desc>
-  <!-- Vertices sit on a circle of radius 100 centred at (150,150), so the two
-       triangles are exact equilaterals and the hexagram is regular. -->
-  <g fill="none" stroke-width="10" stroke-linejoin="miter" stroke-miterlimit="10">
-    <path d="M150 50 L236.6 200 L63.4 200 Z" stroke="#78303A"/>
-    <path d="M150 250 L63.4 100 L236.6 100 Z" stroke="#2A3556"/>
-  </g>
-  <g fill="#2A3556">
-    <path d="M150 72 L208 202 L182 202 L150 128 L118 202 L92 202 Z"/>
-    <path d="M150 150 L165 173 L150 196 L135 173 Z"/>
-  </g>
+  <desc>Hexagram of two overlapping equilateral triangles. The upward triangle carries a chevron notch cut up into its base, which reads as an arrow.</desc>
+  <!-- Vertices sit on a circle of radius 100 centred at (150,150), so both
+       triangles are true equilaterals and the hexagram is regular. -->
+
+  <!-- Downward triangle, behind, same weight as the upward one -->
+  <path d="M150 250 L63.4 100 L236.6 100 Z"
+        fill="none" stroke="#1A1A1A" stroke-width="15"
+        stroke-linejoin="miter" stroke-miterlimit="10"/>
+
+  <!-- Upward triangle, in front. Its base is interrupted by an upward
+       chevron, which is what turns the mark into an arrow. -->
+  <path d="M150 50 L236.6 200 L197 200 L150 132 L103 200 L63.4 200 Z"
+        fill="none" stroke="#8C1130" stroke-width="15"
+        stroke-linejoin="miter" stroke-miterlimit="10"/>
 </svg>

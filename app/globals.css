@@ -355,8 +355,10 @@ main { overflow: hidden; }
   min-width: 152px;
 }
 .brand-name {
-  font: 700 16px/1 var(--font-label);
-  letter-spacing: 0.04em;
+  /* The logo wordmark is a classical serif, so the lockup follows it rather
+     than the UI sans. */
+  font: 600 17px/1 var(--font-serif);
+  letter-spacing: 0.1em;
   color: var(--ink-strong);
   white-space: nowrap;
 }
@@ -1672,8 +1674,8 @@ textarea:focus-visible {
   max-width: 1420px;
   margin: auto;
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
-  gap: 56px;
+  grid-template-columns: 1.5fr 0.8fr 1fr 1fr;
+  gap: 48px;
   padding-bottom: 56px;
 }
 .brand-lockup.is-inverse .brand-name { color: var(--white); }
@@ -1699,6 +1701,22 @@ textarea:focus-visible {
   color: var(--heritage-gold);
   margin-bottom: 6px;
 }
+
+/* Address and contact details */
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-style: normal;
+  font-size: 13.5px;
+  color: rgba(248, 247, 243, 0.72);
+}
+.footer-contact p {
+  margin: 0;
+  line-height: 1.75;
+}
+.footer-contact a { width: fit-content; }
+.footer-contact a:hover { color: var(--heritage-soft); }
 .partner-note {
   margin: 0;
   font-size: 12.5px;
@@ -1941,5 +1959,7 @@ textarea:focus-visible {
   .copy-btn { min-height: 44px; padding: 6px 16px; }
   .handbook-nav-item { min-height: 48px; }
   .primary-nav a, .footer-nav a { padding: 10px 0; }
+  /* Phone and mail are tapped, not read, so they get a real target */
+  .footer-contact a { min-height: 44px; display: flex; align-items: center; }
   .exam-card, .track-card { -webkit-tap-highlight-color: transparent; }
 }

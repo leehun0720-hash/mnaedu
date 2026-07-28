@@ -1177,8 +1177,8 @@ export default function Home() {
                 className="brand-symbol"
                 src="/logo-frontier-group-white.svg"
                 alt=""
-                width={51}
-                height={44}
+                width={46}
+                height={46}
                 aria-hidden="true"
               />
               <span className="brand-wordmark">
@@ -1194,12 +1194,21 @@ export default function Home() {
 
           <nav className="footer-nav" aria-label="푸터 메뉴">
             <span className="footer-nav-title">과정 안내</span>
-            <a href="#funnel">수강 여정</a>
-            <a href="#exam">금주의 문제</a>
             <a href="#courses">5대 과정</a>
+            <a href="#funnel">수강 여정</a>
             <a href="#exam">선발 테스트</a>
             <a href="#offline">오프라인 과정</a>
           </nav>
+
+          <address className="footer-contact">
+            <span className="footer-nav-title">오시는 길 · 문의</span>
+            <p>
+              서울시 영등포구 경인로 775<br />
+              에이스아이테크시티 1동 9층
+            </p>
+            <a href="tel:+82220522100">02-2052-2100</a>
+            <a href="mailto:sbk3000@fontier.kr">sbk3000@fontier.kr</a>
+          </address>
 
           {/* TenAI signature — dark background version at ≥180px (TenAI §04·§08) */}
           <div className="partner-signature">

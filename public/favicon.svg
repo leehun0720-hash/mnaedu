@@ -1,9 +1,8 @@
 <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
   <title>Frontier Group</title>
-  <desc>Simplified mark for small sizes: the star is dropped to a single outline and the chevron carries the identity.</desc>
-  <rect width="32" height="32" fill="#2A3556"/>
-  <!-- Star reduced to one outline; two overlapping triangles turn to mud at 16px -->
-  <path d="M16 6 L25.5 22.5 L6.5 22.5 Z" fill="none" stroke="#78303A" stroke-width="1.6"/>
-  <!-- Central chevron, the most recognisable element, kept solid -->
-  <path d="M16 8.4 L22.4 22.8 L19.5 22.8 L16 14.6 L12.5 22.8 L9.6 22.8 Z" fill="#F8F7F3"/>
+  <desc>Small-size form: the thin black triangle disappears below ~24px, so only the heavier notched triangle is kept.</desc>
+  <rect width="32" height="32" fill="#1A1A1A"/>
+  <path d="M16 6 L25.2 22 L21.1 22 L16 14.7 L10.9 22 L6.8 22 Z"
+        fill="none" stroke="#C4324F" stroke-width="3"
+        stroke-linejoin="miter" stroke-miterlimit="10"/>
 </svg>
