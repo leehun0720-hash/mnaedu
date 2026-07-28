@@ -311,11 +311,13 @@ const permissionMatrix = {
 };
 
 // Primary navigation — shared by the inline bar and the mobile drawer
+// The five programmes sit in the main menu itself. They share one section,
+// so each entry scrolls to it and selects that programme.
 const navItems = [
-  { href: "#funnel", label: "수강 여정" },
-  { href: "#courses", label: "5대 과정" },
-  { href: "#exam", label: "선발 테스트" },
-  { href: "#offline", label: "오프라인 과정" }
+  { href: "#courses", label: "5대 과정", courses: true },
+  { href: "#funnel", label: "수강 여정", courses: false },
+  { href: "#exam", label: "선발 테스트", courses: false },
+  { href: "#offline", label: "오프라인 과정", courses: false }
 ];
 
 
@@ -464,6 +466,10 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Programme dropdown: hover is CSS, keyboard is explicit state so focus
+  // never lands on a hidden element.
+  const [coursesOpen, setCoursesOpen] = useState(false);
+
   // Drawer navigation (tablet + mobile)
   const [isNavOpen, setIsNavOpen] = useState(false);
   useEffect(() => {
@@ -592,9 +598,42 @@ export default function Home() {
           </span>
         </a>
         <nav className="primary-nav" aria-label="주요 메뉴">
-          {navItems.map((item) => (
-            <a key={item.href} href={item.href}>{item.label}</a>
-          ))}
+          {navItems.map((item) =>
+            item.courses ? (
+              // Opens on hover and on keyboard focus, handled in CSS, so the
+              // five programmes stay reachable without a click target war.
+              <span
+                key={item.href}
+                className="nav-group"
+                data-open={coursesOpen}
+                onFocus={() => setCoursesOpen(true)}
+                onBlur={(e) => {
+                  // Only close once focus has actually left the group
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setCoursesOpen(false);
+                }}
+                onMouseLeave={() => setCoursesOpen(false)}
+              >
+                <a href={item.href} aria-haspopup="true" aria-expanded={coursesOpen}>{item.label}</a>
+                <span className="nav-dropdown">
+                  {tracks.map((t, i) => (
+                    <a
+                      key={t.id}
+                      href="#courses"
+                      onClick={() => {
+                        setSelectedTrackIndex(i);
+                        setSelectedChapterIndex(0);
+                      }}
+                    >
+                      <b>{t.title}</b>
+                      <em>{t.hook}</em>
+                    </a>
+                  ))}
+                </span>
+              </span>
+            ) : (
+              <a key={item.href} href={item.href}>{item.label}</a>
+            )
+          )}
         </nav>
 
         <div className="header-actions">
@@ -624,10 +663,29 @@ export default function Home() {
       <nav id="mobile-nav" className="mobile-nav" data-open={isNavOpen} aria-label="모바일 메뉴">
         <p className="mobile-nav-title">MENU</p>
         {navItems.map((item) => (
-          <a key={item.href} href={item.href} onClick={() => setIsNavOpen(false)}>
-            <span>{item.label}</span>
-            <i aria-hidden="true">→</i>
-          </a>
+          <div key={item.href} className="mobile-nav-block">
+            <a href={item.href} onClick={() => setIsNavOpen(false)}>
+              <span>{item.label}</span>
+              <i aria-hidden="true">→</i>
+            </a>
+            {item.courses && (
+              <div className="mobile-nav-sub">
+                {tracks.map((t, i) => (
+                  <a
+                    key={t.id}
+                    href="#courses"
+                    onClick={() => {
+                      setSelectedTrackIndex(i);
+                      setSelectedChapterIndex(0);
+                      setIsNavOpen(false);
+                    }}
+                  >
+                    {t.title}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
         <a className="button button-red mobile-nav-cta" href="#exam" onClick={() => setIsNavOpen(false)}>
           선발 테스트 <span>↗</span>
@@ -701,64 +759,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Learning Funnel & Permission Matrix (기획서 §2.1–2.2) */}
-      <section className="section band-paper band-hair" id="funnel">
-        <span className="section-marker" aria-hidden="true">ADMISSIONS</span>
-        <div className="section-heading">
-          <div>
-            <p className="section-index">수강 여정 <i>Admissions</i></p>
-            <h2>온라인은 관문이고,<br /><em>본체는 오프라인입니다</em></h2>
-          </div>
-          <p>
-            온라인 과정은 실무를 가르치는 곳이 아니라, 오프라인에 앉을 사람을 가려내는 자리입니다. 선발 테스트를 통과한 인원만 성보경 회장이 직접 진행하는 소수정예 토론으로 넘어갑니다.
-          </p>
-        </div>
-
-        <div className="funnel-rail">
-          {funnelSteps.map((step) => (
-            <div key={step.index} className="funnel-step" data-gate={String(step.gate)}>
-              <span className="funnel-step-index">{step.index}{step.gate ? " · GATE" : ""}</span>
-              <h3 className="funnel-name">{step.name}</h3>
-              <p className="funnel-desc">{step.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="matrix-scroll">
-          <table className="matrix-table">
-            <caption className="sr-only">단계별로 열리는 범위</caption>
-            <thead>
-              <tr>
-                <th scope="col" style={{ textAlign: "left" }}>제공 범위 / 단계</th>
-                {permissionMatrix.columns.map((col) => (
-                  <th key={col} scope="col">{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {permissionMatrix.rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row">{row.label}</th>
-                  {row.cells.map((cell, i) => (
-                    <td key={i}>
-                      {cell === "O" ? (
-                        <span className="matrix-yes">O</span>
-                      ) : cell === "X" ? (
-                        <span className="matrix-no">—</span>
-                      ) : (
-                        <span className="matrix-partial">{cell}</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
       {/* The five programmes, named plainly and shown up front */}
-      <section className="section band-white band-hair" id="courses">
+      <section className="section band-paper band-hair" id="courses">
         <span className="section-marker" aria-hidden="true">PROGRAMS</span>
         <div className="section-heading">
           <div>
@@ -908,6 +910,62 @@ export default function Home() {
               <div className="clause-code">{currentTrack.sampleClause.code}</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* How you get in: online filters, offline delivers */}
+      <section className="section band-white band-hair" id="funnel">
+        <span className="section-marker" aria-hidden="true">ADMISSIONS</span>
+        <div className="section-heading">
+          <div>
+            <p className="section-index">수강 여정 <i>Admissions</i></p>
+            <h2>온라인은 관문이고,<br /><em>본체는 오프라인입니다</em></h2>
+          </div>
+          <p>
+            온라인 과정은 실무를 가르치는 곳이 아니라, 오프라인에 앉을 사람을 가려내는 자리입니다. 선발 테스트를 통과한 인원만 성보경 회장이 직접 진행하는 소수정예 토론으로 넘어갑니다.
+          </p>
+        </div>
+
+        <div className="funnel-rail">
+          {funnelSteps.map((step) => (
+            <div key={step.index} className="funnel-step" data-gate={String(step.gate)}>
+              <span className="funnel-step-index">{step.index}{step.gate ? " · GATE" : ""}</span>
+              <h3 className="funnel-name">{step.name}</h3>
+              <p className="funnel-desc">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="matrix-scroll">
+          <table className="matrix-table">
+            <caption className="sr-only">단계별로 열리는 범위</caption>
+            <thead>
+              <tr>
+                <th scope="col" style={{ textAlign: "left" }}>제공 범위 / 단계</th>
+                {permissionMatrix.columns.map((col) => (
+                  <th key={col} scope="col">{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {permissionMatrix.rows.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row">{row.label}</th>
+                  {row.cells.map((cell, i) => (
+                    <td key={i}>
+                      {cell === "O" ? (
+                        <span className="matrix-yes">O</span>
+                      ) : cell === "X" ? (
+                        <span className="matrix-no">—</span>
+                      ) : (
+                        <span className="matrix-partial">{cell}</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

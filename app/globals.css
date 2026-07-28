@@ -394,6 +394,66 @@ main { overflow: hidden; }
 .primary-nav a:hover { color: var(--ink-strong); }
 .primary-nav a:hover::after { transform: scaleX(1); }
 
+/* — Programme dropdown in the main menu — */
+.nav-group { position: relative; display: inline-flex; }
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 6px);
+  margin-top: 14px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background: var(--ground);
+  border: 1px solid rgba(248, 247, 243, 0.14);
+  box-shadow: 0 22px 48px rgba(23, 17, 15, 0.34);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  z-index: 60;
+}
+/* Focus must not land inside while it is closed */
+.nav-dropdown a { pointer-events: none; }
+.nav-group:hover .nav-dropdown a,
+.nav-group[data-open="true"] .nav-dropdown a { pointer-events: auto; }
+/* Hover for pointers, focus-within so it is reachable by keyboard too */
+.nav-group:hover .nav-dropdown,
+.nav-group[data-open="true"] .nav-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+/* Bridges the gap so the menu does not close while crossing into it */
+.nav-group::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 16px;
+}
+.nav-dropdown a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 14px;
+  transition: background 0.18s ease;
+}
+.nav-dropdown a:hover { background: rgba(248, 247, 243, 0.07); }
+.nav-dropdown a::after { content: none; }
+.nav-dropdown b {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--warm-white);
+}
+.nav-dropdown em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--label-on-dark);
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -523,6 +583,22 @@ main { overflow: hidden; }
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .mobile-nav a:hover i, .mobile-nav a:focus-visible i { opacity: 1; transform: translateX(0); }
+.mobile-nav-block { display: flex; flex-direction: column; }
+.mobile-nav-sub {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0 10px 14px;
+  border-left: 1px solid rgba(248, 247, 243, 0.16);
+  margin: 6px 0 8px 2px;
+}
+.mobile-nav-sub a {
+  min-height: 44px;
+  font-size: 14px;
+  color: rgba(248, 247, 243, 0.78);
+  border-bottom: 0;
+}
+.mobile-nav-sub a:hover { color: var(--heritage-soft); }
+
 .mobile-nav .mobile-nav-cta {
   margin-top: 24px;
   border-bottom: 0;
