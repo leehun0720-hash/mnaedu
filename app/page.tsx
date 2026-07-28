@@ -311,13 +311,13 @@ const permissionMatrix = {
 };
 
 // Primary navigation — shared by the inline bar and the mobile drawer
-// The five programmes sit in the main menu itself. They share one section,
-// so each entry scrolls to it and selects that programme.
+// The five programmes are listed in the menu outright. They share one
+// section, so each entry scrolls there and selects that programme.
 const navItems = [
-  { href: "#courses", label: "5대 과정", courses: true },
-  { href: "#funnel", label: "수강 여정", courses: false },
-  { href: "#exam", label: "선발 테스트", courses: false },
-  { href: "#offline", label: "오프라인 과정", courses: false }
+  ...tracks.map((t, i) => ({ href: "#courses", label: t.title, courseIndex: i })),
+  { href: "#funnel", label: "수강 여정", courseIndex: -1 },
+  { href: "#exam", label: "선발 테스트", courseIndex: -1 },
+  { href: "#offline", label: "오프라인 과정", courseIndex: -1 }
 ];
 
 
@@ -466,10 +466,6 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Programme dropdown: hover is CSS, keyboard is explicit state so focus
-  // never lands on a hidden element.
-  const [coursesOpen, setCoursesOpen] = useState(false);
-
   // Drawer navigation (tablet + mobile)
   const [isNavOpen, setIsNavOpen] = useState(false);
   useEffect(() => {
@@ -557,8 +553,8 @@ export default function Home() {
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
               <img className="loader-mark loader-mark--r" src="/logo-frontier-group-white.svg" alt="" width={46} height={46} />
               <span className="loader-seal">
-                <span>成 甫</span>
-                <span>京 印</span>
+                <span>成 保</span>
+                <span>慶 印</span>
               </span>
             </div>
 
@@ -598,42 +594,20 @@ export default function Home() {
           </span>
         </a>
         <nav className="primary-nav" aria-label="주요 메뉴">
-          {navItems.map((item) =>
-            item.courses ? (
-              // Opens on hover and on keyboard focus, handled in CSS, so the
-              // five programmes stay reachable without a click target war.
-              <span
-                key={item.href}
-                className="nav-group"
-                data-open={coursesOpen}
-                onFocus={() => setCoursesOpen(true)}
-                onBlur={(e) => {
-                  // Only close once focus has actually left the group
-                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setCoursesOpen(false);
-                }}
-                onMouseLeave={() => setCoursesOpen(false)}
-              >
-                <a href={item.href} aria-haspopup="true" aria-expanded={coursesOpen}>{item.label}</a>
-                <span className="nav-dropdown">
-                  {tracks.map((t, i) => (
-                    <a
-                      key={t.id}
-                      href="#courses"
-                      onClick={() => {
-                        setSelectedTrackIndex(i);
-                        setSelectedChapterIndex(0);
-                      }}
-                    >
-                      <b>{t.title}</b>
-                      <em>{t.hook}</em>
-                    </a>
-                  ))}
-                </span>
-              </span>
-            ) : (
-              <a key={item.href} href={item.href}>{item.label}</a>
-            )
-          )}
+          {navItems.map((item, idx) => (
+            <a
+              key={item.label}
+              href={item.href}
+              data-first-section={idx === tracks.length ? "true" : undefined}
+              onClick={() => {
+                if (item.courseIndex < 0) return;
+                setSelectedTrackIndex(item.courseIndex);
+                setSelectedChapterIndex(0);
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
 
         <div className="header-actions">
@@ -662,30 +636,22 @@ export default function Home() {
       />
       <nav id="mobile-nav" className="mobile-nav" data-open={isNavOpen} aria-label="모바일 메뉴">
         <p className="mobile-nav-title">MENU</p>
-        {navItems.map((item) => (
-          <div key={item.href} className="mobile-nav-block">
-            <a href={item.href} onClick={() => setIsNavOpen(false)}>
-              <span>{item.label}</span>
-              <i aria-hidden="true">→</i>
-            </a>
-            {item.courses && (
-              <div className="mobile-nav-sub">
-                {tracks.map((t, i) => (
-                  <a
-                    key={t.id}
-                    href="#courses"
-                    onClick={() => {
-                      setSelectedTrackIndex(i);
-                      setSelectedChapterIndex(0);
-                      setIsNavOpen(false);
-                    }}
-                  >
-                    {t.title}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+        {navItems.map((item, idx) => (
+          <a
+            key={item.label}
+            href={item.href}
+            data-first-section={idx === tracks.length ? "true" : undefined}
+            onClick={() => {
+              if (item.courseIndex >= 0) {
+                setSelectedTrackIndex(item.courseIndex);
+                setSelectedChapterIndex(0);
+              }
+              setIsNavOpen(false);
+            }}
+          >
+            <span>{item.label}</span>
+            <i aria-hidden="true">→</i>
+          </a>
         ))}
         <a className="button button-red mobile-nav-cta" href="#exam" onClick={() => setIsNavOpen(false)}>
           선발 테스트 <span>↗</span>
@@ -1028,8 +994,8 @@ export default function Home() {
               <span style={{ fontSize: "13px", color: "var(--label-on-dark)" }}>㈜프론티어 M&amp;A 대표출제자</span>
             </div>
             <div className="stamp-seal">
-              <span>成 甫</span>
-              <span>京 印</span>
+              <span>成 保</span>
+              <span>慶 印</span>
             </div>
           </div>
         </aside>

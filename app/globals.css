@@ -369,10 +369,22 @@ main { overflow: hidden; }
 
 .primary-nav {
   display: flex;
-  gap: clamp(18px, 2.2vw, 32px);
-  font-size: 13.5px;
+  align-items: center;
+  /* Eight items now, so the bar runs tighter than a four-item menu would */
+  gap: clamp(11px, 1.35vw, 19px);
+  font-size: 12.5px;
   font-weight: 500;
+  white-space: nowrap;
   color: var(--ink);
+}
+/* Rule separating the five programmes from the rest of the menu */
+.primary-nav a[data-first-section] {
+  margin-left: 6px;
+  padding-left: clamp(12px, 1.4vw, 20px);
+  border-left: 1px solid var(--line-color);
+}
+.site-header[data-scrolled="false"] .primary-nav a[data-first-section] {
+  border-left-color: rgba(248, 247, 243, 0.3);
 }
 .primary-nav a {
   position: relative;
@@ -393,66 +405,6 @@ main { overflow: hidden; }
 }
 .primary-nav a:hover { color: var(--ink-strong); }
 .primary-nav a:hover::after { transform: scaleX(1); }
-
-/* — Programme dropdown in the main menu — */
-.nav-group { position: relative; display: inline-flex; }
-.nav-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translate(-50%, 6px);
-  margin-top: 14px;
-  min-width: 260px;
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  background: var(--ground);
-  border: 1px solid rgba(248, 247, 243, 0.14);
-  box-shadow: 0 22px 48px rgba(23, 17, 15, 0.34);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
-  z-index: 60;
-}
-/* Focus must not land inside while it is closed */
-.nav-dropdown a { pointer-events: none; }
-.nav-group:hover .nav-dropdown a,
-.nav-group[data-open="true"] .nav-dropdown a { pointer-events: auto; }
-/* Hover for pointers, focus-within so it is reachable by keyboard too */
-.nav-group:hover .nav-dropdown,
-.nav-group[data-open="true"] .nav-dropdown {
-  opacity: 1;
-  visibility: visible;
-  transform: translate(-50%, 0);
-}
-/* Bridges the gap so the menu does not close while crossing into it */
-.nav-group::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  height: 16px;
-}
-.nav-dropdown a {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 11px 14px;
-  transition: background 0.18s ease;
-}
-.nav-dropdown a:hover { background: rgba(248, 247, 243, 0.07); }
-.nav-dropdown a::after { content: none; }
-.nav-dropdown b {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--warm-white);
-}
-.nav-dropdown em {
-  font-style: normal;
-  font-size: 11.5px;
-  color: var(--label-on-dark);
-}
 
 .header-actions {
   display: flex;
@@ -564,6 +516,7 @@ main { overflow: hidden; }
   color: var(--heritage-gold);
   margin: 0 0 12px;
 }
+.mobile-nav a[data-first-section] { margin-top: 14px; }
 .mobile-nav a {
   display: flex;
   align-items: center;
@@ -583,22 +536,6 @@ main { overflow: hidden; }
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .mobile-nav a:hover i, .mobile-nav a:focus-visible i { opacity: 1; transform: translateX(0); }
-.mobile-nav-block { display: flex; flex-direction: column; }
-.mobile-nav-sub {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 0 10px 14px;
-  border-left: 1px solid rgba(248, 247, 243, 0.16);
-  margin: 6px 0 8px 2px;
-}
-.mobile-nav-sub a {
-  min-height: 44px;
-  font-size: 14px;
-  color: rgba(248, 247, 243, 0.78);
-  border-bottom: 0;
-}
-.mobile-nav-sub a:hover { color: var(--heritage-soft); }
-
 .mobile-nav .mobile-nav-cta {
   margin-top: 24px;
   border-bottom: 0;
@@ -616,7 +553,7 @@ textarea:focus-visible {
   outline-offset: 3px;
 }
 
-/* Red Stamp Graphic (成甫京) — the chairman personal seal, not a brand logo,
+/* Red Stamp Graphic (成保慶) — the chairman personal seal, not a brand logo,
    so it keeps its stamped rotation. Tinted lighter on navy for legibility. */
 .stamp-seal {
   display: inline-flex;
@@ -1910,7 +1847,7 @@ textarea:focus-visible {
 }
 
 /* — 태블릿 세로: 인라인 내비 → 드로어 — */
-@media (max-width: 1023px) {
+@media (max-width: 1199px) {
   .primary-nav { display: none; }
   .nav-toggle { display: inline-flex; }
 
@@ -1937,6 +1874,13 @@ textarea:focus-visible {
   .handbook-content { padding: 30px 26px; }
   .dojo-header { flex-wrap: wrap; gap: 14px; }
   .dojo-engine { padding-left: 0; border-left: 0; }
+}
+
+/* Between 1200 and 1440 the bar carries eight links, so the header CTA steps
+   aside — 선발 테스트 is already one of those links. */
+@media (max-width: 1439px) {
+  .site-header { padding: 0 clamp(20px, 3.4vw, 46px); }
+  .header-login { display: none; }
 }
 
 /* — 모바일 가로 · 대형 폰 — */
