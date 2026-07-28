@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const baseUrl = `${protocol}://${host}`;
-  const title = "M&A Mastery | FRONTIER M&A × TEN AI";
+  const title = "M&A 아카데미 | FRONTIER GROUP × TEN AI";
   const description = "M&A·경영권 투자·패밀리 오피스 전문가를 위한 프리미엄 온라인 아카데미";
 
   return {
@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: [
         { url: "/favicon.svg", type: "image/svg+xml" },
-        { url: "/logo-frontier-symbol.png", type: "image/png" },
+        { url: "/logo-frontier-group.svg", type: "image/svg+xml" },
       ],
     },
     openGraph: { title, description, images: [{ url: `${baseUrl}/og.png`, width: 1680, height: 945 }] },

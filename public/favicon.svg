@@ -1,18 +1,9 @@
 <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <title>Frontier M&amp;A</title>
-  <desc>Simplified symbol form for sizes at or below 24px, per BI/CI guideline section 04.</desc>
-  <rect width="32" height="32" fill="#08264D"/>
-  <!-- left structure, stepping up (UPWARD RHYTHM) -->
-  <path d="M5 27v-8h3v8z" fill="#F8F7F3" opacity="0.5"/>
-  <path d="M10 27V12h4v15z" fill="#F8F7F3"/>
-  <!-- centre tower carrying the negative-space F -->
-  <path d="M15 27V6h2v21z" fill="#F8F7F3"/>
-  <!-- right structure in Heritage Gold (MERGER: two masses meeting at centre) -->
-  <path d="M18 6h4v21h-4z" fill="#C49A3A"/>
-  <path d="M23 27V14h3v13z" fill="#C49A3A" opacity="0.7"/>
-  <!-- negative-space F -->
-  <rect x="18" y="10" width="3.4" height="1.7" fill="#08264D"/>
-  <rect x="18" y="14.4" width="2.4" height="1.7" fill="#08264D"/>
-  <!-- baseline -->
-  <rect x="4" y="27" width="24" height="1.7" fill="#C49A3A"/>
+  <title>Frontier Group</title>
+  <desc>Simplified mark for small sizes: the star is dropped to a single outline and the chevron carries the identity.</desc>
+  <rect width="32" height="32" fill="#2A3556"/>
+  <!-- Star reduced to one outline; two overlapping triangles turn to mud at 16px -->
+  <path d="M16 6 L25.5 22.5 L6.5 22.5 Z" fill="none" stroke="#78303A" stroke-width="1.6"/>
+  <!-- Central chevron, the most recognisable element, kept solid -->
+  <path d="M16 8.4 L22.4 22.8 L19.5 22.8 L16 14.6 L12.5 22.8 L9.6 22.8 Z" fill="#F8F7F3"/>
 </svg>

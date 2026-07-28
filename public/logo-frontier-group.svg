@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-label="Frontier Group">
+  <title>Frontier Group</title>
+  <desc>Hexagram of two overlapping equilateral triangles with a central upward chevron.</desc>
+  <!-- Vertices sit on a circle of radius 100 centred at (150,150), so the two
+       triangles are exact equilaterals and the hexagram is regular. -->
+  <g fill="none" stroke-width="10" stroke-linejoin="miter" stroke-miterlimit="10">
+    <path d="M150 50 L236.6 200 L63.4 200 Z" stroke="#78303A"/>
+    <path d="M150 250 L63.4 100 L236.6 100 Z" stroke="#2A3556"/>
+  </g>
+  <g fill="#2A3556">
+    <path d="M150 72 L208 202 L182 202 L150 128 L118 202 L92 202 Z"/>
+    <path d="M150 150 L165 173 L150 196 L135 173 Z"/>
+  </g>
+</svg>

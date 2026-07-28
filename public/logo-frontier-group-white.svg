@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-label="Frontier Group">
+  <title>Frontier Group</title>
+  <desc>White monochrome form of the mark, for dark grounds.</desc>
+  <g fill="none" stroke="#F8F7F3" stroke-width="10" stroke-linejoin="miter" stroke-miterlimit="10">
+    <path d="M150 50 L236.6 200 L63.4 200 Z"/>
+    <path d="M150 250 L63.4 100 L236.6 100 Z"/>
+  </g>
+  <g fill="#F8F7F3">
+    <path d="M150 72 L208 202 L182 202 L150 128 L118 202 L92 202 Z"/>
+    <path d="M150 150 L165 173 L150 196 L135 173 Z"/>
+  </g>
+</svg>

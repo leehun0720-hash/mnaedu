@@ -547,9 +547,9 @@ export default function Home() {
           <div className="loader-inner">
             <div className="loader-markwrap" aria-hidden="true">
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
-              <img className="loader-mark loader-mark--l" src="/logo-frontier-symbol-white.png" alt="" width={51} height={44} />
+              <img className="loader-mark loader-mark--l" src="/logo-frontier-group-white.svg" alt="" width={46} height={46} />
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
-              <img className="loader-mark loader-mark--r" src="/logo-frontier-symbol-white.png" alt="" width={51} height={44} />
+              <img className="loader-mark loader-mark--r" src="/logo-frontier-group-white.svg" alt="" width={46} height={46} />
               <span className="loader-seal">
                 <span>成 甫</span>
                 <span>京 印</span>
@@ -580,15 +580,15 @@ export default function Home() {
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized; avoids coupling to a deploy-target image loader */}
           <img
             className="brand-symbol"
-            src={isScrolled ? "/logo-frontier-symbol.png" : "/logo-frontier-symbol-white.png"}
+            src={isScrolled ? "/logo-frontier-group.svg" : "/logo-frontier-group-white.svg"}
             alt=""
             width={44}
             height={38}
             aria-hidden="true"
           />
           <span className="brand-wordmark">
-            <span className="brand-name">FRONTIER M&amp;A</span>
-            <span className="brand-descriptor">M&amp;A MASTERY ACADEMY</span>
+            <span className="brand-name">FRONTIER GROUP</span>
+            <span className="brand-descriptor">M&amp;A 아카데미</span>
           </span>
         </a>
         <nav className="primary-nav" aria-label="주요 메뉴">
@@ -1151,15 +1151,15 @@ export default function Home() {
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
               <img
                 className="brand-symbol"
-                src="/logo-frontier-symbol-white.png"
+                src="/logo-frontier-group-white.svg"
                 alt=""
                 width={51}
                 height={44}
                 aria-hidden="true"
               />
               <span className="brand-wordmark">
-                <span className="brand-name">FRONTIER M&amp;A</span>
-                <span className="brand-descriptor">M&amp;A MASTERY ACADEMY</span>
+                <span className="brand-name">FRONTIER GROUP</span>
+                <span className="brand-descriptor">M&amp;A 아카데미</span>
               </span>
             </div>
             <p className="footer-statement">
