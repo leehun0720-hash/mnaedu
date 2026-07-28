@@ -372,8 +372,8 @@ export default function Home() {
   const barRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const open = setTimeout(() => setLoader("exiting"), 1800);
-    const clear = setTimeout(() => setLoader("done"), 2900);
+    const open = setTimeout(() => setLoader("exiting"), 5000);
+    const clear = setTimeout(() => setLoader("done"), 6100);
     return () => {
       clearTimeout(open);
       clearTimeout(clear);
@@ -391,7 +391,7 @@ export default function Home() {
       count.textContent = String(Math.round(v * 100)).padStart(3, "0");
       bar.style.transform = `scaleX(${v})`;
     };
-    const DURATION = 1600;
+    const DURATION = 4600;
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
@@ -412,16 +412,33 @@ export default function Home() {
     };
   }, [loader]);
 
-  // Hero video pauses for viewers who ask for reduced motion
+  // The hero footage auto-plays and loops, so it needs a visible control
+  // (WCAG 2.2.2 Pause, Stop, Hide).
   const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const [videoPlaying, setVideoPlaying] = useState(true);
   useEffect(() => {
-    const apply = () => {
-      const v = heroVideoRef.current;
-      if (!v) return;
-      void v.play().catch(() => {});
+    const v = heroVideoRef.current;
+    if (!v) return;
+    // Track the element's own events rather than assuming our calls stuck:
+    // the browser pauses playback on its own when the tab is hidden or the
+    // device is saving power, and the control must not keep claiming to be
+    // playing when it isn't.
+    const sync = () => setVideoPlaying(!v.paused);
+    v.addEventListener("play", sync);
+    v.addEventListener("pause", sync);
+    void v.play().catch(() => {});
+    sync();
+    return () => {
+      v.removeEventListener("play", sync);
+      v.removeEventListener("pause", sync);
     };
-    apply();
   }, []);
+  const toggleHeroVideo = () => {
+    const v = heroVideoRef.current;
+    if (!v) return;
+    if (v.paused) void v.play().catch(() => {});
+    else v.pause();
+  };
 
   // Content settles in as each band enters the viewport
   useEffect(() => {
@@ -771,10 +788,21 @@ export default function Home() {
               <span>OFFLINE DEAL LAB</span>
             </div>
           </div>
-          <a className="scroll-cue" href="#funnel" aria-label="아래로 스크롤">
-            <span>SCROLL</span>
-            <i aria-hidden="true" />
-          </a>
+          <div className="hero-bar-aside">
+            <button
+              type="button"
+              className="hero-videotoggle"
+              data-playing={videoPlaying}
+              onClick={toggleHeroVideo}
+            >
+              <i aria-hidden="true" />
+              {videoPlaying ? "영상 정지" : "영상 재생"}
+            </button>
+            <a className="scroll-cue" href="#funnel" aria-label="아래로 스크롤">
+              <span>SCROLL</span>
+              <i aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </section>
 
