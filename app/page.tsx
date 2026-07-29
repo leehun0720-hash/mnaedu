@@ -1207,7 +1207,7 @@ export default function Home() {
               에이스아이테크시티 1동 9층
             </p>
             <a href="tel:+82220522100">02-2052-2100</a>
-            <a href="mailto:sbk3000@fontier.kr">sbk3000@fontier.kr</a>
+            <a href="mailto:sbk3000@frontier.kr">sbk3000@frontier.kr</a>
           </address>
 
           {/* TenAI signature — dark background version at ≥180px (TenAI §04·§08) */}
