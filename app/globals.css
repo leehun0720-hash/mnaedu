@@ -1963,3 +1963,129 @@ textarea:focus-visible {
   .footer-contact a { min-height: 44px; display: flex; align-items: center; }
   .exam-card, .track-card { -webkit-tap-highlight-color: transparent; }
 }
+
+/* ==========================================================================
+   ADMIN — internal authoring tool. Plain and dense on purpose: it is used to
+   get work done, not to impress anyone.
+   ========================================================================== */
+.admin {
+  min-height: 100svh;
+  background: var(--paper-bg);
+  padding: 48px clamp(20px, 5vw, 56px);
+}
+.admin-shell { max-width: 940px; margin-inline: auto; }
+.admin-shell--narrow { max-width: 420px; }
+.admin h1 {
+  font: 700 clamp(24px, 3vw, 32px) var(--font-serif);
+  letter-spacing: -0.01em;
+  color: var(--ink-strong);
+  margin: 0 0 8px;
+}
+.admin h2 {
+  font: 700 16px var(--font-serif);
+  color: var(--ink-strong);
+  margin: 0 0 6px;
+}
+.admin-note { font-size: 13.5px; line-height: 1.7; color: var(--muted); margin: 0 0 18px; }
+.admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.admin-card {
+  background: var(--white);
+  border: 1px solid var(--line-color);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.admin-form { display: flex; flex-direction: column; gap: 12px; }
+.admin-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+.admin-row > label { flex: 1 1 180px; }
+.admin-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.admin label { font-size: 13px; font-weight: 600; color: var(--ink-strong); display: block; }
+.admin label small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.admin input, .admin select, .admin textarea {
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px 12px;
+  font: 400 14px var(--font-sans);
+  color: var(--ink);
+  background: var(--warm-white);
+  border: 1px solid var(--line-color);
+  border-radius: 2px;
+}
+.admin textarea { resize: vertical; line-height: 1.7; }
+.admin input:focus, .admin select:focus, .admin textarea:focus {
+  outline: 2px solid var(--ember);
+  outline-offset: 1px;
+}
+.admin-choice { display: flex; gap: 8px; align-items: center; }
+.admin-choice input { margin-top: 0; }
+.admin-check { display: flex; align-items: center; gap: 8px; margin: 4px 0 18px; }
+.admin-check input { width: auto; margin: 0; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.admin-btn {
+  min-height: 42px;
+  padding: 10px 18px;
+  font: 700 13px var(--font-label);
+  color: var(--white);
+  background: var(--ember);
+  border: 1px solid var(--ember);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.admin-btn:hover { background: var(--ember-press); border-color: var(--ember-press); }
+.admin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.admin-btn--quiet {
+  background: transparent;
+  color: var(--ink-strong);
+  border-color: var(--line-color);
+}
+.admin-btn--quiet:hover { background: var(--paper-deep); border-color: var(--muted); }
+.admin-btn--danger { background: transparent; color: var(--ember-ink); border-color: var(--ember-ink); }
+.admin-btn--danger:hover { background: var(--ember-ink); color: var(--white); }
+.admin-error { color: var(--ember-ink); font-size: 13.5px; font-weight: 600; margin: 12px 0 0; }
+.admin-ok { color: #2F6B45; font-size: 13.5px; font-weight: 600; margin: 12px 0 0; }
+.admin-warn {
+  background: var(--ember-soft);
+  border-left: 3px solid var(--ember);
+  padding: 14px 18px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #7a2c20;
+  margin-bottom: 20px;
+}
+.admin-pre {
+  background: var(--ink-strong);
+  color: var(--warm-white);
+  padding: 18px;
+  font: 400 12.5px/1.9 var(--font-label);
+  overflow-x: auto;
+  border-radius: 2px;
+}
+.admin-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.admin-list li { border-top: 1px solid var(--line-color); padding-top: 16px; }
+.admin-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font: 600 11px var(--font-label);
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.admin-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--line-color);
+  color: var(--muted);
+}
+.admin-tag--on { border-color: var(--ember); color: var(--ember-ink); }
+.admin-list-prompt {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink);
+  margin: 0 0 12px;
+  max-width: 72ch;
+}

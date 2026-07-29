@@ -1,14 +1,27 @@
-import { env } from "cloudflare:workers";
-import { drizzle } from "drizzle-orm/d1";
+import { drizzle } from "drizzle-orm/vercel-postgres";
+import { sql } from "@vercel/postgres";
 import * as schema from "./schema";
 
+/**
+ * The database is optional on purpose.
+ *
+ * The site is live, and it was live before any database existed. Nothing here
+ * may throw at import time or during a build that has no connection string —
+ * callers ask `isDbConfigured()` first and fall back to the seed questions.
+ * The moment POSTGRES_URL is present the same code path starts using it.
+ */
+export function isDbConfigured(): boolean {
+  return Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+}
+
+let cached: ReturnType<typeof drizzle> | null = null;
+
 export function getDb() {
-  const dbBinding = (env as unknown as { DB?: D1Database }).DB;
-  if (!dbBinding) {
+  if (!isDbConfigured()) {
     throw new Error(
-      "Cloudflare D1 binding `DB` is unavailable. Set the `d1` field in .openai/hosting.json to `DB` or let your control plane inject the real binding values before using the database."
+      "POSTGRES_URL is not set. Create a Postgres store in the Vercel dashboard (Storage → Create Database); Vercel injects the connection string automatically."
     );
   }
-
-  return drizzle(dbBinding, { schema });
+  if (!cached) cached = drizzle(sql, { schema });
+  return cached;
 }

@@ -1,5 +1,13 @@
 {
   "version": "7",
-  "dialect": "sqlite",
-  "entries": []
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785293602168,
+      "tag": "0000_puzzling_bastion",
+      "breakpoints": true
+    }
+  ]
 }

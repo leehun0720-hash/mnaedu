@@ -10,11 +10,12 @@
     "build": "next build",
     "build:vinext": "vinext build",
     "start": "next start",
-    "test": "npm run build:vinext && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build:vinext && node --import tsx --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "0.45.2",
     "next": "16.2.6",
     "react": "19.2.6",
