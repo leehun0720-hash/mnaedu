@@ -6,9 +6,20 @@
 
 ## 1. 데이터베이스 만들기
 
-Vercel 대시보드 → 프로젝트 선택 → **Storage** → **Create Database** → **Postgres**
+Vercel 대시보드 → **Storage** → **Create Database** → **Neon** (Serverless Postgres)
 
-만들면 `POSTGRES_URL`이 프로젝트에 자동으로 주입됩니다. 따로 복사할 필요 없습니다.
+연결 대화상자에서 아래와 같이 설정합니다.
+
+| 항목 | 값 |
+| --- | --- |
+| Project | `mnaedu` |
+| Environments | Production, Preview, **Development** 모두 체크 |
+| Create database branch for deployment | 둘 다 해제 |
+| Custom Prefix | `DATABASE` (비워두면 `STORAGE`가 되며, 이 경우도 동작합니다) |
+| Sensitive | 켠 상태 유지 |
+
+Development를 체크해야 2단계에서 로컬로 접속 정보를 받을 수 있습니다.
+접속 정보는 자동 주입되므로 복사할 필요 없습니다.
 
 ## 2. 테이블 만들기
 
