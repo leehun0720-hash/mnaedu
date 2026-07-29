@@ -2124,3 +2124,344 @@ textarea:focus-visible {
   margin: 0 0 12px;
   max-width: 72ch;
 }
+
+/* ==========================================================================
+   STUDIO MODE — 미팅 현장 디자인 협의 패널 (?studio=1 로만 진입)
+   패널이 CSS 변수와 body 클래스를 만지는 방식이라, 아래 훅 규칙들은
+   변수가 기본값일 때 기존 렌더와 완전히 동일해야 한다.
+   ========================================================================== */
+:root {
+  --studio-type-scale: 1;
+  --studio-body-scale: 1;
+  --studio-space: 1;
+  --studio-radius: 0px;
+}
+/* 제목 크기 스케일 훅 — 기존 클램프에 배율만 곱한다 */
+.hero h1 { font-size: calc(clamp(40px, 6.4vw, 96px) * var(--studio-type-scale)); }
+.section h2 { font-size: calc(clamp(30px, 3.6vw, 46px) * var(--studio-type-scale)); }
+/* 본문 크기 훅 — body 기본 15px에 배율 */
+body { font-size: calc(15px * var(--studio-body-scale)); }
+/* 섹션 상하 여백 훅 — 좌우 패딩은 그대로 둔다 */
+.section { padding-block: calc(clamp(84px, 9vw, 152px) * var(--studio-space)); }
+/* 모서리 훅 — 주요 면 요소에 일괄 적용 */
+.button,
+.tier-card,
+.exam-card,
+.funnel-step,
+.thread-card,
+.verdict-container,
+.handbook-window,
+.header-login,
+.hero-videotoggle {
+  border-radius: var(--studio-radius);
+}
+/* 도조 창은 원래 2px를 갖고 있었다 — 기본값에서 그대로 유지 */
+.dojo-container { border-radius: max(2px, var(--studio-radius)); }
+/* 제목 고딕 전환 */
+body.studio-headings-sans .hero h1,
+body.studio-headings-sans .section h2,
+body.studio-headings-sans .tier-card h3,
+body.studio-headings-sans .funnel-name,
+body.studio-headings-sans .verdict-quote,
+body.studio-headings-sans .exam-prompt,
+body.studio-headings-sans .brand-name {
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
+}
+/* 히어로 영상 끔 — 스크림과 다크 그라운드만 남는다 */
+body.studio-no-video .hero-video { display: none; }
+
+/* 문구 직접 수정 모드 — 편집 가능한 영역을 점선으로 표시 */
+[data-studio-edit] {
+  outline: 1px dashed rgba(196, 154, 58, 0.5);
+  outline-offset: 3px;
+  cursor: text;
+  border-radius: 1px;
+}
+[data-studio-edit]:hover { outline-color: var(--heritage-gold); }
+[data-studio-edit]:focus,
+[data-studio-edit]:focus-visible {
+  outline: 2px solid var(--heritage-gold);
+  outline-offset: 3px;
+  background: rgba(196, 154, 58, 0.07);
+}
+
+/* — 패널 본체 — */
+.studio-panel {
+  position: fixed;
+  top: calc(var(--header-h) + 12px);
+  right: 14px;
+  z-index: 240;
+  width: 296px;
+  max-height: calc(100vh - var(--header-h) - 28px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(23, 17, 15, 0.96);
+  border: 1px solid rgba(196, 154, 58, 0.35);
+  border-radius: 4px;
+  color: var(--warm-white);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  font-family: var(--font-sans);
+}
+.studio-panel section {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(248, 247, 243, 0.1);
+}
+.studio-panel h4 {
+  margin: 0 0 10px;
+  font: 700 10px var(--font-label);
+  letter-spacing: 0.2em;
+  color: var(--heritage-soft);
+  text-transform: uppercase;
+}
+.studio-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+}
+.studio-head strong {
+  display: block;
+  font: 700 12px var(--font-label);
+  letter-spacing: 0.2em;
+  color: var(--warm-white);
+}
+.studio-head span {
+  font-size: 10.5px;
+  color: rgba(248, 247, 243, 0.55);
+}
+.studio-head-actions { display: flex; gap: 6px; }
+.studio-head-actions button {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  background: rgba(248, 247, 243, 0.08);
+  border: 1px solid rgba(248, 247, 243, 0.18);
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1;
+}
+.studio-head-actions button:hover { background: rgba(248, 247, 243, 0.16); }
+
+.studio-presets { display: flex; flex-direction: column; gap: 7px; }
+.studio-preset {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  text-align: left;
+  padding: 9px 11px;
+  background: rgba(248, 247, 243, 0.05);
+  border: 1px solid rgba(248, 247, 243, 0.14);
+  border-radius: 3px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.studio-preset:hover { background: rgba(248, 247, 243, 0.1); }
+.studio-preset[data-active="true"] {
+  border-color: var(--heritage-gold);
+  background: rgba(196, 154, 58, 0.14);
+}
+.studio-chips { display: inline-flex; gap: 3px; grid-row: span 2; }
+.studio-chips i {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(248, 247, 243, 0.35);
+}
+.studio-preset-name { font-size: 12.5px; font-weight: 700; }
+.studio-preset-note { font-size: 10.5px; color: rgba(248, 247, 243, 0.55); }
+
+.studio-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 9px;
+}
+.studio-row:last-child { margin-bottom: 0; }
+.studio-row label {
+  flex-shrink: 0;
+  width: 62px;
+  font-size: 11px;
+  color: rgba(248, 247, 243, 0.72);
+}
+.studio-row input[type="color"] {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(248, 247, 243, 0.25);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+.studio-row input[type="range"] { flex: 1; accent-color: var(--heritage-gold); }
+.studio-row code {
+  font: 600 10.5px var(--font-label);
+  color: rgba(248, 247, 243, 0.6);
+  letter-spacing: 0.03em;
+  min-width: 4.5ch;
+}
+.studio-verdict {
+  margin: 10px 0 0;
+  font: 600 10.5px var(--font-label);
+  letter-spacing: 0.04em;
+  color: #7FBF8E;
+}
+.studio-verdict[data-ok="false"] { color: var(--ember-glow); }
+
+.studio-seg {
+  display: inline-flex;
+  border: 1px solid rgba(248, 247, 243, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.studio-seg button {
+  padding: 5px 12px;
+  font-size: 11.5px;
+  background: transparent;
+  border: 0;
+}
+.studio-seg button[data-active="true"] {
+  background: var(--heritage-gold);
+  color: var(--ground);
+  font-weight: 700;
+}
+.studio-copyset { display: flex; flex-direction: column; gap: 6px; margin-bottom: 11px; }
+.studio-copyset button {
+  text-align: left;
+  padding: 8px 11px;
+  font-size: 12px;
+  background: rgba(248, 247, 243, 0.05);
+  border: 1px solid rgba(248, 247, 243, 0.14);
+  border-radius: 3px;
+}
+.studio-copyset button[data-active="true"] {
+  border-color: var(--heritage-gold);
+  background: rgba(196, 154, 58, 0.14);
+  font-weight: 700;
+}
+.studio-mini {
+  padding: 5px 10px;
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid rgba(248, 247, 243, 0.25);
+  border-radius: 3px;
+  color: rgba(248, 247, 243, 0.8);
+}
+.studio-mini:hover { border-color: rgba(248, 247, 243, 0.5); }
+
+/* 구성 — 섹션 표시/숨김 토글 */
+.studio-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.studio-checks button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+  text-align: left;
+  background: rgba(248, 247, 243, 0.05);
+  border: 1px solid rgba(248, 247, 243, 0.14);
+  border-radius: 3px;
+  color: rgba(248, 247, 243, 0.5);
+}
+.studio-checks button i {
+  font-style: normal;
+  font-size: 9px;
+  color: rgba(248, 247, 243, 0.35);
+}
+.studio-checks button[data-active="true"] {
+  color: var(--warm-white);
+  border-color: rgba(196, 154, 58, 0.45);
+}
+.studio-checks button[data-active="true"] i { color: var(--heritage-gold); }
+
+/* 문구·스냅샷 안내문 */
+.studio-hint {
+  margin: 9px 0 0;
+  font-size: 10.5px;
+  line-height: 1.65;
+  color: rgba(248, 247, 243, 0.55);
+}
+
+/* 스냅샷 슬롯 */
+.studio-snaps { display: flex; gap: 7px; }
+.studio-snap {
+  flex: 1;
+  display: flex;
+  border: 1px solid rgba(248, 247, 243, 0.18);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.studio-snap[data-filled="true"] { border-color: rgba(196, 154, 58, 0.5); }
+.studio-snap button {
+  flex: 1;
+  padding: 7px 4px;
+  font-size: 11px;
+  background: rgba(248, 247, 243, 0.05);
+  border: 0;
+  color: rgba(248, 247, 243, 0.75);
+}
+.studio-snap[data-filled="true"] button:first-child {
+  color: var(--heritage-soft);
+  font-weight: 700;
+}
+.studio-snap button:hover { background: rgba(248, 247, 243, 0.12); }
+.studio-snap-x {
+  flex: 0 0 24px !important;
+  border-left: 1px solid rgba(248, 247, 243, 0.14) !important;
+  font-size: 9px !important;
+}
+
+.studio-foot {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(248, 247, 243, 0.1);
+}
+.studio-primary {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: var(--heritage-gold);
+  color: var(--ground);
+  border: 0;
+  border-radius: 3px;
+}
+.studio-primary:hover { background: var(--heritage-soft); }
+
+/* 접힌 상태 — 우하단의 작은 탭 */
+.studio-tab {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 240;
+  padding: 9px 16px;
+  font: 700 11px var(--font-label);
+  letter-spacing: 0.18em;
+  background: rgba(23, 17, 15, 0.94);
+  color: var(--heritage-soft);
+  border: 1px solid rgba(196, 154, 58, 0.4);
+  border-radius: 3px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* 좁은 화면에서는 하단 시트로 */
+@media (max-width: 720px) {
+  .studio-panel {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-height: 62vh;
+    border-radius: 10px 10px 0 0;
+  }
+}

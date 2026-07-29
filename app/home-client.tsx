@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PublicQuestion } from "@/lib/questions";
+import StudioPanel, { HERO_VARIANTS } from "./studio-panel";
 
 // 5 Tracks Data from Master Plan
 const tracks = [
@@ -457,6 +458,35 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
     };
   }, [isNavOpen]);
 
+  // STUDIO — 미팅용 디자인 협의 모드. `?studio=1`로 켜고, 세션 동안 유지된다.
+  // 패널을 닫으면 플래그와 함께 사라지므로 일반 방문자는 볼 일이 없다.
+  const [studio, setStudio] = useState(false);
+  const [heroVariant, setHeroVariant] = useState(0);
+  useEffect(() => {
+    let on = false;
+    try {
+      const q = new URLSearchParams(window.location.search);
+      if (q.get("studio") === "1") {
+        sessionStorage.setItem("fma-studio", "1");
+        on = true;
+      } else {
+        on = sessionStorage.getItem("fma-studio") === "1";
+      }
+    } catch {}
+    if (!on) return;
+    // Scheduled rather than inline, matching the loader's idiom above.
+    const arm = setTimeout(() => setStudio(true), 0);
+    return () => clearTimeout(arm);
+  }, []);
+  const closeStudio = () => {
+    try {
+      sessionStorage.removeItem("fma-studio");
+    } catch {}
+    setStudio(false);
+    setHeroVariant(0);
+  };
+  const hero = HERO_VARIANTS[heroVariant];
+
   // Which gate question is on screen
   const [selectedExamIndex, setSelectedExamIndex] = useState(0);
 
@@ -650,13 +680,10 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <span /> Frontier M&amp;A Academy
           </p>
           <h1>
-            AI가 답할 수 없는<br />
-            <em>마지막 10%</em>를 가르친다.
+            {hero.pre}<br />
+            <em>{hero.em}</em>{hero.post}
           </h1>
-          <p className="hero-description">
-            ㈜프론티어 M&amp;A 성보경 회장의 40년 실전 자산(500회 · 1,500문제)과
-            온라인에서 가려내고, 오프라인에서 실제 딜을 다루는 소수정예 과정.
-          </p>
+          <p className="hero-description">{hero.desc}</p>
           <div className="hero-actions">
             <a className="button button-red on-dark" href="#exam">제1회 문제 풀기 <span>↗</span></a>
             <a className="button button-gold on-dark" href="#courses">5대 과정 보기 <span>↓</span></a>
@@ -1219,6 +1246,14 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
           </div>
         </div>
       </footer>
+
+      {studio && (
+        <StudioPanel
+          heroVariant={heroVariant}
+          onHeroVariant={setHeroVariant}
+          onClose={closeStudio}
+        />
+      )}
     </main>
   );
 }
