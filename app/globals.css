@@ -2177,7 +2177,18 @@ body.studio-no-video .hero-video { display: none; }
   outline-offset: 3px;
   cursor: text;
   border-radius: 1px;
+  /* 버튼(트랙·문제 카드) 안의 문구는 UA 기본값이 선택을 막으므로 되돌린다 */
+  -webkit-user-select: text;
+  user-select: text;
 }
+[data-studio-edit] * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+/* 편집 중에는 카드형 버튼(트랙·문제)이 클릭을 삼키지 않게 하고,
+   그 안의 편집 영역만 포인터를 받는다 — 버튼의 포커스 가로채기 차단 */
+body.studio-editing button:has([data-studio-edit]) { pointer-events: none; }
+body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 [data-studio-edit]:hover { outline-color: var(--heritage-gold); }
 [data-studio-edit]:focus,
 [data-studio-edit]:focus-visible {

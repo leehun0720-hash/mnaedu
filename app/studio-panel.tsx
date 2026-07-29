@@ -407,6 +407,9 @@ export default function StudioPanel({
   // 편집 중에는 링크가 이동하지 않도록 클릭을 캡처 단계에서 막는다.
   useEffect(() => {
     if (!editing) return;
+    // 버튼 래퍼(트랙·문제 카드)가 mousedown에서 포커스를 가로채 캐럿을 막으므로,
+    // 편집 중에는 body 클래스로 버튼의 포인터 이벤트를 끄고 편집 영역만 받는다.
+    document.body.classList.add("studio-editing");
     const els = Array.from(document.querySelectorAll<HTMLElement>(EDIT_SELECTORS));
     const origs = originalsRef.current;
     els.forEach((el) => {
@@ -415,12 +418,17 @@ export default function StudioPanel({
       el.setAttribute("data-studio-edit", "");
       el.spellcheck = false;
     });
+    // 편집 영역 클릭이 링크 이동이나 카드 선택(트랙·문제 버튼의 onClick)으로
+    // 번지지 않게 캡처 단계에서 끊는다 — 그래야 버튼 안의 문구도 고칠 수 있다.
     const blockNav = (e: MouseEvent) => {
       const t = (e.target as HTMLElement).closest("[data-studio-edit]");
-      if (t && t.closest("a")) e.preventDefault();
+      if (!t) return;
+      if (t.closest("a")) e.preventDefault();
+      e.stopPropagation();
     };
     document.addEventListener("click", blockNav, true);
     return () => {
+      document.body.classList.remove("studio-editing");
       els.forEach((el) => {
         el.removeAttribute("contenteditable");
         el.removeAttribute("data-studio-edit");
