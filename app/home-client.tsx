@@ -1206,7 +1206,16 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <small>STRATEGIC UNION, ENDURING VALUE</small>
             {/* Entry point for the chairman; visitors have no use for it, so it
                 sits here rather than in the main menu. */}
-            <a className="footer-admin" href="/admin">출제자 입장</a>
+            <a
+              className="footer-admin"
+              href="/admin"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              출제자 입장
+              <i aria-hidden="true">↗</i>
+              <span className="sr-only">(새 창에서 열림)</span>
+            </a>
           </div>
         </div>
       </footer>
