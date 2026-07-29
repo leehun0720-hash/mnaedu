@@ -1,17 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-label="Frontier Group">
   <title>Frontier Group</title>
-  <desc>Hexagram of two overlapping equilateral triangles. The upward triangle carries a chevron notch cut up into its base, which reads as an arrow.</desc>
+  <desc>Hexagram of two overlapping equilateral triangles on a white ground. The upward triangle carries a chevron notch cut up into its base, which reads as an arrow.</desc>
   <!-- Vertices sit on a circle of radius 100 centred at (150,150), so both
-       triangles are true equilaterals and the hexagram is regular. -->
+       triangles are true equilaterals and the hexagram is regular.
 
-  <!-- Downward triangle, behind, same weight as the upward one -->
+       Each shape is filled white rather than left transparent, so the mark
+       reads the same on any ground instead of letting the page show through.
+       Fill paints before stroke within a path, and the upward triangle is
+       drawn last, so it covers the black line where the two cross — which is
+       how the artwork reads, with the crimson in front. -->
+
+  <!-- Downward triangle, behind -->
   <path d="M150 250 L63.4 100 L236.6 100 Z"
-        fill="none" stroke="#1A1A1A" stroke-width="15"
+        fill="#FFFFFF" stroke="#1A1A1A" stroke-width="15"
         stroke-linejoin="miter" stroke-miterlimit="10"/>
 
-  <!-- Upward triangle, in front. Its base is interrupted by an upward
-       chevron, which is what turns the mark into an arrow. -->
+  <!-- Upward triangle, in front. The notch is cut out of the fill because the
+       path routes around it. -->
   <path d="M150 50 L236.6 200 L197 200 L150 132 L103 200 L63.4 200 Z"
-        fill="none" stroke="#8C1130" stroke-width="15"
+        fill="#FFFFFF" stroke="#8C1130" stroke-width="15"
         stroke-linejoin="miter" stroke-miterlimit="10"/>
 </svg>
