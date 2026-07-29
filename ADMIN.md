@@ -15,10 +15,13 @@ Vercel 대시보드 → **Storage** → **Create Database** → **Neon** (Server
 | Project | `mnaedu` |
 | Environments | Production, Preview, **Development** 모두 체크 |
 | Create database branch for deployment | 둘 다 해제 |
-| Custom Prefix | `DATABASE` (비워두면 `STORAGE`가 되며, 이 경우도 동작합니다) |
-| Sensitive | 켠 상태 유지 |
+| Custom Prefix | 비워두어도 됩니다. `DATABASE`를 넣으면 변수명이 명확해집니다 |
+| Sensitive | **꺼둡니다** |
 
-Development를 체크해야 2단계에서 로컬로 접속 정보를 받을 수 있습니다.
+Development를 체크하고 Sensitive를 꺼두어야 2단계에서 접속 정보를 로컬로 받을 수 있습니다.
+Sensitive를 켜면 값을 다시 읽을 수 없어 `vercel env pull`이 빈 값을 가져옵니다. 그때는
+2단계 대신 Neon 콘솔의 SQL 편집기에서 마이그레이션 SQL을 직접 실행하십시오.
+
 접속 정보는 자동 주입되므로 복사할 필요 없습니다.
 
 ## 2. 테이블 만들기
