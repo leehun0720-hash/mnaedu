@@ -1202,7 +1202,12 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
 
         <div className="footer-base">
           <small>© 2026 ㈜프론티어 M&amp;A × 주식회사 텐에이아이. ALL RIGHTS RESERVED.</small>
-          <small>STRATEGIC UNION, ENDURING VALUE</small>
+          <div className="footer-base-right">
+            <small>STRATEGIC UNION, ENDURING VALUE</small>
+            {/* Entry point for the chairman; visitors have no use for it, so it
+                sits here rather than in the main menu. */}
+            <a className="footer-admin" href="/admin">출제자 입장</a>
+          </div>
         </div>
       </footer>
     </main>
