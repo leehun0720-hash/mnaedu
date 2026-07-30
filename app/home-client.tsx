@@ -768,7 +768,9 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
                   className={`handbook-nav-item ${selectedChapterIndex === cIdx ? "active" : ""}`}
                   onClick={() => setSelectedChapterIndex(cIdx)}
                 >
-                  {chap.title} {chap.done ? "✓" : ""}
+                  {/* 스튜디오 문구 수정이 캐럿을 놓을 수 있도록 버튼 자체가 아니라
+                      span이 텍스트를 든다 — 버튼은 편집 호스트가 되지 못한다. */}
+                  <span>{chap.title} {chap.done ? "✓" : ""}</span>
                 </button>
               ))}
             </nav>
