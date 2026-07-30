@@ -2364,6 +2364,32 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 }
 .studio-mini:hover { border-color: rgba(248, 247, 243, 0.5); }
 
+/* 문구 직접 수정 — 패널 최상단의 주 기능 바 */
+.studio-editbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.studio-editbar .studio-hint { flex-basis: 100%; margin-top: 2px; }
+.studio-editbtn {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  background: rgba(196, 154, 58, 0.14);
+  border: 1px solid var(--heritage-gold);
+  border-radius: 3px;
+  color: var(--heritage-soft);
+  transition: background 0.15s ease;
+}
+.studio-editbtn:hover { background: rgba(196, 154, 58, 0.24); }
+.studio-editbtn[data-on="true"] {
+  background: var(--heritage-gold);
+  color: var(--ground);
+}
+
 /* 구성 — 섹션 표시/숨김 토글 */
 .studio-checks {
   display: grid;

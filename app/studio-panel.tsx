@@ -543,6 +543,27 @@ export default function StudioPanel({
         </div>
       </header>
 
+      {/* 미팅에서 가장 많이 쓰는 기능이라 맨 위에 둔다 */}
+      <section className="studio-editbar" data-on={editing}>
+        <button
+          type="button"
+          className="studio-editbtn"
+          data-on={editing}
+          onClick={() => setEditing((v) => !v)}
+        >
+          {editing ? "✎ 문구 수정 중 — 점선 영역을 클릭해 고치세요" : "✎ 문구 직접 수정 시작"}
+        </button>
+        <button type="button" className="studio-mini" onClick={restoreTexts}>
+          원복
+        </button>
+        {editing && (
+          <p className="studio-hint">
+            메뉴·제목·본문·푸터의 점선 영역을 클릭해 그 자리에서 타이핑하십시오.
+            수정 내용은 &ldquo;확정 사양 복사&rdquo;에 원문과 함께 기록됩니다.
+          </p>
+        )}
+      </section>
+
       <section>
         <h4>방향</h4>
         <div className="studio-presets">
@@ -689,30 +710,6 @@ export default function StudioPanel({
             );
           })}
         </div>
-      </section>
-
-      <section>
-        <h4>문구</h4>
-        <div className="studio-row">
-          <label>직접 수정</label>
-          <div className="studio-seg">
-            <button type="button" data-active={!editing} onClick={() => setEditing(false)}>
-              끔
-            </button>
-            <button type="button" data-active={editing} onClick={() => setEditing(true)}>
-              켬
-            </button>
-          </div>
-          <button type="button" className="studio-mini" onClick={restoreTexts}>
-            원복
-          </button>
-        </div>
-        {editing && (
-          <p className="studio-hint">
-            화면의 점선 영역(메뉴·제목·본문·푸터)을 클릭해 그 자리에서 고치십시오.
-            수정 내용은 &ldquo;확정 사양 복사&rdquo;에 원문과 함께 기록됩니다.
-          </p>
-        )}
       </section>
 
       <section>
