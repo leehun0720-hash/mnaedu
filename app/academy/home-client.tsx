@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { PublicQuestion } from "@/lib/questions";
 import StudioPanel, { HERO_VARIANTS } from "./studio-panel";
@@ -268,6 +269,21 @@ const funnelSteps = [
   }
 ];
 
+// 5레벨 승급 체계 (기획서 4.2 — 명칭·커트라인은 확정 전의 안)
+const levelLadder = [
+  { code: "L1", name: "입문", scope: "용어 · 기본 개념", authoring: "AI 출제 · 아바타 해설" },
+  { code: "L2", name: "기본", scope: "절차 · 구조 이해", authoring: "AI 출제" },
+  { code: "L3", name: "실무", scope: "사례 적용", authoring: "AI 초안 + 운영 검토" },
+  { code: "L4", name: "상급", scope: "실전 판단 · 딜 구조", authoring: "회장 출제 · 검수 없이는 발행 불가" },
+  { code: "L5", name: "마스터", scope: "델라웨어 판례 · 플레이북 수준", authoring: "회장 전담 출제" },
+];
+
+const levelRules = [
+  { title: "승급", desc: "레벨별 응시 후 커트라인을 통과해야 다음 레벨이 열립니다." },
+  { title: "등급 비공개", desc: "본인 등급은 기본 비공개이며, 노출 여부는 본인이 설정합니다." },
+  { title: "L5 통과", desc: "오프라인 정예 과정의 심사 대상이 될 뿐, 자동 합격이 아닙니다." },
+];
+
 // 단계별로 열리는 범위
 const permissionMatrix = {
   columns: ["비회원", "무료 회원", "온라인 수강생", "선발 통과자"],
@@ -288,6 +304,7 @@ const permissionMatrix = {
 const navItems = [
   ...tracks.map((t, i) => ({ href: "#courses", label: t.title, courseIndex: i })),
   { href: "#funnel", label: "수강 여정", courseIndex: -1 },
+  { href: "#levels", label: "5레벨 체계", courseIndex: -1 },
   { href: "#exam", label: "선발 테스트", courseIndex: -1 },
   { href: "#offline", label: "오프라인 과정", courseIndex: -1 }
 ];
@@ -412,7 +429,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
   // Content settles in as each band enters the viewport
   useEffect(() => {
     const targets = document.querySelectorAll<HTMLElement>(
-      ".section-heading, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .verdict-container, .track-grid, .handbook-window, .leveltest-grid"
+      ".section-heading, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .verdict-container, .track-grid, .handbook-window, .leveltest-grid, .levels-grid"
     );
     targets.forEach((el) => el.setAttribute("data-reveal", ""));
     const io = new IntersectionObserver(
@@ -612,6 +629,8 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         </nav>
 
         <div className="header-actions">
+          {/* 게이트로 돌아가는 유일한 문(기획서 2장) */}
+          <Link className="header-gate" href="/">메인</Link>
           <a className="header-login" href="#exam">선발 테스트 <span>↗</span></a>
           <button
             type="button"
@@ -657,6 +676,10 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         <a className="button button-red mobile-nav-cta" href="#exam" onClick={() => setIsNavOpen(false)}>
           선발 테스트 <span>↗</span>
         </a>
+        <Link className="mobile-nav-gate" href="/">
+          <span>메인 게이트로</span>
+          <i aria-hidden="true">⌂</i>
+        </Link>
       </nav>
 
       {/* Hero — full-viewport cinematic video statement */}
@@ -691,17 +714,18 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         </div>
 
         <div className="hero-bar">
+          {/* 실적 수치는 회장 승인 전 노출 금지 — 구조(레벨·과정·방식)만 말한다 */}
           <div className="hero-proof">
             <div>
-              <strong>500회</strong>
-              <span>TOTAL EXAMS · 1,500 QUESTIONS</span>
+              <strong>5-LEVEL</strong>
+              <span>L1–L5 승급 체계</span>
             </div>
             <div>
-              <strong>3-TIER</strong>
-              <span>STUDENT · AI · MASTER</span>
+              <strong>5대 과정</strong>
+              <span>실전 M&amp;A 커리큘럼</span>
             </div>
             <div>
-              <strong>1:10</strong>
+              <strong>소수정예</strong>
               <span>OFFLINE DEAL LAB</span>
             </div>
           </div>
@@ -935,6 +959,46 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         </div>
       </section>
 
+      {/* 5-level promotion ladder — the academy's confirmed rank structure */}
+      <section className="section band-paper band-hair" id="levels">
+        <span className="section-marker" aria-hidden="true">LEVELS</span>
+        <div className="section-heading">
+          <div>
+            <p className="section-index">5레벨 체계 <i>Level System</i></p>
+            <h2>다섯 개의 레벨,<br /><em>통과해야 열립니다</em></h2>
+          </div>
+          <p>
+            L1부터 L5까지 레벨별로 응시하고, 커트라인을 통과한 사람에게만 다음 레벨이 열립니다. 상급 문제는 성보경 회장의 검수 없이는 발행되지 않습니다.
+          </p>
+        </div>
+
+        <div className="levels-grid">
+          <ol className="levels-ladder">
+            {levelLadder.map((lv, i) => (
+              <li key={lv.code} className="levels-step" data-top={i >= 3}>
+                <span className="levels-code">{lv.code}</span>
+                <div className="levels-body">
+                  <strong>{lv.name}</strong>
+                  <span className="levels-scope">{lv.scope}</span>
+                  <span className="levels-authoring">{lv.authoring}</span>
+                </div>
+                {i < levelLadder.length - 1 && <i className="levels-gate" aria-hidden="true">커트라인</i>}
+              </li>
+            ))}
+          </ol>
+
+          <div className="levels-rules">
+            {levelRules.map((r) => (
+              <div key={r.title} className="levels-rule">
+                <strong>{r.title}</strong>
+                <p>{r.desc}</p>
+              </div>
+            ))}
+            <p className="levels-footnote">레벨 명칭과 커트라인은 확정 전의 안이며, 운영 중 조정될 수 있습니다.</p>
+          </div>
+        </div>
+      </section>
+
       {/* The gate: online exists to filter for the offline programme */}
       <section className="section band-paper band-hair" id="exam">
         <span className="section-marker" aria-hidden="true">ASSESSMENT</span>
@@ -982,7 +1046,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
           <h3 className="dossier-title">제1회 M&amp;A 실전 평가</h3>
           <div className="dossier-tags">
             <span className="tier-badge">출제: 주 3문제</span>
-            <span className="tier-badge">전체 회차: 500회</span>
+            <span className="tier-badge">정답 비공개 원칙</span>
             <span className="tier-badge">난이도: 초·중·상급</span>
           </div>
           <p className="dossier-quote">
@@ -1196,15 +1260,18 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <span className="footer-nav-title">과정 안내</span>
             <a href="#courses">5대 과정</a>
             <a href="#funnel">수강 여정</a>
+            <a href="#levels">5레벨 체계</a>
             <a href="#exam">선발 테스트</a>
             <a href="#offline">오프라인 과정</a>
+            <Link href="/">메인 게이트</Link>
           </nav>
 
           <address className="footer-contact">
             <span className="footer-nav-title">오시는 길 · 문의</span>
+            {/* 기확보 정보(기획 보고서 3장)만 표기 — 상세 주소는 확인 후 추가 */}
             <p>
-              서울시 영등포구 경인로 775<br />
-              에이스아이테크시티 1동 9층
+              서울 여의도<br />
+              에이스아이테크시티
             </p>
             <a href="tel:+82220522100">02-2052-2100</a>
             <a href="mailto:sbk3000@frontier.kr">sbk3000@frontier.kr</a>

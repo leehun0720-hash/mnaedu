@@ -16,10 +16,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const baseUrl = `${protocol}://${host}`;
-  const title = "M&A 아카데미 | FRONTIER GROUP × TEN AI";
-  const description = "M&A·경영권 투자·패밀리 오피스 전문가를 위한 프리미엄 온라인 아카데미";
+  const title = "프론티어 M&A | FRONTIER M&A";
+  const description = "1993년 국내 최초의 M&A 전문기업 — 기업 홈페이지와 M&A 아카데미";
 
   return {
+    metadataBase: new URL(baseUrl),
     title,
     description,
     icons: {
@@ -28,8 +29,10 @@ export async function generateMetadata(): Promise<Metadata> {
         { url: "/logo-frontier-group.svg", type: "image/svg+xml" },
       ],
     },
-    openGraph: { title, description, images: [{ url: `${baseUrl}/og.png`, width: 1680, height: 945 }] },
-    twitter: { card: "summary_large_image", title, description, images: [`${baseUrl}/og.png`] },
+    // title/description을 여기 넣으면 하위 페이지의 og:title 폴백이 막힌다 —
+    // 이미지·카드 타입만 두고 제목·설명은 각 페이지 metadata에서 온다.
+    openGraph: { images: [{ url: `${baseUrl}/og.png`, width: 1680, height: 945 }] },
+    twitter: { card: "summary_large_image", images: [`${baseUrl}/og.png`] },
   };
 }
 
