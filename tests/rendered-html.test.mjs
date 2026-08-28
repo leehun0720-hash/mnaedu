@@ -77,6 +77,17 @@ test("server-renders the academy at /academy", async () => {
   assert.doesNotMatch(html, /모범답안 공개/);
 });
 
+test("the privacy policy page renders and is linked where data is collected", async () => {
+  const html = await renderHtml("/privacy");
+  assert.match(html, /개인정보처리방침/);
+  assert.match(html, /수집하는 개인정보 항목/);
+  // 양식이 있는 두 화면에서 방침으로 이어진다 (보고서 8장)
+  const company = await renderHtml("/company");
+  assert.match(company, /href="\/privacy"/);
+  const academy = await renderHtml("/academy");
+  assert.match(academy, /href="\/privacy"/);
+});
+
 test("both sites carry the shared right-hand rail", async () => {
   for (const path of ["/company", "/academy"]) {
     const html = await renderHtml(path);

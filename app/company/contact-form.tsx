@@ -93,7 +93,8 @@ export default function ContactForm() {
       </div>
 
       <p className="co-form-note">
-        보내주신 내용은 비밀유지 원칙에 따라 관리되며, 접수 후 개별적으로 연락드립니다.
+        보내주신 내용은 비밀유지 원칙에 따라 관리되며, 접수 후 개별적으로 연락드립니다.{" "}
+        <a href="/privacy">개인정보처리방침</a>
       </p>
       <button type="submit" className="co-btn co-btn--primary">
         문의 보내기 <i aria-hidden="true">→</i>

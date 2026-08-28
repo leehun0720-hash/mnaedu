@@ -3716,3 +3716,18 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   .co-footer-base, .gate-base { padding-bottom: 68px; }
   .site-footer { padding-bottom: 60px; }
 }
+
+/* — 개인정보처리방침 등 법적 고지 페이지 — */
+.co-legal { max-width: 760px; }
+.co-legal-item { padding: 22px 0; border-bottom: 1px solid var(--co-line); }
+.co-legal-item:first-child { padding-top: 0; }
+.co-legal-item h2 {
+  margin: 0 0 10px;
+  font: 700 16.5px var(--font-sans);
+  color: var(--co-ink-strong);
+}
+.co-legal-item p { margin: 0 0 8px; font-size: 14px; line-height: 1.9; color: var(--co-ink); }
+.co-legal-item p:last-child { margin-bottom: 0; }
+.co-legal-item a { color: var(--co-navy); font-weight: 600; }
+.co-legal-item a:hover { text-decoration: underline; }
+.co-legal-date { margin: 22px 0 0; font-size: 13px; color: var(--co-muted); }

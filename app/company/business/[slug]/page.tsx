@@ -167,6 +167,8 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
             <span aria-hidden="true"> · </span>
             <Link href="/academy">퀴즈 아카데미</Link>
             <span aria-hidden="true"> · </span>
+            <Link href="/privacy">개인정보처리방침</Link>
+            <span aria-hidden="true"> · </span>
             <Link href="/">메인</Link>
           </small>
         </div>

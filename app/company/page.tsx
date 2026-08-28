@@ -358,6 +358,7 @@ export default function CompanyPage() {
               </a>
             ))}
             <Link href="/academy">퀴즈 아카데미</Link>
+            <Link href="/privacy">개인정보처리방침</Link>
             <Link href="/">메인</Link>
           </nav>
         </div>

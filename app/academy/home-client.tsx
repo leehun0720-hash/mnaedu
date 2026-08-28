@@ -614,7 +614,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <h2>온라인은 관문이고,<br /><em>본체는 오프라인입니다</em></h2>
           </div>
           <p>
-            온라인 과정은 실무를 가르치는 곳이 아니라, 오프라인에 앉을 사람을 가려내는 자리입니다. 선발 테스트를 통과한 인원만 성보경 회장이 직접 진행하는 소수정예 토론으로 넘어갑니다.
+            온라인 과정은 실무를 가르치는 곳이 아니라, 오프라인에 앉을 사람을 가려내는 자리입니다. 퀴즈를 풀며 쌓인 학습 이력과 성취동기를 분석해, 가능성 있는 소수만 성보경 회장이 직접 진행하는 초전문가 과정에 초대합니다.
           </p>
         </div>
 
@@ -827,7 +827,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <h2 style={{ color: "#fff" }}>통과한 사람만<br /><em>이 방에 앉습니다</em></h2>
           </div>
           <p>
-실무는 온라인에 올리지 않습니다. 선발 테스트를 통과한 인원만 성보경 회장이 직접 진행하는 토론식 정예 과정에 참여하며, 자산가와 자산관리자가 같은 자리에서 딜을 다룹니다.
+실무는 온라인에 올리지 않습니다. 학습 이력과 성취동기 분석으로 선별된 인원만 성보경 회장이 직접 진행하는 심화 학습·강의·커리큘럼의 전문가 과정에 초대되어, 같은 자리에서 실제 딜을 다룹니다.
           </p>
         </div>
 
@@ -909,11 +909,17 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <p style={{ fontSize: "14.5px", color: "var(--label-on-dark)", lineHeight: "1.8", marginBottom: "24px" }}>
 공개된 적 없는 40년치 실전 사례를 놓고 토론합니다. 강의가 아니라 실제 딜을 다루는 자리이므로, 참여 인원과 논의 내용은 외부에 공개되지 않습니다.
             </p>
+            {/* 시그니처 콘텐츠 — 개념·필요성은 일부 공개한다 (보고서 4.5) */}
+            <p style={{ fontSize: "14px", color: "var(--label-on-dark)", lineHeight: "1.8", marginBottom: "24px" }}>
+              과정에서는 <strong style={{ color: "var(--heritage-soft)" }}>플레이북과 화이트북</strong>을 직접 작성해
+              자기만의 고유 스킬과 레퍼런스를 쌓습니다. 실적의 진위는 화이트북 한 권으로
+              드러난다고 믿기에, 이 기록이 곧 아카데미 출신의 증명이 됩니다.
+            </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "14px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                <span style={{ color: "var(--label-on-dark)" }}>수강 자격 요건</span>
-                <strong style={{ color: "var(--heritage-soft)" }}>선발 테스트 통과</strong>
+                <span style={{ color: "var(--label-on-dark)" }}>참여 방식</span>
+                <strong style={{ color: "var(--heritage-soft)" }}>L5 통과 후 선별 초대</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                 <span style={{ color: "var(--label-on-dark)" }}>정원</span>
@@ -1004,7 +1010,8 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             </div>
 
             <p style={{ fontSize: "12.5px", color: "var(--muted)", marginBottom: "18px", lineHeight: 1.7 }}>
-              남겨주신 정보는 과정 안내 목적으로만 사용하며, 안내가 끝나면 파기합니다.
+              남겨주신 정보는 과정 안내 목적으로만 사용하며, 안내가 끝나면 파기합니다.{" "}
+              <a href="/privacy" style={{ textDecoration: "underline" }}>개인정보처리방침</a>
             </p>
 
             <div style={{ display: "flex", gap: "12px" }}>
@@ -1057,6 +1064,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <a href="#levels">5레벨 체계</a>
             <a href="#exam">선발 테스트</a>
             <a href="#offline">오프라인 과정</a>
+            <Link href="/privacy">개인정보처리방침</Link>
             <Link href="/">메인 게이트</Link>
           </nav>
 
