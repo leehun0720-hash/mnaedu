@@ -3329,3 +3329,390 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   display: flex;
   flex-direction: column;
 }
+
+/* ==========================================================================
+   VER 2.2 — 우측 고정 내비게이션 · 복사 방지 · 문제은행 · 회원 등급
+   ========================================================================== */
+
+/* — 우측 고정 바: 두 사이트를 잇는 문 (보고서 3.1) — */
+.site-rail {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--line-color);
+  border: 1px solid var(--line-color);
+  border-right: 0;
+  box-shadow: -6px 0 22px rgba(0, 0, 0, 0.08);
+}
+.rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 74px;
+  padding: 15px 6px;
+  text-align: center;
+  background: var(--white);
+  color: var(--ink-strong);
+  font: 600 11px/1.35 var(--font-sans);
+  transition: background 0.22s ease, color 0.22s ease;
+}
+.rail-icon { font-style: normal; font-size: 15px; line-height: 1; }
+.rail-item:hover { background: var(--paper-deep); }
+.rail-item--switch { background: var(--ink-strong); color: var(--warm-white); }
+.rail-item--switch:hover { background: var(--ground); }
+.rail-item--switch .rail-icon { color: var(--heritage-soft); }
+.rail-item--action { color: var(--ember-ink); }
+.rail-item--action:hover { background: var(--ember-soft); }
+/* 아카데미(어두운 바탕) 쪽 대비 */
+.site-rail[data-site="academy"] {
+  background: rgba(248, 247, 243, 0.16);
+  border-color: rgba(248, 247, 243, 0.2);
+}
+.site-rail[data-site="academy"] .rail-item { background: var(--ink); color: var(--warm-white); }
+.site-rail[data-site="academy"] .rail-item:hover { background: var(--ground); }
+.site-rail[data-site="academy"] .rail-item--switch { background: var(--warm-white); color: var(--ink-strong); }
+.site-rail[data-site="academy"] .rail-item--switch .rail-icon { color: var(--ember-ink); }
+.site-rail[data-site="academy"] .rail-item--switch:hover { background: var(--white); }
+.site-rail[data-site="academy"] .rail-item--action { color: var(--ember-on-dark); }
+.site-rail[data-site="academy"] .rail-item--action:hover { background: rgba(240, 112, 90, 0.16); }
+@media (max-width: 899px) {
+  /* 좁은 화면에서는 세로 바 대신 하단 고정 바 */
+  .site-rail {
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    transform: none;
+    flex-direction: row;
+    border: 0;
+    border-top: 1px solid var(--line-color);
+    box-shadow: 0 -6px 22px rgba(0, 0, 0, 0.1);
+  }
+  .rail-item { flex: 1; width: auto; flex-direction: row; gap: 7px; padding: 12px 6px; }
+  .rail-label br { display: none; }
+  .rail-label { font-size: 12px; }
+}
+
+/* — 복사 방지: 본문 선택 차단, 입력 요소는 예외 (설계서 지시 · 8장 한계 고지) — */
+.copy-guarded body,
+.copy-guarded .co-page,
+.copy-guarded main {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.copy-guarded input,
+.copy-guarded textarea,
+.copy-guarded select,
+.copy-guarded [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+@media print {
+  .copy-guarded body > * { display: none !important; }
+  .copy-guarded body::after {
+    content: "본 사이트의 내용은 인쇄할 수 없습니다. 문의: 02-2052-2100";
+    display: block;
+    padding: 40px;
+    font: 600 14px sans-serif;
+  }
+}
+
+/* — 새 소식 리스트 (설계서: 첫 페이지에 10개씩) — */
+.co-post-list { list-style: none; margin: 0; padding: 0; }
+.co-post {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--white);
+  border: 1px solid var(--co-line);
+  border-bottom: 0;
+}
+.co-post:last-child { border-bottom: 1px solid var(--co-line); }
+.co-post-kind {
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.1em;
+  color: var(--co-navy);
+  border: 1px solid var(--co-line);
+  padding: 4px 8px;
+  text-align: center;
+}
+.co-post-title { font: 600 14.5px var(--font-sans); color: var(--co-ink-strong); }
+.co-post-area, .co-post-date { font-size: 12.5px; color: var(--co-muted); }
+.co-empty {
+  background: var(--white);
+  border: 1px dashed var(--co-line);
+  padding: 34px 28px;
+  text-align: center;
+}
+.co-empty strong { display: block; font: 700 17px var(--font-sans); color: var(--co-ink-strong); margin-bottom: 8px; }
+.co-empty p { margin: 0 auto; max-width: 56ch; font-size: 13.5px; line-height: 1.85; color: var(--co-muted); }
+@media (max-width: 767px) {
+  .co-post { grid-template-columns: auto minmax(0, 1fr); }
+  .co-post-area, .co-post-date { grid-column: 2; }
+}
+
+/* — 업무 카드 하단 (주제 수 · 오프라인 표시) — */
+.co-biz-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 700 12.5px var(--font-sans);
+  color: var(--co-navy);
+}
+.co-biz-foot i { font-style: normal; margin-left: auto; transition: transform 0.3s ease; }
+.co-biz--open:hover .co-biz-foot i { transform: translateX(4px); }
+.co-biz-count { border: 1px solid var(--co-line); padding: 4px 9px; border-radius: 999px; color: var(--co-muted); font-weight: 600; }
+.co-biz-lock {
+  font: 600 10.5px var(--font-label);
+  letter-spacing: 0.06em;
+  color: var(--co-gold);
+  background: rgba(138, 106, 36, 0.09);
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+/* — 웹 공개 범위 고지 (패밀리오피스 · 투자가 클럽) — */
+.co-offline-note {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 48px);
+}
+.co-offline-note > strong {
+  display: inline-block;
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.18em;
+  color: var(--co-gold);
+  margin-bottom: 8px;
+}
+.co-offline-note p {
+  margin: 0;
+  padding: 18px 22px;
+  background: rgba(138, 106, 36, 0.07);
+  border-left: 3px solid var(--co-gold);
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--co-ink);
+}
+
+/* — 마스터 팁 · 각주 — */
+.co-mastertip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  background: var(--co-ink-strong);
+  color: var(--warm-white);
+}
+.co-mastertip-badge {
+  font: 700 10px var(--font-label);
+  letter-spacing: 0.18em;
+  color: var(--heritage-soft);
+  border: 1px solid rgba(229, 194, 107, 0.5);
+  padding: 4px 9px;
+}
+.co-mastertip-title { font: 600 14.5px var(--font-sans); flex: 1; min-width: 200px; }
+.co-mastertip .co-tag--soon { color: rgba(251, 250, 247, 0.75); background: transparent; border-color: rgba(251, 250, 247, 0.28); }
+.co-mastertip .co-tag--quiz { color: var(--heritage-soft); border-color: rgba(229, 194, 107, 0.5); }
+.co-mastertip .co-tag--quiz:hover { background: var(--heritage-soft); color: var(--co-ink-strong); }
+.co-footnote { margin: 14px 0 0; font-size: 12.5px; color: var(--co-muted); }
+
+/* — 채용시험 게시판 카드 — */
+.co-exam-board {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 20px 22px;
+  background: var(--white);
+  border: 1px solid var(--co-line);
+  border-left: 3px solid var(--co-navy);
+}
+.co-exam-board strong { display: block; font: 700 15px var(--font-sans); color: var(--co-ink-strong); margin-bottom: 5px; }
+.co-exam-board p { margin: 0; font-size: 13px; color: var(--co-muted); }
+.co-consult-line { margin-top: 30px; }
+
+/* — 문의 양식 — */
+.co-form { display: flex; flex-direction: column; gap: 16px; }
+.co-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.co-form-row { display: flex; flex-direction: column; gap: 6px; }
+.co-form-row label { font: 700 11px var(--font-label); letter-spacing: 0.14em; color: var(--heritage-soft); }
+.co-form input,
+.co-form select,
+.co-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font: 400 14px var(--font-sans);
+  color: var(--white);
+  background: rgba(251, 250, 247, 0.06);
+  border: 1px solid rgba(251, 250, 247, 0.24);
+  border-radius: 0;
+}
+.co-form select option { color: var(--co-ink-strong); background: var(--white); }
+.co-form input:focus-visible,
+.co-form select:focus-visible,
+.co-form textarea:focus-visible { outline: 2px solid var(--heritage-soft); outline-offset: 1px; }
+.co-form textarea { resize: vertical; min-height: 120px; }
+.co-form-note { margin: 0; font-size: 12.5px; color: rgba(251, 250, 247, 0.68); }
+.co-form-sent { margin: 0; font-size: 13px; color: var(--heritage-soft); }
+.co-form-sent a { color: var(--white); text-decoration: underline; }
+.co-form .co-btn { align-self: flex-start; }
+
+/* — 문의 사이드: 연락처 + 대화창 — */
+.co-contact-side { display: flex; flex-direction: column; gap: 18px; }
+.co-chat-card {
+  padding: 22px;
+  background: rgba(251, 250, 247, 0.06);
+  border: 1px solid rgba(251, 250, 247, 0.18);
+}
+.co-chat-card strong { display: block; font: 700 15px var(--font-sans); color: var(--white); margin-bottom: 8px; }
+.co-chat-card p { margin: 0 0 14px; font-size: 13.5px; line-height: 1.8; color: rgba(251, 250, 247, 0.78); }
+.co-chat-link { display: inline-flex; align-items: center; gap: 7px; font: 700 13px var(--font-sans); color: var(--heritage-soft); }
+.co-chat-link:hover { text-decoration: underline; }
+.co-chat-link i { font-style: normal; }
+
+/* — 아카데미 문제은행 2축 뷰 — */
+.bank-window { background: var(--white); border: 1px solid var(--line-color); }
+.bank-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 24px 26px;
+  border-bottom: 1px solid var(--line-color);
+  background: var(--paper-deep);
+}
+.bank-eyebrow { font: 700 10.5px var(--font-label); letter-spacing: 0.2em; color: var(--gold-ink); }
+.bank-head h3 { margin: 6px 0 0; font: 700 24px var(--font-serif); color: var(--ink-strong); }
+.bank-axis { margin: 0; font-size: 13px; color: var(--muted); }
+.bank-mastertip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 26px;
+  background: var(--ink-strong);
+  color: var(--warm-white);
+  font: 600 14px var(--font-sans);
+}
+.bank-tip-badge {
+  font: 700 10px var(--font-label);
+  letter-spacing: 0.16em;
+  color: var(--heritage-soft);
+  border: 1px solid rgba(229, 194, 107, 0.5);
+  padding: 4px 9px;
+  flex: 0 0 auto;
+}
+.bank-topics { list-style: none; margin: 0; padding: 0; }
+.bank-topic {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 26px;
+  border-top: 1px solid var(--line-color);
+}
+.bank-topic:first-child { border-top: 0; }
+.bank-topic-no { font: 800 12px var(--font-label); color: var(--ember-ink); }
+.bank-topic-title { font: 600 14.5px var(--font-sans); color: var(--ink-strong); }
+.bank-topic-levels { display: flex; gap: 4px; }
+.bank-topic-levels i {
+  font: 700 10px var(--font-label);
+  font-style: normal;
+  color: var(--label-ink);
+  border: 1px solid var(--line-color);
+  padding: 3px 6px;
+  min-width: 26px;
+  text-align: center;
+}
+/* 무료로 열리는 레벨은 하나뿐이다 */
+.bank-topic-levels i[data-free="true"] { color: var(--gold-ink); border-color: var(--heritage-gold); background: rgba(196, 154, 58, 0.1); }
+.bank-note {
+  margin: 0;
+  padding: 18px 26px;
+  border-top: 1px solid var(--line-color);
+  background: var(--paper-bg);
+  font-size: 13px;
+  color: var(--muted);
+}
+.bank-note a { color: var(--ember-ink); font-weight: 600; }
+.bank-note a:hover { text-decoration: underline; }
+@media (max-width: 767px) {
+  .bank-topic { grid-template-columns: 34px minmax(0, 1fr); padding: 13px 18px; }
+  .bank-topic-levels { grid-column: 2; }
+  .bank-head, .bank-mastertip, .bank-note { padding-left: 18px; padding-right: 18px; }
+}
+
+/* — 회원 등급 · 포인트 — */
+.member-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 40px;
+}
+.member-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 26px 24px;
+  background: var(--paper-bg);
+  border: 1px solid var(--line-color);
+}
+.member-card[data-tier="paid"] { background: var(--ink-strong); color: var(--warm-white); border-color: var(--ink-strong); }
+.member-name { font: 700 11px var(--font-label); letter-spacing: 0.18em; color: var(--gold-ink); }
+.member-card[data-tier="paid"] .member-name { color: var(--heritage-soft); }
+.member-scope { font: 700 17px var(--font-serif); color: var(--ink-strong); }
+.member-card[data-tier="paid"] .member-scope { color: var(--white); }
+.member-purpose { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--muted); }
+.member-card[data-tier="paid"] .member-purpose { color: rgba(248, 247, 243, 0.8); }
+.member-items { list-style: none; margin: 8px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line-color); display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+.member-card[data-tier="paid"] .member-items { border-top-color: rgba(248, 247, 243, 0.2); }
+.member-items li { padding-left: 15px; position: relative; }
+.member-items li::before { content: "·"; position: absolute; left: 4px; font-weight: 700; color: var(--heritage-gold); }
+.member-card--point { border-left: 3px solid var(--ember); }
+.member-cta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 26px; }
+.member-cta-note { font-size: 12.5px; color: var(--muted); }
+
+/* — 레벨 카드의 무료/유료 뱃지 — */
+.levels-access {
+  margin-left: 8px;
+  font: 600 10px var(--font-label);
+  font-style: normal;
+  letter-spacing: 0.08em;
+  color: var(--label-ink);
+  border: 1px solid var(--line-color);
+  padding: 3px 7px;
+  vertical-align: 2px;
+}
+.levels-access[data-free="true"] { color: var(--gold-ink); border-color: var(--heritage-gold); background: rgba(196, 154, 58, 0.1); }
+
+/* — 게이트웨이: MADE 첫 글자를 살린다 — */
+.gate-orbit-word b { color: var(--heritage-gold); font-weight: 800; }
+
+/* 우측 바가 본문을 가리지 않도록 여백을 확보한다.
+   아카데미는 헤더가 fixed라 본문 여백과 따로 잡아 준다. */
+@media (min-width: 900px) {
+  .co-page, .gate { padding-right: var(--rail-w, 74px); }
+  .co-page .co-header { padding-right: calc(clamp(20px, 4vw, 48px) + var(--rail-w, 74px)); }
+  /* 아카데미(단일 main 레이아웃) */
+  main.has-rail { padding-right: var(--rail-w, 74px); }
+  main.has-rail .site-header,
+  main.has-rail .mobile-nav { right: var(--rail-w, 74px); }
+}
+/* 좁은 화면에서는 바가 하단으로 내려가므로 마지막 블록에 여유를 준다 */
+@media (max-width: 899px) {
+  .co-footer-base, .gate-base { padding-bottom: 68px; }
+  .site-footer { padding-bottom: 60px; }
+}

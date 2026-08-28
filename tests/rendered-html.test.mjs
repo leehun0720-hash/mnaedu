@@ -38,26 +38,48 @@ test("server-renders the main gate with both entrances", async () => {
   assert.match(html, /href="\/academy"/);
 });
 
-test("server-renders the corporate homepage", async () => {
+test("server-renders the corporate homepage with all five business areas", async () => {
   const html = await renderHtml("/company");
   assert.match(html, /주요 업무/);
   assert.match(html, /운영원칙/);
-  // Family office & investor club stay name-only: no detail routes exist
-  assert.doesNotMatch(html, /href="\/company\/business\/family-office"/);
-  assert.doesNotMatch(html, /href="\/company\/business\/investor-club"/);
+  assert.match(html, /직원채용/);
+  // ver2.2: 패밀리오피스·투자가 클럽도 메뉴와 페이지를 갖는다
+  assert.match(html, /href="\/company\/business\/family-office"/);
+  assert.match(html, /href="\/company\/business\/investor-club"/);
+  // 가입 창구는 아카데미 하나뿐 — 홈페이지에 가입 메뉴를 두지 않는다
+  assert.doesNotMatch(html, /<a[^>]*>\s*회원가입\s*<\/a>/);
 });
 
-test("server-renders a business detail page with its curriculum", async () => {
+test("business detail pages carry their curriculum", async () => {
   const html = await renderHtml("/company/business/brokerage");
   assert.match(html, /M&(amp;)?A 중개/);
   assert.match(html, /업무 커리큘럼/);
+  assert.match(html, /MASTER TIP/);
+});
+
+test("the offline-only areas publish their intro but flag the web boundary", async () => {
+  const html = await renderHtml("/company/business/investor-club");
+  assert.match(html, /투자가 클럽/);
+  assert.match(html, /웹 안내 범위/);
+  // 공개 목차는 순화된 표현을 쓰고 원문 표현은 웹에 내보내지 않는다 (8장)
+  assert.doesNotMatch(html, /은닉 기법/);
+  assert.doesNotMatch(html, /택스 헤이븐/);
 });
 
 test("server-renders the academy at /academy", async () => {
   const html = await renderHtml("/academy");
   assert.match(html, /아카데미/);
-  // The 5-level ladder is on the page…
   assert.match(html, /5레벨 체계/);
+  // 회원 등급과 포인트 해설 정책이 실려 있다
+  assert.match(html, /무료회원/);
+  assert.match(html, /유료회원/);
   // …and answers/intent still never reach the public HTML
   assert.doesNotMatch(html, /모범답안 공개/);
+});
+
+test("both sites carry the shared right-hand rail", async () => {
+  for (const path of ["/company", "/academy"]) {
+    const html = await renderHtml(path);
+    assert.match(html, /site-rail/, `${path} should render the rail`);
+  }
 });

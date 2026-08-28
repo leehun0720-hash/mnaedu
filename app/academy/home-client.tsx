@@ -2,311 +2,119 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { PublicQuestion } from "@/lib/questions";
+import { BUSINESS_AREAS, TOTAL_TOPICS } from "@/lib/company";
+import { LEVEL_TIERS, QUESTIONS_PER_QUIZ, type PublicQuestion } from "@/lib/questions";
+import CopyGuard from "../copy-guard";
+import SiteRail from "../site-rail";
 import StudioPanel, { HERO_VARIANTS } from "./studio-panel";
 
-// 5 Tracks Data from Master Plan
-const tracks = [
+/**
+ * 문제은행 가로축 — 홈페이지 게시판과 같은 5분야 정본을 그대로 쓴다.
+ * 한 문제가 '경영권 분쟁 > 델라웨어 판례 > L5'로 분류되도록, 분야·주제는
+ * lib/company.ts 한 곳에서만 정의한다 (기획 보고서 4.2).
+ */
+const tracks = BUSINESS_AREAS.map((b, i) => ({
+  slug: b.slug,
+  number: String(i + 1).padStart(2, "0"),
+  title: b.name,
+  en: b.en,
+  description: b.line,
+  topics: b.curriculum,
+  masterTip: b.masterTip,
+  offlineOnly: b.offlineOnly ?? false,
+}));
+
+// 회원 등급 — 가입 창구는 아카데미 하나뿐이다 (보고서 4.3)
+const memberTiers = [
   {
-    id: 1,
-    number: "01",
-    title: "우호적 M&A",
-    hook: "기업을 사고파는 정석",
-    en: "FRIENDLY M&A TRACK",
-    description: "M&A 전략 수립부터 밸류에이션, 정밀실사, 딜 구조화, 계약 협상, PMI까지 6대 핵심 업무를 다룹니다.",
-    modules: 12,
-    curriculum: {
-      competencies: [
-        "전략적 통찰력 및 산업 분석력",
-        "고도화된 재무 구조화 및 자금조달 능력",
-        "거래 진행 여부 결정 및 리스크 관리 능력",
-        "최고위급 협상력 및 이해관계 조율 능력",
-        "글로벌 오케스트라 지휘자로서의 리더십"
-      ],
-      knowledge: [
-        "회계 및 재무 관리 기법",
-        "관련 법규 및 규제 대응 기법",
-        "세무 전략",
-        "기업의 화학적 결합 및 PMI 기법"
-      ],
-      duties: [
-        "M&A 전략 및 대상기업 발굴 (Sourcing)",
-        "기업가치평가 및 재무적 모델링 (Valuation)",
-        "정밀실사 바탕 인수위험 평가",
-        "거래구조 설계 및 인수금융조달 (Structuring)",
-        "거래조건 협상 및 계약서 작성",
-        "인수 후 통합 작업 (PMI)"
-      ]
-    },
-    chapters: [
-      { id: "c1", title: "01. M&A 전략 및 대상기업 발굴", done: true },
-      { id: "c2", title: "02. 기업가치평가 & DCF/WACC 모델링", done: true },
-      { id: "c3", title: "03. 정밀실사 및 우발채무 계약 조항", done: false },
-      { id: "c4", title: "04. 인수 후 통합(PMI) 및 조직 정렬", done: false },
-    ],
-    sampleClause: {
-      title: "제12조 [진술과 보증 및 우발채무 보상]",
-      code: `매도인은 이 계약 체결일 현재 대상회사의 재무제표에 반영되지 아니한 우발채무(조세, 손해배상청구, 미지급임금 등)가 존재하지 않음을 진술하고 보증한다. Closing 후 2년 이내에 발생한 정밀실사 미인지 우발채무에 대해서는 매매대금의 최대 20% 범위 내에서 매도인이 에스크로 계좌를 통해 즉시 보상한다.`
-    },
-    checklist: [
-      "WACC 변동에 따른 DCF 민감도 분석 완료",
-      "LOI 제출 전 바인딩/논바인딩 조항 구분 확인",
-      "정밀실사 우발채무 발생 시 에스크로 보상비율 산정",
-      "PMI 핵심 인력 이탈 방지를 위한 2년 Lock-up 조항"
-    ]
+    key: "free",
+    name: "무료회원",
+    scope: "기초적인 초기 정보 + L1 입문 퀴즈",
+    purpose: "먼저 풀어보며 수준을 가늠하는 단계입니다.",
+    items: ["L1 입문 퀴즈 응시", "포인트 적립", "포인트로 해설 열람"],
   },
   {
-    id: 2,
-    number: "02",
-    title: "적대적 M&A",
-    hook: "원하지 않는 상대를 인수하는 법",
-    en: "HOSTILE M&A TRACK",
-    description: "스텔스 지분 매집과 의결권 확보, 포이즌필 무력화, 백기사 연대 분쇄까지 경영권 공격·방어 전술을 분석합니다.",
-    modules: 14,
-    curriculum: {
-      competencies: [
-        "대상기업 구조적 약점 파악 통찰력",
-        "대담한 결단력",
-        "우호 주주 포섭 협상력",
-        "위기관리 능력",
-        "정보 수집력"
-      ],
-      knowledge: [
-        "자본시장법·상법·공정거래법에 대한 해부학적 이해",
-        "기업가치평가 및 LBO 자금조달 기법",
-        "경영권 방어 및 공격 전술 응용 전략"
-      ],
-      duties: [
-        "적대적 M&A 네트워크 구축",
-        "취약점 분석 및 대상기업 발굴",
-        "인수자금 구조 설계 및 FI 유치",
-        "스텔스 지분 매집 및 의결권 확보",
-        "법적 소송 및 방어 대응"
-      ]
-    },
-    chapters: [
-      { id: "c1", title: "01. 대상기업 구조적 약점 및 지분 해부", done: true },
-      { id: "c2", title: "02. 5% 룰 및 스텔스 지분 매집 메커니즘", done: false },
-      { id: "c3", title: "03. 의결권 대리행사 권유 및 주주총회 분쟁", done: false },
-      { id: "c4", title: "04. 방어 전술(백기사/황금주) 무력화 논리", done: false },
-    ],
-    sampleClause: {
-      title: "제8조 [의결권 대리행사 및 주주약정]",
-      code: `공동목적보유자 계약에 따라 특수관계인은 주주총회 의결권 행사 시 대주주의 서면 지시에 따라 통일된 의결권을 행사한다. 위반 시 보유 주식 전체에 대한 매도청구권(Call Option)이 발동된다.`
-    },
-    checklist: [
-      "자본시장법 5% 보고 의무 시점 및 스텔스 구간 계산",
-      "의결권 제한 주식 보유 현황 및 상법상 제한 요건 검토",
-      "백기사 연대 파기 시 자금조달 구조(LBO) 리스크 체크",
-      "공개매수(Tender Offer) 가격 산정 및 법적 제한 기준"
-    ]
+    key: "paid",
+    name: "유료회원",
+    scope: "L1 + L2~L5 전문가 퀴즈 전 범위",
+    purpose: "학습 · 검증 · 승급, 그리고 오프라인 초대 후보가 되는 단계입니다.",
+    items: ["L2~L5 전문가 퀴즈", "델라웨어 판례 해설", "회장 직강 스트리밍", "초전문가 과정 초대 검토"],
   },
-  {
-    id: 3,
-    number: "03",
-    title: "경영권 투자",
-    hook: "지분으로 회사를 지배하는 구조",
-    en: "CONTROL INVESTMENT TRACK",
-    description: "딜 소싱부터 정밀실사, SPA 협상, Bolt-on 밸류업, 투자자금 회수(Exit)까지 5단계를 전담합니다.",
-    modules: 10,
-    curriculum: {
-      competencies: [
-        "투자 대상기업 발굴 및 네트워크 운영",
-        "미래가치 설계 및 구조화 능력",
-        "밸류업 및 경영권 통제 능력",
-        "협상 및 갈등 조율 능력"
-      ],
-      knowledge: [
-        "고도의 인수금융 및 기업가치평가 지식",
-        "M&A 법률 및 제도적 규제 해결 능력"
-      ],
-      duties: [
-        "1단계 — 딜 소싱 및 투자제안서 검토",
-        "2단계 — 정밀 실사 (재무/법률/영업)",
-        "3단계 — 매매계약 협상 및 인수 실행",
-        "4단계 — 경영 통제 및 기업가치 제고",
-        "5단계 — 투자자금 회수 (Exit)"
-      ]
-    },
-    chapters: [
-      { id: "c1", title: "01. PEF/VC 딜 소싱 및 투자제안서 검토", done: true },
-      { id: "c2", title: "02. Locked-Box vs Closing Accounts 실사", done: false },
-      { id: "c3", title: "03. Bolt-on 전략과 Anchor 기업 인수", done: false },
-      { id: "c4", title: "04. Exit 회수구조(IPO / Trade Sale / Recap)", done: false },
-    ],
-    sampleClause: {
-      title: "제15조 [동반매도청구권(Drag-along) 및 동반매수참여권(Tag-along)]",
-      code: `대주주가 제3자에게 경영권 주식을 매각할 경우, 투자자는 동일한 조건으로 자신의 주식을 함께 매각할 권리(Tag-along)를 가진다. 투자자의 동의 없이 대주주가 단독 매각을 추진할 경우 Drag-along을 발동하여 대상 회사 지분 100%를 제3자에게 동시 매각할 수 있다.`
-    },
-    checklist: [
-      "Locked-Box 가격조정 기전의 락드박스 일자 확정",
-      "Drag-along 행사 시 최소 보장 수익률(IRR 15%) 명시",
-      "Bolt-on 피인수기업과의 전산/영업망 통합 스케줄",
-      "경영진 성과보상(Earn-out) 계약 조항 검토"
-    ]
-  },
-  {
-    id: 4,
-    number: "04",
-    title: "패밀리오피스",
-    hook: "가문의 부를 3대까지 지키는 설계",
-    en: "FAMILY OFFICE TRACK",
-    description: "가문 헌장 제정과 승계 구조화, 가문위원회 운영, 자산 보호를 총괄하는 가문 CSO를 양성합니다.",
-    modules: 11,
-    curriculum: {
-      competencies: [
-        "가문 헌장(Family Constitution) 제정",
-        "가문위원회 구성 및 권한 규정",
-        "서비스 범위 확정",
-        "설립비용·운영예산 및 보안시스템 구축"
-      ],
-      knowledge: [
-        "신뢰성·전문성 갖춘 핵심 인력 채용",
-        "세금 효율성·책임 분산 법인 형태 결정",
-        "내부통제시스템(평판/사이버/투자) 구축",
-        "택스 헤이븐 활용 및 글로벌 공동투자"
-      ],
-      duties: [
-        "UHNW 가문 자산 관리 총괄",
-        "가업 승계 구조 설계 및 실행",
-        "세무·법률 리스크 통제",
-        "가문 라이프스타일 및 평판 관리",
-        "가문 최고비밀책임자(CSO) 역할 수행"
-      ]
-    },
-    chapters: [
-      { id: "c1", title: "01. 가문 헌장(Family Constitution) 제정", done: true },
-      { id: "c2", title: "02. 승계 주식 신탁 및 지배구조 설계", done: false },
-      { id: "c3", title: "03. Margin Loan을 활용한 경영권 유지", done: false },
-      { id: "c4", title: "04. 가문 위험 관리 및 비공개 글로벌 투자", done: false },
-    ],
-    sampleClause: {
-      title: "가문 헌장 제4조 [가문 자산 의결권 및 처분 제한]",
-      code: `가문 소유 지주회사 주식의 매각은 가문위원회 재적 위원 4/5 이상의 찬성으로만 가능하며, 가문 외 제3자에게 지분을 양도할 경우 가문 신탁 재단이 우선매수권(Right of First Refusal)을 행사한다.`
-    },
-    checklist: [
-      "가문 헌장 내 후계자 자격 기준 및 분쟁 조율 기전",
-      "AUM 대비 운영 예산(0.5%~1.5%) 수립 및 보안 체계",
-      "상속세 및 증여세법에 따른 지분 승계 트러스트 설계",
-      "글로벌 공동투자(Co-investment) 네트워크 구축"
-    ]
-  },
-  {
-    id: 5,
-    number: "05",
-    title: "투자클럽 운영",
-    hook: "돈과 딜이 모이는 폐쇄 네트워크",
-    en: "INVESTOR CLUB TRACK",
-    description: "Series LLC·VCC·SPC 역외 설계와 RWA 토큰화, ZKP 비밀선발, Alpha Inside 딜 소싱 네트워크를 구축합니다.",
-    modules: 9,
-    curriculum: {
-      competencies: [
-        "UHNW 자산관리 금융 네트워크 운영",
-        "Series LLC / VCC / SPC 구조 설계",
-        "주주약정서 작성 및 딜 소싱 채널 공유",
-        "다국적 자산배분 및 RWA 토큰화"
-      ],
-      knowledge: [
-        "Master-Feeder Structure 설계 원리",
-        "ICSID 사법적 방어기전",
-        "ZKP / SMPC 암호기술 활용"
-      ],
-      duties: [
-        "안전한 법인구조 선택 및 클럽 설립",
-        "합법적 역외 절세 루트 구축",
-        "RWA 토큰화 및 결제 인프라 구축",
-        "ZKP 암호기술 기반 회원 선발",
-        "의사결정 투표시스템 운영",
-        "Capital Call 송금 및 리스크 관리",
-        "Alpha Inside 독점 정보 수집"
-      ]
-    },
-    chapters: [
-      { id: "c1", title: "01. Series LLC 및 SPC 역외 법인 구조화", done: true },
-      { id: "c2", title: "02. Master-Feeder 구조와 역외 절세 래퍼", done: false },
-      { id: "c3", title: "03. RWA 토큰화 및 ZKP 회원 검증", done: false },
-      { id: "c4", title: "04. Capital Call 관리 및 ICSID 분쟁 방어", done: false },
-    ],
-    sampleClause: {
-      title: "제21조 [Master-Feeder SPC 수직계열 조항]",
-      code: `Feeder Fund는 운용 자금의 100%를 Cayman Master Fund에 투여하며, Master Fund가 개별 딜 SPC 주식을 취득함으로써 각 투자자의 법적 책임을 차단하고 다국적 조세조약 혜택을 도모한다.`
-    },
-    checklist: [
-      "케이맨·싱가포르 VCC SPC 설립 및 법적 면책 요건",
-      "Master-Feeder 구조에서의 Withholding Tax 차감 계산",
-      "ZKP 영지식 증명을 통한 회원 암호화 선발 체계",
-      "Capital Call 미이행 시 지분 몰수(Default) 조항"
-    ]
-  }
 ];
 
-
-// 수강 여정 — 온라인은 선발 관문이고, 본체는 오프라인이다
+// 수강 여정 — 온라인은 선별 장치이고, 본체는 오프라인 초전문가 과정이다
 const funnelSteps = [
   {
     index: "STEP 01",
-    name: "무료 워밍업",
-    desc: "공개 문제로 지금 수준을 가늠합니다. 가입 없이 바로 응시할 수 있습니다.",
+    name: "무료 가입",
+    desc: "기초 정보와 L1 입문 퀴즈를 무료로 풀며 지금 수준을 가늠합니다.",
     gate: false
   },
   {
     index: "STEP 02",
-    name: "온라인 과정",
-    desc: "5대 과정의 강의노트와 문제를 풀며 실전 개념을 쌓습니다.",
+    name: "유료 전환",
+    desc: "L2~L5 전문가 퀴즈가 열립니다. 풀며 쌓은 포인트로 회장 해설을 엽니다.",
     gate: false
   },
   {
     index: "STEP 03",
-    name: "선발 테스트",
-    desc: "과정별 서술형 평가. 통과한 인원만 다음 단계로 넘어갑니다.",
+    name: "레벨 승급",
+    desc: "레벨별 커트라인을 통과해야 다음 레벨이 열립니다. 여기서 걸러집니다.",
     gate: true
   },
   {
     index: "STEP 04",
-    name: "오프라인 정예 과정",
-    desc: "성보경 회장이 직접 진행하는 소수정예 토론. 이 과정이 본체입니다.",
+    name: "오프라인 초대",
+    desc: "학습 이력과 성취동기를 분석해 선별하고, 초전문가 과정에 초대합니다.",
     gate: false
   }
 ];
 
 // 5레벨 승급 체계 (기획서 4.2 — 명칭·커트라인은 확정 전의 안)
-const levelLadder = [
-  { code: "L1", name: "입문", scope: "용어 · 기본 개념", authoring: "AI 출제 · 아바타 해설" },
-  { code: "L2", name: "기본", scope: "절차 · 구조 이해", authoring: "AI 출제" },
-  { code: "L3", name: "실무", scope: "사례 적용", authoring: "AI 초안 + 운영 검토" },
-  { code: "L4", name: "상급", scope: "실전 판단 · 딜 구조", authoring: "회장 출제 · 검수 없이는 발행 불가" },
-  { code: "L5", name: "마스터", scope: "델라웨어 판례 · 플레이북 수준", authoring: "회장 전담 출제" },
-];
+const levelLadder = LEVEL_TIERS;
 
 const levelRules = [
   { title: "승급", desc: "레벨별 응시 후 커트라인을 통과해야 다음 레벨이 열립니다." },
   { title: "등급 비공개", desc: "본인 등급은 기본 비공개이며, 노출 여부는 본인이 설정합니다." },
-  { title: "L5 통과", desc: "오프라인 정예 과정의 심사 대상이 될 뿐, 자동 합격이 아닙니다." },
+  {
+    title: "L5를 넘어서면",
+    desc: "학습 이력과 성취동기 분석을 거쳐 초전문가 과정 초대장 발급을 검토합니다. 자동 합격이 아닙니다.",
+  },
 ];
 
-// 단계별로 열리는 범위
+// 등급별로 열리는 범위
 const permissionMatrix = {
-  columns: ["비회원", "무료 회원", "온라인 수강생", "선발 통과자"],
+  columns: ["비회원", "무료회원", "유료회원", "L5 통과"],
   rows: [
-    { label: "과정 소개 열람", cells: ["O", "O", "O", "O"] },
-    { label: "무료 워밍업 문제", cells: ["O", "O", "O", "O"] },
-    { label: "강의노트 열람", cells: ["1장 샘플", "1장 전체", "전체 · 체크 저장", "전체 열람"] },
-    { label: "과정별 문제 풀이", cells: ["X", "X", "O", "O"] },
-    { label: "선발 테스트 응시", cells: ["X", "X", "O", "응시 완료"] },
-    { label: "오프라인 정예 과정", cells: ["X", "X", "X", "O"] },
-    { label: "투자클럽 · 딜 네트워크", cells: ["X", "X", "X", "심사 후 초대"] }
+    { label: "업무 소개 · 커리큘럼 열람", cells: ["O", "O", "O", "O"] },
+    { label: "L1 입문 퀴즈", cells: ["X", "O", "O", "O"] },
+    { label: "L2~L5 전문가 퀴즈", cells: ["X", "X", "O", "O"] },
+    { label: "포인트로 회장 해설 열람", cells: ["X", "L1 범위", "O", "O"] },
+    { label: "델라웨어 판례 해설", cells: ["X", "X", "O", "O"] },
+    { label: "회장 직강 스트리밍", cells: ["X", "X", "O", "O"] },
+    { label: "초전문가 과정 (오프라인)", cells: ["X", "X", "X", "심사 후 초대"] }
   ]
 };
 
 // Primary navigation — shared by the inline bar and the mobile drawer
 // The five programmes are listed in the menu outright. They share one
 // section, so each entry scrolls there and selects that programme.
-const navItems = [
-  ...tracks.map((t, i) => ({ href: "#courses", label: t.title, courseIndex: i })),
+const sectionItems = [
+  { href: "#courses", label: "5개 분야", courseIndex: -1 },
   { href: "#funnel", label: "수강 여정", courseIndex: -1 },
+  { href: "#membership", label: "회원 등급", courseIndex: -1 },
   { href: "#levels", label: "5레벨 체계", courseIndex: -1 },
   { href: "#exam", label: "선발 테스트", courseIndex: -1 },
   { href: "#offline", label: "오프라인 과정", courseIndex: -1 }
+];
+
+// 인라인 바는 섹션만 — 분야가 다섯이라 전부 펼치면 워드마크와 부딪힌다.
+const navItems = sectionItems;
+
+// 서랍에서는 분야까지 낱낱이 보여 준다 (좁은 화면에는 자리가 있다)
+const drawerItems = [
+  ...tracks.map((t, i) => ({ href: "#courses", label: t.title, courseIndex: i })),
+  ...sectionItems
 ];
 
 
@@ -429,7 +237,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
   // Content settles in as each band enters the viewport
   useEffect(() => {
     const targets = document.querySelectorAll<HTMLElement>(
-      ".section-heading, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .verdict-container, .track-grid, .handbook-window, .leveltest-grid, .levels-grid"
+      ".section-heading, .funnel-rail, .matrix-scroll, .exam-grid, .exam-notice, .exam-dossier, .verdict-container, .track-grid, .bank-window, .leveltest-grid, .levels-grid, .member-grid"
     );
     targets.forEach((el) => el.setAttribute("data-reveal", ""));
     const io = new IntersectionObserver(
@@ -509,27 +317,10 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
 
   const handleSelectExam = (index: number) => setSelectedExamIndex(index);
 
-  // Web Handbook Interactive State
-  const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
-  const [checklistState, setChecklistState] = useState<Record<string, boolean>>({
-    "0": true,
-    "1": true,
-    "2": false,
-    "3": false
-  });
-  const [copiedToast, setCopiedToast] = useState(false);
-
   // Level Test State
   const [levelTestScore, setLevelTestScore] = useState<number | null>(null);
   const [levelTestAnswer, setLevelTestAnswer] = useState("");
   const [showModal, setShowModal] = useState(false);
-
-  // Copy Clause Handler
-  const handleCopyClause = (codeText: string) => {
-    navigator.clipboard.writeText(codeText);
-    setCopiedToast(true);
-    setTimeout(() => setCopiedToast(false), 2500);
-  };
 
   // Level Test Evaluation Simulator
   const handleRunLevelTest = (e: React.FormEvent) => {
@@ -542,7 +333,11 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
   };
 
   return (
-    <main>
+    // has-rail: 우측 고정 바가 본문을 덮지 않도록 폭을 미리 좁혀 둔다
+    <main className="has-rail">
+      <CopyGuard />
+      <SiteRail site="academy" />
+
       {/* Prevent FOUC by ensuring the loader covers the screen immediately before external CSS loads */}
       <style dangerouslySetInnerHTML={{ __html: `
         .loader { position: fixed; inset: 0; z-index: 9999; background: #17110F; display: grid; place-items: center; }
@@ -612,17 +407,8 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
           </span>
         </a>
         <nav className="primary-nav" aria-label="주요 메뉴">
-          {navItems.map((item, idx) => (
-            <a
-              key={item.label}
-              href={item.href}
-              data-first-section={idx === tracks.length ? "true" : undefined}
-              onClick={() => {
-                if (item.courseIndex < 0) return;
-                setSelectedTrackIndex(item.courseIndex);
-                setSelectedChapterIndex(0);
-              }}
-            >
+          {navItems.map((item) => (
+            <a key={item.label} href={item.href}>
               {item.label}
             </a>
           ))}
@@ -656,7 +442,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
       />
       <nav id="mobile-nav" className="mobile-nav" data-open={isNavOpen} aria-label="모바일 메뉴">
         <p className="mobile-nav-title">MENU</p>
-        {navItems.map((item, idx) => (
+        {drawerItems.map((item, idx) => (
           <a
             key={item.label}
             href={item.href}
@@ -664,7 +450,6 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             onClick={() => {
               if (item.courseIndex >= 0) {
                 setSelectedTrackIndex(item.courseIndex);
-                setSelectedChapterIndex(0);
               }
               setIsNavOpen(false);
             }}
@@ -747,159 +532,78 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         </div>
       </section>
 
-      {/* The five programmes, named plainly and shown up front */}
+      {/* 문제은행 가로축 — 홈페이지와 같은 5분야 정본 */}
       <section className="section band-paper band-hair" id="courses">
         <span className="section-marker" aria-hidden="true">PROGRAMS</span>
         <div className="section-heading">
           <div>
-            <p className="section-index">5대 과정 <i>Programs</i></p>
-            <h2>다섯 개의 과정,<br /><em>한국에 없던 실전</em></h2>
+            <p className="section-index">5개 분야 <i>Business Areas</i></p>
+            <h2>다섯 개의 분야,<br /><em>{TOTAL_TOPICS}개의 주제</em></h2>
           </div>
-          <p>차등의결권, TRS, 역외 구조처럼 국내 강의에서 다루지 않는 설계 기법을 실제 사례로 풉니다. 과정을 눌러 커리큘럼과 계약 조항 예시를 확인하십시오.</p>
+          <p>
+            문제은행은 두 축으로 짜여 있습니다. 세로축은 난이도 L1~L5, 가로축은 기업 홈페이지와 같은 5개 분야 {TOTAL_TOPICS}개 주제입니다. 한 문제는 &lsquo;경영권 분쟁 &gt; 델라웨어 판례 &gt; L5&rsquo;처럼 분류됩니다.
+          </p>
         </div>
 
         {/* Track Selection Buttons */}
         <div className="track-grid" style={{ marginTop: "32px", marginBottom: "32px" }}>
           {tracks.map((t, idx) => (
             <button
-              key={t.id}
+              key={t.slug}
               className={`track-card ${selectedTrackIndex === idx ? "is-selected" : ""}`}
               onClick={() => {
                 setSelectedTrackIndex(idx);
-                setSelectedChapterIndex(0);
               }}
             >
               <span className="track-number">{t.number}</span>
               <strong>{t.title}</strong>
-              <span className="track-hook">{t.hook}</span>
+              <span className="track-hook">{t.en}</span>
               <p>{t.description}</p>
-              <span className="track-meta">{t.modules}개 모듈 <i>↗</i></span>
+              <span className="track-meta">{t.topics.length}개 주제 <i>↗</i></span>
             </button>
           ))}
         </div>
 
-        {/* Interactive Handbook Reader Window */}
-        <div className="handbook-window">
-          <aside>
-            <div className="handbook-logo">F</div>
-            <b style={{ color: "var(--heritage-gold)", display: "block", marginBottom: "12px" }}>
-              {currentTrack.title}
-            </b>
-            <nav>
-              {currentTrack.chapters.map((chap, cIdx) => (
-                <button
-                  key={chap.id}
-                  className={`handbook-nav-item ${selectedChapterIndex === cIdx ? "active" : ""}`}
-                  onClick={() => setSelectedChapterIndex(cIdx)}
-                >
-                  {/* 스튜디오 문구 수정이 캐럿을 놓을 수 있도록 버튼 자체가 아니라
-                      span이 텍스트를 든다 — 버튼은 편집 호스트가 되지 못한다. */}
-                  <span>{chap.title} {chap.done ? "✓" : ""}</span>
-                </button>
-              ))}
-            </nav>
-          </aside>
-
-          <div className="handbook-content">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <span style={{ font: "700 11px var(--font-label)", color: "var(--gold-ink)", letterSpacing: "0.1em" }}>
-                CHAPTER {selectedChapterIndex + 1} HANDBOOK
-              </span>
-              <span style={{ fontSize: "12px", color: "var(--muted)" }}>회원 전용 · 체크리스트 연동</span>
+        {/* 선택한 분야의 주제 목록 — 주제마다 L1~L5가 걸린다 */}
+        <div className="bank-window">
+          <div className="bank-head">
+            <div>
+              <span className="bank-eyebrow">문제은행 · QUESTION BANK</span>
+              <h3>{currentTrack.title}</h3>
             </div>
-
-            <h3 style={{ font: "700 28px var(--font-serif)", color: "var(--ink-strong)", margin: "0 0 16px" }}>
-              {currentTrack.chapters[selectedChapterIndex]?.title}
-            </h3>
-
-            <p style={{ fontSize: "14.5px", lineHeight: "1.8", color: "#4A3E38", maxWidth: "70ch" }}>
-              본 핸드북 챕터에서는 실전 M&amp;A 거래 진행 시 반드시 점검해야 할 법률 조항과 핵심 체크리스트를 구조화하여 제공합니다.
+            <p className="bank-axis">
+              {currentTrack.topics.length}개 주제 × 5레벨 · 퀴즈 1건은 {QUESTIONS_PER_QUIZ}문제로 구성됩니다.
             </p>
-
-            {/* Track curriculum structure (기획서 §2.1) */}
-            <div className="curriculum-grid">
-              <div className="curriculum-col">
-                <h5>핵심 역량 · {currentTrack.curriculum.competencies.length}</h5>
-                <ul>
-                  {currentTrack.curriculum.competencies.map((c) => <li key={c}>{c}</li>)}
-                </ul>
-              </div>
-              <div className="curriculum-col">
-                <h5>기본 지식 · {currentTrack.curriculum.knowledge.length}</h5>
-                <ul>
-                  {currentTrack.curriculum.knowledge.map((k) => <li key={k}>{k}</li>)}
-                </ul>
-              </div>
-              <div className="curriculum-col">
-                <h5>핵심 업무 · {currentTrack.curriculum.duties.length}</h5>
-                <ul>
-                  {currentTrack.curriculum.duties.map((d) => <li key={d}>{d}</li>)}
-                </ul>
-              </div>
-            </div>
-
-            {/* Interactive Checklist */}
-            <div style={{ margin: "24px 0" }}>
-              <h4 style={{ font: "700 15px var(--font-serif)", color: "var(--ink-strong)", marginBottom: "12px" }}>
-                실무 체크리스트 (클릭하여 완료 상태 저장)
-              </h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {currentTrack.checklist.map((item, idx) => {
-                  const key = `${selectedChapterIndex}-${idx}`;
-                  const isChecked = !!checklistState[key];
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => setChecklistState(prev => ({ ...prev, [key]: !prev[key] }))}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "12px 16px",
-                        background: isChecked ? "var(--paper-deep)" : "var(--paper-bg)",
-                        border: "1px solid var(--line-color)",
-                        textAlign: "left",
-                        fontSize: "13.5px"
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: "18px",
-                          height: "18px",
-                          border: "1px solid var(--ink-strong)",
-                          background: isChecked ? "var(--ink-strong)" : "transparent",
-                          color: "#fff",
-                          display: "grid",
-                          placeItems: "center",
-                          fontSize: "11px",
-                          fontWeight: 700
-                        }}
-                      >
-                        {isChecked ? "✓" : ""}
-                      </span>
-                      <span style={{ textDecoration: isChecked ? "line-through" : "none", color: isChecked ? "var(--muted)" : "inherit" }}>
-                        {item}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Contract Clause Code Block */}
-            <div className="clause-block">
-              <div className="clause-header">
-                <span className="clause-title">{currentTrack.sampleClause.title}</span>
-                <button
-                  className="copy-btn"
-                  onClick={() => handleCopyClause(currentTrack.sampleClause.code)}
-                >
-                  {copiedToast ? "복사 완료" : "조항 복사"}
-                </button>
-              </div>
-              <div className="clause-code">{currentTrack.sampleClause.code}</div>
-            </div>
           </div>
+
+          {currentTrack.masterTip && (
+            <div className="bank-mastertip">
+              <span className="bank-tip-badge">MASTER TIP</span>
+              <span>{currentTrack.masterTip}</span>
+            </div>
+          )}
+
+          <ol className="bank-topics">
+            {currentTrack.topics.map((topic, i) => (
+              <li key={topic.label} className="bank-topic">
+                <span className="bank-topic-no" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <span className="bank-topic-title">{topic.label}</span>
+                <span className="bank-topic-levels" aria-label="난이도 L1부터 L5까지">
+                  {levelLadder.map((lv) => (
+                    <i key={lv.code} data-free={lv.access === "무료회원"}>{lv.code}</i>
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <p className="bank-note">
+            {currentTrack.offlineOnly
+              ? "본 분야의 설립·운영 세부와 가입 절차는 웹에 게재하지 않으며, 학습은 오프라인 과정에서 이어집니다."
+              : "주제별 업무자료는 기업 홈페이지에서 공개하고, 문제 풀이와 해설은 이곳에서 진행합니다."}
+            {" "}
+            <Link href={`/company/business/${currentTrack.slug}`}>업무자료 보러 가기 ↗</Link>
+          </p>
         </div>
       </section>
 
@@ -959,6 +663,54 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         </div>
       </section>
 
+      {/* 회원 등급 · 포인트 — 가입 창구는 이곳 하나뿐이다 (보고서 4.3) */}
+      <section className="section band-white band-hair" id="membership">
+        <span className="section-marker" aria-hidden="true">MEMBERSHIP</span>
+        <div className="section-heading">
+          <div>
+            <p className="section-index">회원 등급 <i>Membership</i></p>
+            <h2>무료로 먼저 풀고,<br /><em>깊이는 유료로</em></h2>
+          </div>
+          <p>
+            회원가입은 이곳에서만 받습니다. 무료회원은 기초 정보와 L1 입문 퀴즈를 풀 수 있고, 유료회원에게 L2~L5 전문가 퀴즈가 열립니다. 요금은 문의·가입 단계에서 개별 안내드립니다.
+          </p>
+        </div>
+
+        <div className="member-grid">
+          {memberTiers.map((tier) => (
+            <div key={tier.key} className="member-card" data-tier={tier.key}>
+              <span className="member-name">{tier.name}</span>
+              <strong className="member-scope">{tier.scope}</strong>
+              <p className="member-purpose">{tier.purpose}</p>
+              <ul className="member-items">
+                {tier.items.map((it) => (
+                  <li key={it}>{it}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {/* 포인트 = 학습 보상 구조 */}
+          <div className="member-card member-card--point">
+            <span className="member-name">포인트 · 해설</span>
+            <strong className="member-scope">문제를 풀어 쌓고, 해설을 열 때 씁니다</strong>
+            <p className="member-purpose">
+              풀이로 포인트를 적립하고 그 포인트로 문제별 성보경 회장 해설을 엽니다. 해설이 곧 보상이 되어 풀이를 반복하게 만듭니다.
+            </p>
+            <ul className="member-items">
+              <li>적립 · 차감 비율은 운영 중 조정</li>
+              <li>정답과 해설은 공개 영역에 노출되지 않음</li>
+              <li>열람 화면은 복사 방지 · 워터마크 적용</li>
+            </ul>
+          </div>
+        </div>
+
+        <p className="member-cta-line">
+          <a className="button button-red" href="#exam">먼저 문제 풀어보기 <span>↗</span></a>
+          <span className="member-cta-note">가입 절차는 회원 시스템 구축 후 이 자리에서 바로 진행됩니다.</span>
+        </p>
+      </section>
+
       {/* 5-level promotion ladder — the academy's confirmed rank structure */}
       <section className="section band-paper band-hair" id="levels">
         <span className="section-marker" aria-hidden="true">LEVELS</span>
@@ -978,7 +730,10 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
               <li key={lv.code} className="levels-step" data-top={i >= 3}>
                 <span className="levels-code">{lv.code}</span>
                 <div className="levels-body">
-                  <strong>{lv.name}</strong>
+                  <strong>
+                    {lv.name}
+                    <i className="levels-access" data-free={lv.access === "무료회원"}>{lv.access}</i>
+                  </strong>
                   <span className="levels-scope">{lv.scope}</span>
                   <span className="levels-authoring">{lv.authoring}</span>
                 </div>

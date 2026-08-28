@@ -52,7 +52,7 @@ test("pasted question is split into fields", () => {
   );
 
   assert.equal(parsed.level, "상급");
-  assert.equal(parsed.track, "hostile");
+  assert.equal(parsed.track, "dispute");
   assert.equal(parsed.format, "객관식");
   assert.deepEqual(parsed.choices, ["신주발행 무효의 소", "주주총회 결의 취소"]);
   assert.equal(parsed.answer, "①");
