@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { COURSES, FORMATS, LEVELS } from "@/lib/questions";
+import { COURSES, FORMATS, LEVELS, normalizeLevel, normalizeTrack } from "@/lib/questions";
 import { parseQuestion } from "@/lib/parse-question";
 
 type Row = {
@@ -31,7 +31,8 @@ type Draft = {
 
 const EMPTY: Draft = {
   track: "",
-  level: "중급",
+  // 5레벨 체계의 한가운데. 목록에 없는 값을 기본값으로 두면 저장이 거부된다.
+  level: "실무",
   format: "주관식",
   prompt: "",
   choices: ["", ""],
@@ -139,8 +140,10 @@ export default function AdminClient({
   function edit(r: Row) {
     setDraft({
       id: r.id,
-      track: r.track,
-      level: r.level,
+      // 개편 전에 저장된 행은 옛 슬러그·난이도를 갖고 있어, 그대로 세우면
+      // 선택지에 일치 항목이 없어 빈칸이 되고 저장이 거부된다.
+      track: normalizeTrack(r.track),
+      level: normalizeLevel(r.level),
       format: r.format,
       prompt: r.prompt,
       choices: r.choices?.length ? r.choices : ["", ""],

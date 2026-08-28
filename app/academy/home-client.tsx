@@ -317,19 +317,17 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
 
   const handleSelectExam = (index: number) => setSelectedExamIndex(index);
 
-  // Level Test State
-  const [levelTestScore, setLevelTestScore] = useState<number | null>(null);
+  // 예시 문제 체험 — 채점은 회장 확정 채점이라(보고서 4.4) 웹에서 점수를
+  // 매기지 않는다. 답안을 써 보게 하고 평가 기준만 보여 준다.
+  const [levelTestSubmitted, setLevelTestSubmitted] = useState(false);
   const [levelTestAnswer, setLevelTestAnswer] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [inquiry, setInquiry] = useState({ name: "", org: "", email: "" });
 
-  // Level Test Evaluation Simulator
   const handleRunLevelTest = (e: React.FormEvent) => {
     e.preventDefault();
     if (!levelTestAnswer.trim()) return;
-
-    // Evaluate response depth
-    const score = levelTestAnswer.length > 80 ? 88 : 72;
-    setLevelTestScore(score);
+    setLevelTestSubmitted(true);
   };
 
   return (
@@ -493,7 +491,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
           </h1>
           <p className="hero-description">{hero.desc}</p>
           <div className="hero-actions">
-            <a className="button button-red on-dark" href="#exam">제1회 문제 풀기 <span>↗</span></a>
+            <a className="button button-red on-dark" href="#exam">예시 문제 풀기 <span>↗</span></a>
             <a className="button button-gold on-dark" href="#courses">5개 분야 보기 <span>↓</span></a>
           </div>
         </div>
@@ -797,10 +795,10 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
 
         {/* Weekly assessment dossier — the chairman's framing for this round */}
         <aside className="verdict-container exam-dossier">
-          <div className="verdict-eyebrow">금주의 평가 · Weekly Assessment</div>
-          <h3 className="dossier-title">제1회 M&amp;A 실전 평가</h3>
+          <div className="verdict-eyebrow">출제 원칙 · Assessment Policy</div>
+          <h3 className="dossier-title">M&amp;A 실전 평가</h3>
           <div className="dossier-tags">
-            <span className="tier-badge">출제: 주 3문제</span>
+            <span className="tier-badge">퀴즈 1건 = 3문제</span>
             <span className="tier-badge">정답 비공개 원칙</span>
             <span className="tier-badge">난이도: L1~L5</span>
           </div>
@@ -862,38 +860,42 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
                 onChange={(e) => setLevelTestAnswer(e.target.value)}
               />
               <button type="submit" className="button button-gold on-dark" style={{ width: "100%" }}>
-                선발 테스트 채점받기 <span>→</span>
+                답안 제출하고 평가 기준 보기 <span>→</span>
               </button>
             </form>
 
-            {levelTestScore !== null && (
+            {levelTestSubmitted && (
               <div
                 style={{
                   marginTop: "20px",
                   padding: "20px",
-                  /* Amber, not red, for "needs work": red is now the brand colour
-                     and would read as identity rather than a status. */
-                  background: levelTestScore >= 80 ? "rgba(16, 185, 129, 0.15)" : "rgba(240, 180, 41, 0.16)",
-                  border: `1px solid ${levelTestScore >= 80 ? "#10B981" : "#F0B429"}`
+                  background: "rgba(196, 154, 58, 0.14)",
+                  border: "1px solid var(--heritage-gold)"
                 }}
               >
-                <div style={{ font: "700 18px var(--font-serif)", color: levelTestScore >= 80 ? "#34D399" : "#F5C451" }}>
-                  심사 결과: {levelTestScore}점 / 100점({levelTestScore >= 80 ? "통과" : "보완 필요"})
+                <div style={{ font: "700 17px var(--font-serif)", color: "var(--heritage-soft)" }}>
+                  답안을 확인했습니다
                 </div>
-                <p style={{ fontSize: "13px", marginTop: "8px", color: "rgba(248,247,243,0.82)" }}>
-                  {levelTestScore >= 80
-                    ? "통과하셨습니다. 성보경 회장이 진행하는 오프라인 정예 과정에 지원하실 수 있습니다."
-                    : "실전 리스크 조항 설정이 부족합니다. 온라인 과정에서 해당 대목을 보완한 뒤 다시 응시해 주십시오."}
+                <p style={{ fontSize: "13.5px", marginTop: "10px", lineHeight: 1.8, color: "rgba(248,247,243,0.86)" }}>
+                  이 화면은 문제의 결을 미리 보시라고 마련한 체험이라 점수를 매기지 않습니다.
+                  실제 채점은 회원 응시 화면에서 이뤄지며, 상급(L4)·마스터(L5)는 성보경 회장이
+                  직접 확정합니다.
                 </p>
-                {levelTestScore >= 80 && (
-                  <button
-                    onClick={() => setShowModal(true)}
-                    className="button button-red on-dark"
-                    style={{ marginTop: "12px", width: "100%" }}
-                  >
-                    오프라인 과정 지원하기 <span>→</span>
-                  </button>
-                )}
+                <p style={{ fontSize: "13px", marginTop: "12px", color: "var(--heritage-soft)", fontWeight: 700 }}>
+                  평가는 이렇게 봅니다
+                </p>
+                <ul style={{ margin: "6px 0 0", paddingLeft: "18px", fontSize: "13px", lineHeight: 1.9, color: "rgba(248,247,243,0.82)" }}>
+                  <li>교과서적 지식을 옮겨 적었는가, 실전 조건까지 짚었는가</li>
+                  <li>그 논리가 무너지는 한계 상황을 스스로 제시했는가</li>
+                  <li>계약 조항·금액 구조로 결론을 끌고 갈 수 있는가</li>
+                </ul>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="button button-red on-dark"
+                  style={{ marginTop: "16px", width: "100%" }}
+                >
+                  오프라인 과정 문의하기 <span>→</span>
+                </button>
               </div>
             )}
           </div>
@@ -926,7 +928,8 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         </div>
       </section>
 
-      {/* Offline Registration Modal */}
+      {/* 오프라인 과정 문의 — 서버 접수 전까지는 메일로 넘겨 문의가 유실되지
+          않게 한다. 보내지 않고 "접수되었다"고 알리지 않는다. */}
       {showModal && (
         <div
           style={{
@@ -938,8 +941,25 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             placeItems: "center",
             zIndex: 100
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="offline-inquiry-title"
         >
-          <div
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const body = [
+                `성함: ${inquiry.name}`,
+                `소속 / 직함: ${inquiry.org}`,
+                `이메일: ${inquiry.email}`,
+                "",
+                "오프라인 정예 과정 안내를 요청합니다.",
+              ].join("\n");
+              window.location.href = `mailto:sbk3000@frontier.kr?subject=${encodeURIComponent(
+                "[아카데미] 오프라인 정예 과정 문의"
+              )}&body=${encodeURIComponent(body)}`;
+              setShowModal(false);
+            }}
             style={{
               background: "var(--white)",
               maxWidth: "500px",
@@ -949,31 +969,50 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
               boxShadow: "0 20px 50px rgba(0,0,0,0.5)"
             }}
           >
-            <h3 style={{ font: "700 24px var(--font-serif)", color: "var(--ink-strong)", margin: "0 0 12px" }}>
-              오프라인 정예 과정 지원
+            <h3 id="offline-inquiry-title" style={{ font: "700 24px var(--font-serif)", color: "var(--ink-strong)", margin: "0 0 12px" }}>
+              오프라인 정예 과정 문의
             </h3>
-            <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "20px" }}>
-              선발 테스트를 통과하셨습니다. 아래 정보를 남겨주시면 심사 후 개별 안내드립니다.
+            <p style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "20px", lineHeight: 1.75 }}>
+              오프라인 과정은 학습 이력과 성취동기를 분석해 선별 초대하는 방식입니다. 아래
+              정보를 남겨주시면 절차를 개별 안내드립니다.
             </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-              <input type="text" placeholder="성함(예: 홍길동)" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
-              <input type="text" placeholder="소속 / 직함(예: XX자산운용 대표이사)" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
-              <input type="email" placeholder="이메일 주소" style={{ padding: "12px", border: "1px solid var(--line-color)" }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+              <input
+                type="text"
+                required
+                placeholder="성함(예: 홍길동)"
+                value={inquiry.name}
+                onChange={(e) => setInquiry({ ...inquiry, name: e.target.value })}
+                style={{ padding: "12px", border: "1px solid var(--line-color)" }}
+              />
+              <input
+                type="text"
+                placeholder="소속 / 직함(예: XX자산운용 대표이사)"
+                value={inquiry.org}
+                onChange={(e) => setInquiry({ ...inquiry, org: e.target.value })}
+                style={{ padding: "12px", border: "1px solid var(--line-color)" }}
+              />
+              <input
+                type="email"
+                required
+                placeholder="이메일 주소"
+                value={inquiry.email}
+                onChange={(e) => setInquiry({ ...inquiry, email: e.target.value })}
+                style={{ padding: "12px", border: "1px solid var(--line-color)" }}
+              />
             </div>
 
+            <p style={{ fontSize: "12.5px", color: "var(--muted)", marginBottom: "18px", lineHeight: 1.7 }}>
+              남겨주신 정보는 과정 안내 목적으로만 사용하며, 안내가 끝나면 파기합니다.
+            </p>
+
             <div style={{ display: "flex", gap: "12px" }}>
-              <button
-                onClick={() => {
-                  alert("오프라인 정예 과정 지원서가 제출되었습니다. 검토 후 안내 연락드리겠습니다.");
-                  setShowModal(false);
-                }}
-                className="button button-red"
-                style={{ flex: 1 }}
-              >
-                신청서 최종 제출 <span>→</span>
+              <button type="submit" className="button button-red" style={{ flex: 1 }}>
+                문의 보내기 <span>→</span>
               </button>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="button button-gold"
                 style={{ background: "var(--paper-deep)", color: "var(--ink)" }}
@@ -981,7 +1020,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
                 닫기
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -1007,7 +1046,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             </div>
             <p className="footer-statement">
               기업의 결합을 설계하고, 더 높은 가치를 세웁니다.<br className="br-wide" />
-              대한민국 M&amp;A 1세대 성보경 회장의 40년 실전 자산에 기반한 AI 하이브리드 아카데미입니다.
+              1993년 국내 최초의 M&amp;A 전문회사가 쌓아 온 실전 자산에 기반한 AI 하이브리드 아카데미입니다.
             </p>
           </div>
 

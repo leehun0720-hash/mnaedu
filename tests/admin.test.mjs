@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 
 // Credentials for the tests only; the real ones live in the Vercel project.
 process.env.ADMIN_PASSWORD = "correct-horse";
@@ -71,4 +72,37 @@ test("plain prose stays a written question", () => {
   );
   assert.equal(parsed.format, "주관식");
   assert.deepEqual(parsed.choices, []);
+});
+
+test("legacy rows still map onto the current taxonomy", async () => {
+  const { normalizeTrack, normalizeLevel, courseLabel, COURSES, LEVELS } = await import(
+    new URL("../lib/questions.ts", import.meta.url).href
+  );
+
+  // 개편 전에 저장된 값을 관리자 화면에 세울 때, 선택지에 없는 값이면
+  // 빈칸이 되고 저장이 400으로 거부된다.
+  for (const [legacy, expected] of [
+    ["friendly", "brokerage"],
+    ["hostile", "dispute"],
+    ["control", "dispute"],
+    ["family", "family-office"],
+    ["club", "investor-club"],
+  ]) {
+    assert.equal(normalizeTrack(legacy), expected);
+    assert.ok(COURSES.some((c) => c.slug === normalizeTrack(legacy)), `${legacy} must resolve to a listed course`);
+    assert.notEqual(courseLabel(legacy), legacy);
+  }
+
+  for (const [legacy, expected] of [["초급", "입문"], ["중급", "실무"], ["상급", "상급"]]) {
+    assert.equal(normalizeLevel(legacy), expected);
+    assert.ok(LEVELS.includes(normalizeLevel(legacy)), `${legacy} must resolve to a listed level`);
+  }
+});
+
+test("the admin draft default level is one the API accepts", async () => {
+  const { LEVELS } = await import(new URL("../lib/questions.ts", import.meta.url).href);
+  const source = await readFile(new URL("../app/admin/admin-client.tsx", import.meta.url), "utf8");
+  const [, level] = source.match(/const EMPTY: Draft = \{[^}]*?level: "([^"]+)"/s) ?? [];
+  assert.ok(level, "EMPTY draft must declare a level");
+  assert.ok(LEVELS.includes(level), `default level ${level} must be in ${LEVELS.join("/")}`);
 });

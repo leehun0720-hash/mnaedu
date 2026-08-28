@@ -86,9 +86,13 @@ export function levelCode(level: string): LevelCode | undefined {
   return LEVEL_TIERS.find((t) => t.name === normalizeLevel(level))?.code;
 }
 
+/** 옛 슬러그를 현행 분야로 옮긴다 — 저장된 값을 그대로 화면에 세우면 선택지에 없다 */
+export function normalizeTrack(slug: string): string {
+  return LEGACY_TRACKS[slug] ?? slug;
+}
+
 export function courseLabel(slug: string): string {
-  const resolved = LEGACY_TRACKS[slug] ?? slug;
-  return COURSES.find((c) => c.slug === resolved)?.label ?? slug;
+  return COURSES.find((c) => c.slug === normalizeTrack(slug))?.label ?? slug;
 }
 
 /**

@@ -34,8 +34,9 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
   const area = businessArea(slug);
   if (!area) notFound();
 
-  // 원고에 "약 40년"이 나오는 분야에만 연혁 각주를 붙인다 (보고서 9장-8 기본안)
-  const needsTenureNote = area.curriculumIntro.some((t) => t.includes("40년"));
+  // 원고에 "40년"이 나오는 분야에는 각주를 붙인다 — 소개문에만 나오는 분야도
+  // 있으므로 둘 다 본다 (보고서 9장-8 기본안: 회사 연혁과 개인 경력 구분 표기)
+  const needsTenureNote = [area.intro, ...area.curriculumIntro].some((t) => t.includes("40년"));
 
   return (
     <div className="co-page">
@@ -59,7 +60,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
           <a href="/company#contact">문의사항</a>
         </nav>
         <div className="co-header-actions">
-          <a className="co-academy-link" href="#consult">
+          <a className="co-academy-link" href="#contact">
             상담신청 <i aria-hidden="true">→</i>
           </a>
         </div>
@@ -74,7 +75,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
           <h1>{area.name}</h1>
           <p className="co-detail-lede">{area.intro}</p>
           <div className="co-hero-actions">
-            <a className="co-btn co-btn--primary" href="#consult">
+            <a className="co-btn co-btn--primary" href="#contact">
               상담 신청하기 <i aria-hidden="true">→</i>
             </a>
           </div>
@@ -137,7 +138,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
           </p>
         </section>
 
-        <section className="co-section co-section--contact" id="consult">
+        <section className="co-section co-section--contact" id="contact">
           <div className="co-contact co-contact--slim">
             <div className="co-contact-copy">
               <h2>이 업무를 의뢰하시겠습니까?</h2>

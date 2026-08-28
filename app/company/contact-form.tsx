@@ -48,6 +48,9 @@ export default function ContactForm() {
               {b.name}
             </option>
           ))}
+          {/* 경영권 투자는 별도 메뉴가 없지만 문안·문의 항목으로는 유지한다
+              (보고서 9장-3 기본안) */}
+          <option value="경영권 투자">경영권 투자</option>
           <option value="채용">직원채용</option>
           <option value="기타">기타 문의</option>
         </select>

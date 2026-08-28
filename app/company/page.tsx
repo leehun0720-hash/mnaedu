@@ -290,8 +290,9 @@ export default function CompanyPage() {
             <p className="co-section-index">05 · CONTACT</p>
             <h2>문의사항</h2>
             <p className="co-section-note">
-              M&amp;A 중개, 경영권 분쟁, M&amp;A 자금조달, 패밀리오피스, 투자가 클럽에 관한 문의를
-              받고 있습니다. 검토 단계부터 비밀유지약정(NDA) 체결을 원칙으로 합니다.
+              M&amp;A 중개, 경영권 분쟁, 경영권 투자, M&amp;A 자금조달, 패밀리오피스, 투자가
+              클럽에 관한 문의를 받고 있습니다. 검토 단계부터 비밀유지약정(NDA) 체결을
+              원칙으로 합니다.
             </p>
           </div>
 
