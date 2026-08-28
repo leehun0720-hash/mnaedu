@@ -760,10 +760,10 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         <div className="section-heading">
           <div>
             <p className="section-index">선발 테스트 <i>Entrance Assessment</i></p>
-            <h2>여기서 걸러집니다<br /><em>과정별 · 초·중·상급</em></h2>
+            <h2>여기서 걸러집니다<br /><em>분야별 · L1~L5</em></h2>
           </div>
           <p>
-성보경 회장이 40년간 쌓은 실전 사례에서 뽑아낸 문제입니다. 과정별로 초·중·상급이 출제되며, 여기서 통과한 인원만 오프라인 정예 과정으로 넘어갑니다.
+성보경 회장이 40년간 쌓은 실전 사례에서 뽑아낸 문제입니다. 5개 분야마다 L1부터 L5까지 출제되며, 상급(L4)과 마스터(L5)는 회장 검수를 거친 문제만 발행됩니다.
           </p>
         </div>
 
@@ -802,7 +802,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
           <div className="dossier-tags">
             <span className="tier-badge">출제: 주 3문제</span>
             <span className="tier-badge">정답 비공개 원칙</span>
-            <span className="tier-badge">난이도: 초·중·상급</span>
+            <span className="tier-badge">난이도: L1~L5</span>
           </div>
           <p className="dossier-quote">
             &ldquo;정답은 공개되지 않습니다. 교과서적 지식을 나열하는 답안보다, 실전에서 그 장점과 전략이 무너지는 한계 조건까지 사고한 답안이 높이 평가됩니다.&rdquo;
