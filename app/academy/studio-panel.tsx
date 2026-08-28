@@ -265,18 +265,25 @@ const EDIT_SELECTORS = [
   ".verdict-quote",
   ".thread-user",
   ".thread-body",
-  // 핸드북 탐색기 — 사이드바 제목·챕터 목록·본문·커리큘럼·체크리스트·계약 조항
-  ".handbook-window aside b",
-  ".handbook-nav-item span",
-  ".handbook-content h3",
-  ".handbook-content h4",
-  ".handbook-content p",
-  ".handbook-content > div > span",
-  ".handbook-content button > span:last-of-type",
-  ".curriculum-col h5",
-  ".curriculum-col li",
-  ".clause-title",
-  ".clause-code",
+  // 문제은행 — 분야 제목·주제 목록·안내문
+  ".bank-eyebrow",
+  ".bank-head h3",
+  ".bank-axis",
+  ".bank-mastertip span",
+  ".bank-topic-title",
+  ".bank-note",
+  // 회원 등급 · 포인트
+  ".member-name",
+  ".member-scope",
+  ".member-purpose",
+  ".member-items li",
+  ".member-cta-note",
+  // 5레벨 승급
+  ".levels-body strong",
+  ".levels-scope",
+  ".levels-authoring",
+  ".levels-rule strong",
+  ".levels-rule p",
   // AI 도조
   ".dojo-header h4",
   ".dojo-rules-bar span",
@@ -301,7 +308,7 @@ function describeLocation(el: Element): string {
   const section = el.closest("section[id]");
   if (section) {
     const names: Record<string, string> = {
-      courses: "5대 과정",
+      courses: "5개 분야",
       funnel: "수강 여정",
       exam: "선발 테스트",
       offline: "오프라인",
@@ -314,7 +321,7 @@ function describeLocation(el: Element): string {
 /* ----------------------------------------------------------- sections */
 
 const SECTIONS = [
-  { id: "courses", name: "5대 과정" },
+  { id: "courses", name: "5개 분야" },
   { id: "funnel", name: "수강 여정" },
   { id: "exam", name: "선발 테스트" },
   { id: "offline", name: "오프라인" },

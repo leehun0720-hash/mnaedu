@@ -494,7 +494,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
           <p className="hero-description">{hero.desc}</p>
           <div className="hero-actions">
             <a className="button button-red on-dark" href="#exam">제1회 문제 풀기 <span>↗</span></a>
-            <a className="button button-gold on-dark" href="#courses">5대 과정 보기 <span>↓</span></a>
+            <a className="button button-gold on-dark" href="#courses">5개 분야 보기 <span>↓</span></a>
           </div>
         </div>
 
@@ -506,7 +506,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
               <span>L1–L5 승급 체계</span>
             </div>
             <div>
-              <strong>5대 과정</strong>
+              <strong>5개 분야</strong>
               <span>실전 M&amp;A 커리큘럼</span>
             </div>
             <div>
@@ -1013,7 +1013,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
 
           <nav className="footer-nav" aria-label="푸터 메뉴">
             <span className="footer-nav-title">과정 안내</span>
-            <a href="#courses">5대 과정</a>
+            <a href="#courses">5개 분야</a>
             <a href="#funnel">수강 여정</a>
             <a href="#levels">5레벨 체계</a>
             <a href="#exam">선발 테스트</a>

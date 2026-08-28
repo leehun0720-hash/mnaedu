@@ -239,7 +239,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
             rows={6}
-            placeholder={"예)\n난이도: 상급\n적대적 M&A\n포이즌필이 발동된 상황에서…\n① 첫 번째 보기\n② 두 번째 보기\n정답: ②\n출제 의도: 방어수단의 한계를 아는지"}
+            placeholder={"예)\n난이도: 상급\n경영권 분쟁\n포이즌필이 발동된 상황에서…\n① 첫 번째 보기\n② 두 번째 보기\n정답: ②\n출제 의도: 방어수단의 한계를 아는지"}
           />
           <button type="button" className="admin-btn admin-btn--quiet" onClick={applyPaste} disabled={!paste.trim()}>
             초안 채우기
