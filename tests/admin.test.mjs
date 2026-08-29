@@ -106,3 +106,24 @@ test("the admin draft default level is one the API accepts", async () => {
   assert.ok(level, "EMPTY draft must declare a level");
   assert.ok(LEVELS.includes(level), `default level ${level} must be in ${LEVELS.join("/")}`);
 });
+
+test("free members get L1 only; paid members get every level", async () => {
+  const { levelsFor, canAccessLevel } = await import(
+    new URL("../lib/membership.ts", import.meta.url).href
+  );
+  const { LEVEL_TIERS } = await import(new URL("../lib/questions.ts", import.meta.url).href);
+
+  assert.deepEqual(levelsFor("free"), ["입문"]);
+  assert.equal(levelsFor("paid").length, LEVEL_TIERS.length);
+
+  // 무료회원에게 유료 레벨이 열려서는 안 된다
+  assert.equal(canAccessLevel("free", "입문"), true);
+  for (const name of ["기본", "실무", "상급", "마스터"]) {
+    assert.equal(canAccessLevel("free", name), false, `free must not reach ${name}`);
+    assert.equal(canAccessLevel("paid", name), true, `paid must reach ${name}`);
+  }
+
+  // 개편 전 난이도로 저장된 문제도 같은 규칙을 따른다
+  assert.equal(canAccessLevel("free", "초급"), true);
+  assert.equal(canAccessLevel("free", "중급"), false);
+});

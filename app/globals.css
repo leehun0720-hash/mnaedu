@@ -3731,3 +3731,160 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .co-legal-item a { color: var(--co-navy); font-weight: 600; }
 .co-legal-item a:hover { text-decoration: underline; }
 .co-legal-date { margin: 22px 0 0; font-size: 13px; color: var(--co-muted); }
+
+/* ==========================================================================
+   회원 — 가입 · 로그인 · 내 학습 현황
+   아카데미와 같은 어두운 톤을 쓰되, 폼 하나에 집중하도록 좁게 잡는다.
+   ========================================================================== */
+.auth-page {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(196, 154, 58, 0.12) 0%, rgba(196, 154, 58, 0) 60%),
+    var(--ground);
+  color: var(--warm-white);
+  padding: 0 clamp(20px, 5vw, 48px);
+}
+.auth-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(20px, 4vh, 34px) 0;
+}
+.auth-brand { display: inline-flex; align-items: center; gap: 11px; }
+.auth-brand > span {
+  display: flex;
+  flex-direction: column;
+  font: 700 13px var(--font-label);
+  letter-spacing: 0.18em;
+}
+.auth-brand i {
+  font: 500 9.5px var(--font-label);
+  font-style: normal;
+  letter-spacing: 0.24em;
+  color: var(--label-on-dark);
+  margin-top: 3px;
+}
+.auth-back { font: 600 12.5px var(--font-sans); color: var(--label-on-dark); }
+.auth-back:hover { color: var(--warm-white); }
+.auth-main { flex: 1 0 auto; display: grid; place-items: start center; padding: clamp(12px, 3vh, 32px) 0 48px; }
+
+.auth-card {
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: clamp(28px, 4vw, 40px);
+  background: var(--ink);
+  border: 1px solid rgba(248, 247, 243, 0.16);
+}
+.auth-card h1 { margin: 0; font: 700 clamp(23px, 3vw, 28px) var(--font-serif); color: var(--white); }
+.auth-note { margin: 0; font-size: 13.5px; line-height: 1.85; color: rgba(248, 247, 243, 0.78); }
+.auth-note strong { color: var(--heritage-soft); }
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+.auth-field > span { font: 700 11px var(--font-label); letter-spacing: 0.14em; color: var(--heritage-soft); }
+.auth-field input {
+  padding: 12px 14px;
+  font: 400 15px var(--font-sans);
+  color: var(--white);
+  background: rgba(248, 247, 243, 0.07);
+  border: 1px solid rgba(248, 247, 243, 0.24);
+}
+.auth-field input:focus-visible { outline: 2px solid var(--heritage-soft); outline-offset: 1px; }
+.auth-hint { font: 400 11.5px var(--font-sans); font-style: normal; color: var(--label-on-dark); }
+.auth-error {
+  margin: 0;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: #FFD9D2;
+  background: rgba(216, 52, 26, 0.2);
+  border-left: 3px solid var(--ember-on-dark);
+}
+.auth-card .button { justify-content: center; }
+.auth-card .button[disabled] { opacity: 0.6; cursor: default; }
+.auth-switch, .auth-legal { margin: 0; font-size: 13px; color: var(--label-on-dark); }
+.auth-legal { font-size: 12px; padding-top: 4px; border-top: 1px solid rgba(248, 247, 243, 0.12); }
+.auth-switch a, .auth-legal a { color: var(--heritage-soft); font-weight: 600; }
+.auth-switch a:hover, .auth-legal a:hover { text-decoration: underline; }
+.auth-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 20px 0 26px;
+  border-top: 1px solid rgba(248, 247, 243, 0.12);
+  font: 500 11.5px var(--font-label);
+  color: var(--label-on-dark);
+}
+.auth-foot a { color: rgba(248, 247, 243, 0.85); }
+.auth-foot a:hover { color: var(--white); text-decoration: underline; }
+
+/* — 내 학습 현황 — */
+.me-card {
+  width: min(620px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: clamp(28px, 4vw, 40px);
+  background: var(--ink);
+  border: 1px solid rgba(248, 247, 243, 0.16);
+}
+.me-eyebrow { margin: 0; font: 700 11px var(--font-label); letter-spacing: 0.2em; color: var(--heritage-soft); }
+.me-card h1 { margin: -14px 0 0; font: 700 clamp(23px, 3vw, 28px) var(--font-serif); color: var(--white); }
+.me-card h2 { margin: 0 0 12px; font: 700 15px var(--font-sans); color: var(--white); }
+.me-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.me-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px;
+  background: rgba(248, 247, 243, 0.06);
+  border: 1px solid rgba(248, 247, 243, 0.14);
+}
+.me-stats span { font: 700 10.5px var(--font-label); letter-spacing: 0.14em; color: var(--label-on-dark); }
+.me-stats strong { font: 700 19px var(--font-serif); color: var(--heritage-soft); }
+.me-levels ul { list-style: none; margin: 0; padding: 0; }
+.me-levels li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid rgba(248, 247, 243, 0.12);
+  font-size: 14px;
+}
+.me-levels li:first-child { border-top: 0; }
+.me-level-code { font: 800 13px var(--font-label); color: var(--label-on-dark); }
+.me-level-name { color: rgba(248, 247, 243, 0.82); }
+.me-level-state { font: 600 11.5px var(--font-label); color: var(--label-on-dark); }
+.me-levels li[data-open="true"] .me-level-code { color: var(--heritage-soft); }
+.me-levels li[data-open="true"] .me-level-name { color: var(--white); }
+.me-levels li[data-open="true"] .me-level-state { color: var(--heritage-soft); }
+.me-points p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.85; color: rgba(248, 247, 243, 0.78); }
+.me-upgrade { color: var(--heritage-soft) !important; }
+.me-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.me-logout {
+  padding: 12px 20px;
+  font: 600 13px var(--font-sans);
+  color: var(--label-on-dark);
+  background: transparent;
+  border: 1px solid rgba(248, 247, 243, 0.24);
+}
+.me-logout:hover { color: var(--warm-white); border-color: rgba(248, 247, 243, 0.5); }
+@media (max-width: 520px) {
+  .me-stats { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* — 회원 섹션의 로그인 상태 배너 — */
+.member-cta-line--in { justify-content: flex-start; }
+.member-welcome {
+  font-size: 13.5px;
+  color: var(--muted);
+  padding: 11px 16px;
+  background: var(--paper-deep);
+  border: 1px solid var(--line-color);
+}
+.member-welcome b { color: var(--ink-strong); }

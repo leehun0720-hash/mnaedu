@@ -88,6 +88,22 @@ test("the privacy policy page renders and is linked where data is collected", as
   assert.match(academy, /href="\/privacy"/);
 });
 
+test("the join and login screens render without Supabase configured", async () => {
+  // 키가 없어도 화면이 죽지 않고 안내로 물러나야 한다 (DB 없이도 사이트가
+  // 도는 기존 원칙과 같다)
+  for (const path of ["/academy/join", "/academy/login"]) {
+    const html = await renderHtml(path);
+    assert.match(html, /회원가입|로그인/, `${path} should render`);
+  }
+});
+
+test("member screens are kept out of search", async () => {
+  for (const path of ["/academy/join", "/academy/login"]) {
+    const html = await renderHtml(path);
+    assert.match(html, /noindex/, `${path} should be noindex`);
+  }
+});
+
 test("both sites carry the shared right-hand rail", async () => {
   for (const path of ["/company", "/academy"]) {
     const html = await renderHtml(path);

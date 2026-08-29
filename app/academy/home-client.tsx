@@ -118,7 +118,17 @@ const drawerItems = [
 ];
 
 
-export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] }) {
+type MemberView = { name: string; tier: "free" | "paid"; points: number } | null | undefined;
+
+export default function Home({
+  weeklyExams,
+  member,
+}: {
+  weeklyExams: PublicQuestion[];
+  /** 로그인한 회원. 비로그인·미설정이면 없다. */
+  member?: MemberView;
+}) {
+  const signedIn = Boolean(member);
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
   const currentTrack = tracks[selectedTrackIndex];
 
@@ -334,7 +344,7 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
     // has-rail: 우측 고정 바가 본문을 덮지 않도록 폭을 미리 좁혀 둔다
     <main className="has-rail">
       <CopyGuard />
-      <SiteRail site="academy" />
+      <SiteRail site="academy" signedIn={signedIn} />
 
       {/* Prevent FOUC by ensuring the loader covers the screen immediately before external CSS loads */}
       <style dangerouslySetInnerHTML={{ __html: `
@@ -415,7 +425,15 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
         <div className="header-actions">
           {/* 게이트로 돌아가는 유일한 문(기획서 2장) */}
           <Link className="header-gate" href="/">메인</Link>
-          <a className="header-login" href="#exam">선발 테스트 <span>↗</span></a>
+          {signedIn ? (
+            <Link className="header-login" href="/academy/me">
+              내 학습 현황 <span>↗</span>
+            </Link>
+          ) : (
+            <Link className="header-login" href="/academy/join">
+              회원가입 <span>↗</span>
+            </Link>
+          )}
           <button
             type="button"
             className="nav-toggle"
@@ -456,9 +474,13 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
             <i aria-hidden="true">→</i>
           </a>
         ))}
-        <a className="button button-red mobile-nav-cta" href="#exam" onClick={() => setIsNavOpen(false)}>
-          선발 테스트 <span>↗</span>
-        </a>
+        <Link
+          className="button button-red mobile-nav-cta"
+          href={signedIn ? "/academy/me" : "/academy/join"}
+          onClick={() => setIsNavOpen(false)}
+        >
+          {signedIn ? "내 학습 현황" : "회원가입"} <span>↗</span>
+        </Link>
         <Link className="mobile-nav-gate" href="/">
           <span>메인 게이트로</span>
           <i aria-hidden="true">⌂</i>
@@ -703,10 +725,23 @@ export default function Home({ weeklyExams }: { weeklyExams: PublicQuestion[] })
           </div>
         </div>
 
-        <p className="member-cta-line">
-          <a className="button button-red" href="#exam">먼저 문제 풀어보기 <span>↗</span></a>
-          <span className="member-cta-note">가입 절차는 회원 시스템 구축 후 이 자리에서 바로 진행됩니다.</span>
-        </p>
+        {member ? (
+          <p className="member-cta-line member-cta-line--in">
+            <span className="member-welcome">
+              <b>{member.name}</b> 님 · {member.tier === "paid" ? "유료회원" : "무료회원"} ·{" "}
+              {member.points.toLocaleString()}P
+            </span>
+            <Link className="button button-red" href="/academy/me">
+              내 학습 현황 <span>↗</span>
+            </Link>
+          </p>
+        ) : (
+          <p className="member-cta-line">
+            <Link className="button button-red" href="/academy/join">회원가입 <span>↗</span></Link>
+            <Link className="button button-gold" href="/academy/login">로그인</Link>
+            <span className="member-cta-note">무료회원으로 가입하시면 L1 입문 퀴즈가 바로 열립니다.</span>
+          </p>
+        )}
       </section>
 
       {/* 5-level promotion ladder — the academy's confirmed rank structure */}

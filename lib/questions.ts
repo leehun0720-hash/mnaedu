@@ -1,6 +1,3 @@
-import { desc, eq } from "drizzle-orm";
-import { getDb, isDbConfigured } from "@/db";
-import { questions } from "@/db/schema";
 import { BUSINESS_AREAS } from "@/lib/company";
 
 /**
@@ -10,6 +7,9 @@ import { BUSINESS_AREAS } from "@/lib/company";
  * 가로축은 홈페이지 게시판과 같은 정본을 쓰므로 lib/company.ts에서 가져온다 —
  * 한 문제가 '경영권 분쟁 > 델라웨어 판례 > L5'로 분류되어 두 사이트가 같은
  * 분류 체계를 공유한다.
+ *
+ * 이 파일은 관리자 화면 같은 클라이언트 컴포넌트도 함께 쓰므로 데이터베이스를
+ * 건드리지 않는다 — 조회는 lib/questions-db.ts가 맡는다.
  */
 export const COURSES = BUSINESS_AREAS.map((b) => ({ slug: b.slug, label: b.name }));
 
@@ -129,35 +129,3 @@ export const SEED_QUESTIONS: PublicQuestion[] = [
       "SPA 가격조정 방식인 Locked-Box와 Closing Accounts의 구조적 차이를 설명하고, 매수인 관점에서 각 방식이 부담하는 리스크를 비교하십시오.",
   },
 ];
-
-/**
- * Published questions for the public page. Falls back to the seed set when
- * there is no database, or when reading it fails — a storage problem must not
- * take the marketing site down with it.
- */
-export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
-  if (!isDbConfigured()) return SEED_QUESTIONS;
-  try {
-    const rows = await getDb()
-      .select()
-      .from(questions)
-      .where(eq(questions.published, true))
-      .orderBy(desc(questions.createdAt))
-      .limit(limit);
-
-    if (rows.length === 0) return SEED_QUESTIONS;
-
-    return rows.map((r, i) => ({
-      no: i + 1,
-      trackLabel: courseLabel(r.track),
-      level: normalizeLevel(r.level),
-      levelClass: levelClass(r.level),
-      type: r.format,
-      prompt: r.prompt,
-      choices: r.choices ?? undefined,
-    }));
-  } catch (err) {
-    console.error("[questions] falling back to seed set:", err);
-    return SEED_QUESTIONS;
-  }
-}

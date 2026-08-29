@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getPublicQuestions } from "@/lib/questions";
+import { getPublicQuestions } from "@/lib/questions-db";
+import { getCurrentMember } from "@/lib/members";
 import Home from "./home-client";
 
 // Questions come from the database, so the page cannot be baked at build time
@@ -11,6 +12,17 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const weeklyExams = await getPublicQuestions();
-  return <Home weeklyExams={weeklyExams} />;
+  const [weeklyExams, member] = await Promise.all([getPublicQuestions(), getCurrentMember()]);
+  return (
+    <Home
+      weeklyExams={weeklyExams}
+      member={
+        member && {
+          name: member.name ?? member.email,
+          tier: member.tier,
+          points: member.points,
+        }
+      }
+    />
+  );
 }

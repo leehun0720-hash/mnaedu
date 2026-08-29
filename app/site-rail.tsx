@@ -11,8 +11,29 @@ import Link from "next/link";
  * 훅을 쓰지 않는 순수 컴포넌트라 서버 페이지와 클라이언트 트리 양쪽에서
  * 그대로 쓸 수 있다.
  */
-export default function SiteRail({ site }: { site: "company" | "academy" }) {
+export default function SiteRail({
+  site,
+  signedIn = false,
+}: {
+  site: "company" | "academy";
+  /** 로그인한 회원에게는 가입 대신 내 학습 현황으로 보낸다 */
+  signedIn?: boolean;
+}) {
   const isCompany = site === "company";
+  const memberHref = signedIn ? "/academy/me" : "/academy/login";
+  const memberLabel = signedIn ? (
+    <>
+      내 학습
+      <br />
+      현황
+    </>
+  ) : (
+    <>
+      가입
+      <br />
+      로그인
+    </>
+  );
 
   return (
     <nav className="site-rail" data-site={site} aria-label="사이트 이동">
@@ -49,16 +70,12 @@ export default function SiteRail({ site }: { site: "company" | "academy" }) {
           </span>
         </a>
       ) : (
-        <a className="rail-item rail-item--action" href="#membership">
+        <Link className="rail-item rail-item--action" href={memberHref}>
           <i className="rail-icon" aria-hidden="true">
             ⊕
           </i>
-          <span className="rail-label">
-            가입
-            <br />
-            로그인
-          </span>
-        </a>
+          <span className="rail-label">{memberLabel}</span>
+        </Link>
       )}
 
       <Link className="rail-item rail-item--home" href="/">
