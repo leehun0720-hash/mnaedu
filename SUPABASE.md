@@ -32,12 +32,33 @@
 
 ## 2. 테이블 만들기
 
-Supabase 대시보드 → **SQL Editor** 에서 저장소의 마이그레이션을 순서대로 실행합니다.
+Supabase 대시보드 → **SQL Editor** 에 `supabase/setup.sql` 전체를 붙여넣고
+실행하십시오. 한 번이면 끝나고, 여러 번 실행해도 안전합니다.
 
-1. `drizzle/0000_puzzling_bastion.sql`
-2. `drizzle/0001_pretty_ken_ellis.sql`
+이 파일은 두 부분입니다.
 
-로컬에서 하려면 연결 문자열을 넣고 아래를 실행해도 됩니다.
+1. **테이블** — `drizzle/0000_*.sql` + `drizzle/0001_*.sql`을 합친 것
+2. **접근 차단** — 아래 경고를 참조하십시오. 건너뛰면 안 됩니다.
+
+> ### ⚠️ 2부를 반드시 함께 실행하십시오
+>
+> Supabase는 `public` 스키마의 테이블을 **자동 생성 REST API로 노출**하고,
+> 브라우저에 나가는 anon 키로 접근하게 합니다. 그대로 두면 누구나
+> `questions` 테이블의 `answer`·`explanation`을 직접 읽어갑니다 — 정답과 회장
+> 해설을 공개 데이터에서 원천 배제한다는 원칙(보고서 4.3 · 8장)이 무너집니다.
+>
+> `setup.sql` 2부가 RLS를 켜고 권한을 회수해 이 경로를 막습니다. 이 사이트는
+> REST API를 전혀 쓰지 않고 서버가 직접 Postgres에 연결하므로, 잠가도
+> 애플리케이션은 그대로 동작합니다.
+>
+> 실행 후 아래로 확인하십시오 — 네 테이블 모두 `true`여야 합니다.
+>
+> ```sql
+> SELECT tablename, rowsecurity FROM pg_tables
+> WHERE schemaname = 'public' ORDER BY tablename;
+> ```
+
+로컬에서 Drizzle로 하시려면 (2부는 별도로 실행해야 합니다):
 
 ```bash
 POSTGRES_URL="<직결 문자열>" npx drizzle-kit migrate

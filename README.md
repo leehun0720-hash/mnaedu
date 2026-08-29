@@ -34,6 +34,8 @@
 - **회원 시스템** — 신원은 Supabase Auth, 등급·포인트는 `members`/`point_ledger`.
   무료(L1) / 유료(L2~L5) 2등급이며, 해설은 포인트 차감을 거친 `/api/explanation`
   으로만 나간다. 설정은 `SUPABASE.md` 참조. 미설정 상태에서도 사이트는 동작한다.
+- **DB 접근 차단** — `supabase/setup.sql`이 RLS를 켜고 anon·authenticated 권한을
+  회수한다. 이걸 빼면 공개 anon 키로 정답·해설이 REST API를 통해 그대로 읽힌다.
 - **서버 전용 경계** — `db/`, `lib/questions-db.ts`, `lib/members.ts`는 `server-only`로
   막혀 있다. 클라이언트가 쓰는 순수 규칙은 `lib/questions.ts`·`lib/membership.ts`에 있다.
 
