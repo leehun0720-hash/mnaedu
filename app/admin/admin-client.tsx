@@ -31,6 +31,16 @@ type Draft = {
   published: boolean;
 };
 
+type MemberRow = {
+  id: number;
+  email: string;
+  name: string | null;
+  tier: string;
+  points: number;
+  clearedLevel: number;
+  createdAt: string;
+};
+
 type AnswerRow = {
   id: number;
   status: string;
@@ -83,12 +93,17 @@ export default function AdminClient({
   const [inbox, setInbox] = useState<AnswerRow[]>([]);
   const [grades, setGrades] = useState<Record<number, { score: string; feedback: string }>>({});
 
+  // 회원 관리 — 결제 연결 전까지 유료 전환은 여기서 수동으로 한다
+  const [memberRows, setMemberRows] = useState<MemberRow[]>([]);
+
   const load = useCallback(async () => {
     if (!dbConfigured) return;
     const res = await fetch("/api/admin/questions");
     if (res.ok) setRows(((await res.json()) as { questions: Row[] }).questions);
     const ans = await fetch("/api/admin/answers");
     if (ans.ok) setInbox(((await ans.json()) as { answers: AnswerRow[] }).answers);
+    const mem = await fetch("/api/admin/members");
+    if (mem.ok) setMemberRows(((await mem.json()) as { members: MemberRow[] }).members);
   }, [dbConfigured]);
 
   // Initial fetch after login. The guard stops a late response writing state
@@ -99,11 +114,13 @@ export default function AdminClient({
     Promise.all([
       fetch("/api/admin/questions").then((r) => (r.ok ? (r.json() as Promise<{ questions: Row[] }>) : null)),
       fetch("/api/admin/answers").then((r) => (r.ok ? (r.json() as Promise<{ answers: AnswerRow[] }>) : null)),
+      fetch("/api/admin/members").then((r) => (r.ok ? (r.json() as Promise<{ members: MemberRow[] }>) : null)),
     ])
-      .then(([q, a]) => {
+      .then(([q, a, m]) => {
         if (!alive) return;
         if (q) setRows(q.questions);
         if (a) setInbox(a.answers);
+        if (m) setMemberRows(m.members);
       })
       .catch(() => {});
     return () => {
@@ -134,6 +151,24 @@ export default function AdminClient({
     setLoggedIn(false);
     setRows([]);
     setInbox([]);
+    setMemberRows([]);
+  }
+
+  async function updateMember(id: number, patch: { tier?: string; points?: number }) {
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/admin/members", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...patch }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setError(((await res.json()) as { error?: string }).error ?? "회원 정보를 바꾸지 못했습니다.");
+      return;
+    }
+    setNotice("회원 정보를 수정했습니다.");
+    void load();
   }
 
   async function saveGrade(id: number) {
@@ -418,6 +453,49 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           {error && <p className="admin-error">{error}</p>}
           {notice && <p className="admin-ok">{notice}</p>}
         </form>
+
+        <section className="admin-card">
+          <h2>회원 관리 ({memberRows.length}명)</h2>
+          <p className="admin-note">
+            결제 연결 전까지 유료 전환은 여기서 합니다. 등급을 바꾸면 다음 화면 이동부터 바로 적용됩니다 —
+            무료회원은 L1 입문 퀴즈까지, 유료회원은 L2~L5와 회장 해설 열람이 열립니다.
+          </p>
+          {memberRows.length === 0 ? (
+            <p className="admin-note">아직 가입한 회원이 없습니다.</p>
+          ) : (
+            <ul className="admin-list">
+              {memberRows.map((m) => (
+                <li key={m.id}>
+                  <div className="admin-list-meta">
+                    <span className={m.tier === "paid" ? "admin-tag admin-tag--on" : "admin-tag"}>
+                      {m.tier === "paid" ? "유료회원" : "무료회원"}
+                    </span>
+                    <span>{m.name ?? m.email}</span>
+                    <span>{m.points.toLocaleString()}P</span>
+                    <span>{m.clearedLevel > 0 ? `L${m.clearedLevel} 통과` : "통과 없음"}</span>
+                  </div>
+                  <p className="admin-list-prompt">{m.email}</p>
+                  <div className="admin-actions">
+                    <button
+                      className="admin-btn admin-btn--quiet"
+                      disabled={busy}
+                      onClick={() => updateMember(m.id, { tier: m.tier === "paid" ? "free" : "paid" })}
+                    >
+                      {m.tier === "paid" ? "무료로 내리기" : "유료로 올리기"}
+                    </button>
+                    <button
+                      className="admin-btn admin-btn--quiet"
+                      disabled={busy}
+                      onClick={() => updateMember(m.id, { points: m.points + 100 })}
+                    >
+                      포인트 +100
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="admin-card">
           <h2>채점함 ({inbox.filter((a) => a.status === "pending").length}건 대기)</h2>
