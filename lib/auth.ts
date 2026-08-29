@@ -9,7 +9,7 @@ export const SESSION_COOKIE = "fma_admin";
 const SESSION_HOURS = 8;
 
 export function isAuthConfigured(): boolean {
-  return Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_SESSION_SECRET);
+  return Boolean(process.env.ADMIN_PASSWORD?.trim() && process.env.ADMIN_SESSION_SECRET?.trim());
 }
 
 /** Comparison that does not leak the answer through how long it takes. */
@@ -24,10 +24,16 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+/**
+ * 양쪽 끝 공백을 떼고 비교한다. 대시보드에 붙여넣을 때 줄바꿈이나 공백이
+ * 딸려 들어가는 일이 흔한데, 그 한 글자 때문에 "비밀번호가 틀렸다"는 화면만
+ * 보고 원인을 찾지 못하는 상황이 실제로 있었다. 비밀번호 양끝 공백은 어차피
+ * 의미를 갖지 않으므로 떼어내는 편이 안전하다.
+ */
 export function verifyPassword(input: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
+  const expected = process.env.ADMIN_PASSWORD?.trim();
   if (!expected) return false;
-  return timingSafeEqual(input, expected);
+  return timingSafeEqual(input.trim(), expected);
 }
 
 function b64url(bytes: ArrayBuffer): string {
