@@ -43,7 +43,7 @@ Supabase 대시보드 → **SQL Editor** 에 `supabase/setup.sql` 전체를 붙�
 > ### ⚠️ 2부를 반드시 함께 실행하십시오
 >
 > Supabase는 `public` 스키마의 테이블을 **자동 생성 REST API로 노출**하고,
-> 브라우저에 나가는 anon 키로 접근하게 합니다. 그대로 두면 누구나
+> 브라우저에 나가는 공개 키(anon · publishable)로 접근하게 합니다. 그대로 두면 누구나
 > `questions` 테이블의 `answer`·`explanation`을 직접 읽어갑니다 — 정답과 회장
 > 해설을 공개 데이터에서 원천 배제한다는 원칙(보고서 4.3 · 8장)이 무너집니다.
 >
@@ -82,8 +82,8 @@ Vercel 대시보드 → Settings → Environment Variables 에 네 개를 넣습
 
 | 이름 | 어디서 가져오나 |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Project Settings → API → Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project Settings → API → anon public key |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project Settings → Data API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Project Settings → **API Keys** → `sb_publishable_…` |
 | `POSTGRES_URL` | Project Settings → Database → Connection string → **Transaction pooler (6543)** |
 | `POSTGRES_URL_NON_POOLING` | 같은 화면의 **Direct connection (5432)** — 마이그레이션용 |
 
@@ -91,6 +91,19 @@ Vercel 대시보드 → Settings → Environment Variables 에 네 개를 넣습
 **저장소에는 어떤 키도 넣지 마십시오.** 이 저장소는 공개되어 있습니다.
 
 넣은 뒤 **재배포**해야 적용됩니다.
+
+> **키 형식이 두 가지입니다.** Supabase가 `anon` 키를 `sb_publishable_…` 키로
+> 바꾸는 중입니다. 새 키는 anon 키의 드롭인 대체라 동작은 같습니다.
+>
+> - 새 프로젝트(권장): API Keys 화면의 `sb_publishable_…`을
+>   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`에 넣으십시오.
+> - 옛 프로젝트: `NEXT_PUBLIC_SUPABASE_ANON_KEY`라는 이름도 그대로 받습니다
+>   (`lib/supabase/config.ts`가 새 이름을 먼저 보고 없으면 옛 이름을 씁니다).
+>   둘 다 넣을 필요는 없습니다.
+>
+> 같은 화면의 **`sb_secret_…`(옛 service_role) 키는 넣지 마십시오.** 이 사이트는
+> 쓰지 않습니다 — 서버는 Postgres에 직접 붙고, RLS를 우회하는 키를 배포 환경에
+> 두면 그만큼 노출면만 넓어집니다.
 
 ## 5. 유료회원 전환
 

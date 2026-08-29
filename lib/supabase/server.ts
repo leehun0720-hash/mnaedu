@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, isAuthConfigured } from "./config";
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, isAuthConfigured } from "./config";
 
 /**
  * 서버 컴포넌트·라우트 핸들러에서 쓰는 Supabase 클라이언트.
@@ -9,7 +9,7 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isAuthConfigured } from "./config";
 export async function getSupabaseServer() {
   if (!isAuthConfigured()) return null;
   const store = await cookies();
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  return createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {
