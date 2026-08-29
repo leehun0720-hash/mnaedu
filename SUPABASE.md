@@ -97,3 +97,22 @@ update members set tier = 'paid', updated_at = now() where email = '회원이메
 | 로그인은 되는데 내 학습 현황이 비어 있음 | `POSTGRES_URL` 없음, 또는 2단계 미실행 |
 | 인증 메일 링크가 로그인 화면으로 되돌아옴 | Redirect URLs에 `/auth/callback` 누락 |
 | `prepared statement` 오류 | 풀러(6543) 문자열이 아니라 직결을 넣었거나 그 반대 |
+
+## Supabase MCP (선택)
+
+`.mcp.json`에 Supabase MCP 서버가 등록되어 있습니다. 연결하면 Claude가
+대시보드를 거치지 않고 마이그레이션 실행·스키마 조회·디버깅을 할 수 있습니다.
+
+**인증은 각자의 로컬 터미널에서** 해야 합니다 (IDE 확장이나 웹 세션이 아니라):
+
+```bash
+claude /mcp     # supabase 선택 → Authenticate
+```
+
+주의할 점 두 가지입니다.
+
+- `.mcp.json`의 `project_ref`는 **프로젝트마다 다릅니다.** 리전을 바꾸느라
+  프로젝트를 다시 만들면 이 값도 새 것으로 고쳐야 합니다.
+- 등록된 기능 목록에 `database`·`development`가 들어 있어 **운영 DB에 쓰기가
+  가능합니다.** 조회만 필요하다면 URL의 `features`를 줄이거나 Supabase의
+  read-only 옵션을 쓰는 편이 안전합니다.
