@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LEVEL_TIERS } from "@/lib/questions";
+import Link from "next/link";
 import { POINTS, getCurrentMember, levelsFor } from "@/lib/members";
+import { getMyAnswerSummary } from "@/lib/answers";
 import { isAuthConfigured } from "@/lib/supabase/config";
 import AuthShell from "../auth-shell";
 
@@ -21,6 +22,7 @@ export default async function MePage() {
 
   const open = levelsFor(member.tier);
   const isPaid = member.tier === "paid";
+  const solved = await getMyAnswerSummary(member.id);
 
   return (
     <AuthShell>
@@ -41,6 +43,46 @@ export default async function MePage() {
             <span>통과 레벨</span>
             <strong>{member.clearedLevel > 0 ? `L${member.clearedLevel}` : "—"}</strong>
           </div>
+        </div>
+
+        <div className="me-solved">
+          <h2>풀이 현황</h2>
+          {solved.total === 0 ? (
+            <p className="me-solved-empty">
+              아직 푼 문제가 없습니다. 선발 테스트에서 첫 문제를 풀면 점수와 포인트가 여기에 쌓입니다.
+            </p>
+          ) : (
+            <>
+              <div className="me-stats me-stats--solved">
+                <div>
+                  <span>푼 문제</span>
+                  <strong>{solved.total}</strong>
+                </div>
+                <div>
+                  <span>통과</span>
+                  <strong>{solved.passed}</strong>
+                </div>
+                <div>
+                  <span>평균 점수</span>
+                  <strong>{solved.avgScore ?? "—"}</strong>
+                </div>
+                <div>
+                  <span>채점 대기</span>
+                  <strong>{solved.pending}</strong>
+                </div>
+              </div>
+              <ul className="me-answers">
+                {solved.recent.map((a) => (
+                  <li key={a.questionId}>
+                    <Link href={`/academy/quiz/${a.questionId}`}>{a.prompt}…</Link>
+                    <span data-state={a.status === "graded" ? (a.pass ? "pass" : "fail") : "pending"}>
+                      {a.status === "graded" ? `${a.score}점` : "채점 대기"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
 
         <div className="me-levels">

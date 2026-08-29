@@ -3888,3 +3888,173 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   border: 1px solid var(--line-color);
 }
 .member-welcome b { color: var(--ink-strong); }
+
+/* ============================================================
+   문제 풀이 화면 (/academy/quiz/[id]) — 풀이 → 채점 → 해설
+   me-card와 같은 어두운 셸 문법을 따른다.
+   ============================================================ */
+.quiz-card {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: clamp(28px, 4vw, 40px);
+  background: var(--ink);
+  border: 1px solid rgba(248, 247, 243, 0.16);
+}
+.quiz-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.quiz-prompt {
+  margin: 0;
+  font: 700 clamp(19px, 2.6vw, 24px)/1.5 var(--font-serif);
+  color: var(--white);
+  word-break: keep-all;
+}
+.quiz-gate { display: flex; flex-direction: column; gap: 14px; color: rgba(248, 247, 243, 0.85); }
+.quiz-gate-actions { display: flex; gap: 10px; margin: 0; }
+.quiz-form { display: flex; flex-direction: column; gap: 16px; }
+.quiz-choices { display: flex; flex-direction: column; gap: 10px; border: 0; margin: 0; padding: 0; }
+.quiz-choices legend { font: 700 13px var(--font-sans); color: var(--heritage-soft); margin-bottom: 10px; }
+.quiz-choices label {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: rgba(248, 247, 243, 0.06);
+  border: 1px solid rgba(248, 247, 243, 0.14);
+  color: rgba(248, 247, 243, 0.9);
+  cursor: pointer;
+  line-height: 1.5;
+}
+.quiz-choices label.is-picked { border-color: var(--ember-on-dark); background: rgba(216, 52, 26, 0.12); }
+.quiz-choices input { margin-top: 4px; accent-color: var(--ember); }
+.quiz-essay { display: flex; flex-direction: column; gap: 8px; font: 700 13px var(--font-sans); color: var(--heritage-soft); }
+.quiz-essay small { font-weight: 400; color: rgba(248, 247, 243, 0.55); letter-spacing: 0; }
+.quiz-essay textarea {
+  padding: 14px;
+  background: rgba(248, 247, 243, 0.06);
+  border: 1px solid rgba(248, 247, 243, 0.2);
+  color: var(--white);
+  font: 400 15px/1.7 var(--font-sans);
+  resize: vertical;
+}
+.quiz-essay textarea:focus { outline: 2px solid var(--ember-on-dark); outline-offset: 1px; }
+.quiz-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.quiz-points { font: 400 13px var(--font-sans); color: rgba(248, 247, 243, 0.6); }
+.quiz-once { margin: 0; font: 400 12px var(--font-sans); color: rgba(248, 247, 243, 0.45); }
+.quiz-error { margin: 0; font: 700 13px var(--font-sans); color: var(--ember-on-dark); }
+
+.quiz-result { display: flex; flex-direction: column; gap: 20px; }
+.quiz-score {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  border: 1px solid rgba(248, 247, 243, 0.16);
+  background: rgba(248, 247, 243, 0.05);
+}
+.quiz-score-num { font: 700 clamp(26px, 4vw, 34px) var(--font-serif); color: var(--white); }
+.quiz-score.is-pass { border-color: rgba(229, 194, 107, 0.55); }
+.quiz-score.is-pass .quiz-score-num { color: var(--heritage-soft); }
+.quiz-score.is-fail .quiz-score-num { color: var(--ember-on-dark); }
+.quiz-score-label { font: 400 13px var(--font-sans); color: rgba(248, 247, 243, 0.7); }
+.quiz-award { margin: 0; font: 700 13px var(--font-sans); color: var(--heritage-soft); }
+.quiz-mine, .quiz-correct, .quiz-feedback { display: flex; flex-direction: column; gap: 8px; }
+.quiz-mine h2, .quiz-correct h2, .quiz-feedback h2, .quiz-expl h2 {
+  margin: 0;
+  font: 700 12px var(--font-label);
+  letter-spacing: 0.18em;
+  color: var(--heritage-soft);
+}
+.quiz-mine p, .quiz-feedback p {
+  margin: 0;
+  padding: 14px 16px;
+  background: rgba(248, 247, 243, 0.05);
+  border: 1px solid rgba(248, 247, 243, 0.12);
+  color: rgba(248, 247, 243, 0.88);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+.quiz-correct p {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(229, 194, 107, 0.5);
+  background: rgba(229, 194, 107, 0.08);
+  color: var(--heritage-soft);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+/* 해설 — 무료회원에게는 미끼 문단 위 모자이크만 보인다. 실제 해설 본문은
+   열람 자격이 확인된 응답으로만 내려온다 (블러는 장식이지 보안이 아니다). */
+.quiz-expl { display: flex; flex-direction: column; gap: 10px; }
+.quiz-expl-locked { position: relative; overflow: hidden; border: 1px solid rgba(248, 247, 243, 0.14); }
+.quiz-expl-mosaic {
+  filter: blur(5px);
+  opacity: 0.55;
+  padding: 18px 20px;
+  user-select: none;
+  pointer-events: none;
+}
+.quiz-expl-mosaic p { margin: 0 0 12px; color: rgba(248, 247, 243, 0.85); line-height: 1.8; word-break: keep-all; }
+.quiz-expl-veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(180deg, rgba(42, 32, 29, 0.25), rgba(42, 32, 29, 0.82));
+}
+.quiz-expl-veil p { margin: 0; font: 700 15px var(--font-sans); color: var(--white); }
+.quiz-expl-veil small { max-width: 420px; color: rgba(248, 247, 243, 0.75); line-height: 1.6; word-break: keep-all; }
+.quiz-expl-body.is-open {
+  padding: 18px 20px;
+  border: 1px solid rgba(229, 194, 107, 0.45);
+  background: rgba(229, 194, 107, 0.06);
+}
+.quiz-expl-body.is-open p { margin: 0 0 14px; color: rgba(248, 247, 243, 0.92); line-height: 1.85; word-break: keep-all; }
+.quiz-expl-body.is-open p:last-child { margin-bottom: 0; }
+.quiz-back { display: flex; justify-content: space-between; gap: 12px; margin: 4px 0 0; font: 400 13px var(--font-sans); }
+.quiz-back a { color: rgba(248, 247, 243, 0.7); text-decoration: none; }
+.quiz-back a:hover { color: var(--white); }
+
+/* 내 학습 현황 — 풀이 집계 */
+.me-stats--solved { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.me-solved { display: flex; flex-direction: column; gap: 14px; }
+.me-solved-empty { margin: 0; color: rgba(248, 247, 243, 0.65); line-height: 1.6; }
+.me-answers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.me-answers li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(248, 247, 243, 0.05);
+  border: 1px solid rgba(248, 247, 243, 0.1);
+}
+.me-answers a { color: rgba(248, 247, 243, 0.85); text-decoration: none; font-size: 13px; line-height: 1.5; }
+.me-answers a:hover { color: var(--white); }
+.me-answers li span { flex-shrink: 0; font: 700 12px var(--font-sans); }
+.me-answers li span[data-state="pass"] { color: var(--heritage-soft); }
+.me-answers li span[data-state="fail"] { color: var(--ember-on-dark); }
+.me-answers li span[data-state="pending"] { color: rgba(248, 247, 243, 0.55); }
+
+/* 관리자 채점함 */
+.admin-answer-body {
+  margin: 8px 0;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-left: 3px solid var(--paper-deep);
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+.admin-grade-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.admin-grade-row input[type="number"] { width: 90px; }
+.admin-grade-row input:not([type="number"]) { flex: 1; min-width: 200px; }

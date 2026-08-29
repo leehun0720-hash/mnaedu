@@ -56,6 +56,8 @@ export const QUESTIONS_PER_QUIZ = 3;
 
 /** What the public page renders. Answers and intent never appear here. */
 export type PublicQuestion = {
+  /** DB 문제의 id — 예시(시드) 문제에는 없어서 풀이 화면이 열리지 않는다 */
+  id?: number;
   no: number;
   trackLabel: string;
   level: string;

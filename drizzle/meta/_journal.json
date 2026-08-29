@@ -15,6 +15,13 @@
       "when": 1787963176513,
       "tag": "0001_pretty_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787985592301,
+      "tag": "0002_magenta_dorian_gray",
+      "breakpoints": true
     }
   ]
 }

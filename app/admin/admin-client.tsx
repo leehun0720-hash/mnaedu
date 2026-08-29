@@ -13,6 +13,7 @@ type Row = {
   choices: string[] | null;
   answer: string | null;
   intent: string | null;
+  explanation: string | null;
   published: boolean;
   createdAt: string;
 };
@@ -26,7 +27,24 @@ type Draft = {
   choices: string[];
   answer: string;
   intent: string;
+  explanation: string;
   published: boolean;
+};
+
+type AnswerRow = {
+  id: number;
+  status: string;
+  score: number | null;
+  gradedBy: string | null;
+  feedback: string | null;
+  body: string;
+  createdAt: string;
+  questionId: number;
+  prompt: string | null;
+  level: string | null;
+  track: string | null;
+  memberEmail: string | null;
+  memberName: string | null;
 };
 
 const EMPTY: Draft = {
@@ -38,6 +56,7 @@ const EMPTY: Draft = {
   choices: ["", ""],
   answer: "",
   intent: "",
+  explanation: "",
   published: false,
 };
 
@@ -60,10 +79,16 @@ export default function AdminClient({
   const [paste, setPaste] = useState("");
   const [notice, setNotice] = useState("");
 
+  // 채점함 — 주관식 답안을 회장이 직접 채점한다 (AI 채점 미설정 시 필수 경로)
+  const [inbox, setInbox] = useState<AnswerRow[]>([]);
+  const [grades, setGrades] = useState<Record<number, { score: string; feedback: string }>>({});
+
   const load = useCallback(async () => {
     if (!dbConfigured) return;
     const res = await fetch("/api/admin/questions");
     if (res.ok) setRows(((await res.json()) as { questions: Row[] }).questions);
+    const ans = await fetch("/api/admin/answers");
+    if (ans.ok) setInbox(((await ans.json()) as { answers: AnswerRow[] }).answers);
   }, [dbConfigured]);
 
   // Initial fetch after login. The guard stops a late response writing state
@@ -71,10 +96,14 @@ export default function AdminClient({
   useEffect(() => {
     if (!loggedIn || !dbConfigured) return;
     let alive = true;
-    fetch("/api/admin/questions")
-      .then((r) => (r.ok ? (r.json() as Promise<{ questions: Row[] }>) : null))
-      .then((data) => {
-        if (alive && data) setRows(data.questions);
+    Promise.all([
+      fetch("/api/admin/questions").then((r) => (r.ok ? (r.json() as Promise<{ questions: Row[] }>) : null)),
+      fetch("/api/admin/answers").then((r) => (r.ok ? (r.json() as Promise<{ answers: AnswerRow[] }>) : null)),
+    ])
+      .then(([q, a]) => {
+        if (!alive) return;
+        if (q) setRows(q.questions);
+        if (a) setInbox(a.answers);
       })
       .catch(() => {});
     return () => {
@@ -104,6 +133,30 @@ export default function AdminClient({
     await fetch("/api/admin/logout", { method: "POST" });
     setLoggedIn(false);
     setRows([]);
+    setInbox([]);
+  }
+
+  async function saveGrade(id: number) {
+    const g = grades[id];
+    const score = Number(g?.score);
+    if (!g || !Number.isFinite(score) || score < 0 || score > 100) {
+      setError("점수는 0~100 사이 숫자여야 합니다.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/admin/answers", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, score, feedback: g.feedback }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setError(((await res.json()) as { error?: string }).error ?? "채점을 저장하지 못했습니다.");
+      return;
+    }
+    setNotice("채점을 저장했습니다. 통과한 답안에는 퀴즈 포인트가 적립됩니다.");
+    void load();
   }
 
   async function save(e: React.FormEvent) {
@@ -149,6 +202,7 @@ export default function AdminClient({
       choices: r.choices?.length ? r.choices : ["", ""],
       answer: r.answer ?? "",
       intent: r.intent ?? "",
+      explanation: r.explanation ?? "",
       published: r.published,
     });
     setNotice("");
@@ -332,6 +386,16 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             </label>
           </div>
 
+          <label className="admin-field">
+            해설 <small>유료회원이 포인트로 열람 — 풀이 화면의 정답 아래에 표시됩니다</small>
+            <textarea
+              rows={5}
+              value={draft.explanation}
+              onChange={(e) => setDraft({ ...draft, explanation: e.target.value })}
+              placeholder="교과서 논지가 실전에서 무너지는 조건까지 짚는 회장 해설을 적으십시오."
+            />
+          </label>
+
           <label className="admin-check">
             <input
               type="checkbox"
@@ -354,6 +418,57 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           {error && <p className="admin-error">{error}</p>}
           {notice && <p className="admin-ok">{notice}</p>}
         </form>
+
+        <section className="admin-card">
+          <h2>채점함 ({inbox.filter((a) => a.status === "pending").length}건 대기)</h2>
+          <p className="admin-note">
+            주관식 답안입니다. 60점 이상이면 통과로 처리되어 회원에게 퀴즈 포인트가 적립되고,
+            강평은 본인에게만 보입니다.
+          </p>
+          {inbox.length === 0 ? (
+            <p className="admin-note">아직 제출된 답안이 없습니다.</p>
+          ) : (
+            <ul className="admin-list">
+              {inbox.map((a) => (
+                <li key={a.id}>
+                  <div className="admin-list-meta">
+                    <span className={a.status === "pending" ? "admin-tag" : "admin-tag admin-tag--on"}>
+                      {a.status === "pending" ? "채점 대기" : `${a.score}점 · ${a.gradedBy === "ai" ? "AI" : a.gradedBy === "auto" ? "자동" : "회장"}`}
+                    </span>
+                    <span>{a.memberName ?? a.memberEmail ?? "회원"}</span>
+                    <span>{a.level ?? ""}</span>
+                  </div>
+                  <p className="admin-list-prompt">[문제] {a.prompt ?? `#${a.questionId}`}</p>
+                  <p className="admin-answer-body">[답안] {a.body}</p>
+                  {a.status === "pending" && (
+                    <div className="admin-grade-row">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        placeholder="점수"
+                        value={grades[a.id]?.score ?? ""}
+                        onChange={(e) =>
+                          setGrades({ ...grades, [a.id]: { score: e.target.value, feedback: grades[a.id]?.feedback ?? "" } })
+                        }
+                      />
+                      <input
+                        placeholder="강평 (본인에게만 보임)"
+                        value={grades[a.id]?.feedback ?? ""}
+                        onChange={(e) =>
+                          setGrades({ ...grades, [a.id]: { score: grades[a.id]?.score ?? "", feedback: e.target.value } })
+                        }
+                      />
+                      <button className="admin-btn" onClick={() => saveGrade(a.id)} disabled={busy}>
+                        채점 저장
+                      </button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="admin-card">
           <h2>등록된 문제 ({rows.length})</h2>

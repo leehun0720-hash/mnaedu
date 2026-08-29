@@ -19,6 +19,9 @@ export const POINTS = {
   onJoin: 60,
 } as const;
 
+/** 통과 커트라인 — 이 점수부터 포인트가 적립되고 승급에 반영된다 */
+export const PASS_SCORE = 60;
+
 export type Tier = "free" | "paid";
 
 /** 무료회원에게 열리는 레벨은 L1 하나뿐이다 */

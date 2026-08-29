@@ -28,6 +28,7 @@ type Payload = {
   choices?: unknown;
   answer?: string;
   intent?: string;
+  explanation?: string;
   published?: boolean;
 };
 
@@ -57,6 +58,7 @@ function validate(body: Payload) {
       choices,
       answer: (body.answer ?? "").trim() || null,
       intent: (body.intent ?? "").trim() || null,
+      explanation: (body.explanation ?? "").trim() || null,
       published: Boolean(body.published),
     },
   };

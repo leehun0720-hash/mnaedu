@@ -28,6 +28,7 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
     if (rows.length === 0) return SEED_QUESTIONS;
 
     return rows.map((r, i) => ({
+      id: r.id,
       no: i + 1,
       trackLabel: courseLabel(r.track),
       level: normalizeLevel(r.level),
@@ -39,5 +40,45 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
   } catch (err) {
     console.error("[questions] falling back to seed set:", err);
     return SEED_QUESTIONS;
+  }
+}
+
+/** 풀이 화면이 쓰는 문제 전문 — 정답·의도·해설은 여기 실리지 않는다 */
+export type QuizQuestion = {
+  id: number;
+  track: string;
+  trackLabel: string;
+  level: string;
+  levelClass: string;
+  format: string;
+  prompt: string;
+  choices: string[] | null;
+  /** 해설이 등록되어 있는지만 알려준다 — 본문은 /api/explanation으로만 나간다 */
+  hasExplanation: boolean;
+};
+
+export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const [r] = await getDb()
+      .select()
+      .from(questions)
+      .where(eq(questions.id, id))
+      .limit(1);
+    if (!r || !r.published) return null;
+    return {
+      id: r.id,
+      track: r.track,
+      trackLabel: courseLabel(r.track),
+      level: normalizeLevel(r.level),
+      levelClass: levelClass(r.level),
+      format: r.format,
+      prompt: r.prompt,
+      choices: r.choices ?? null,
+      hasExplanation: Boolean(r.explanation),
+    };
+  } catch (err) {
+    console.error("[questions] quiz lookup failed:", err);
+    return null;
   }
 }

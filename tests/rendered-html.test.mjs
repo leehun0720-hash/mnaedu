@@ -110,3 +110,10 @@ test("both sites carry the shared right-hand rail", async () => {
     assert.match(html, /site-rail/, `${path} should render the rail`);
   }
 });
+
+test("quiz detail pages 404 rather than guess when the database is absent", async () => {
+  // DB 없이는 문제를 특정할 수 없다 — 빈 화면이나 오류 대신 404로 물러난다.
+  // (정답·해설이 실릴 자리 자체가 만들어지지 않는다는 확인이기도 하다)
+  const response = await render("/academy/quiz/1");
+  assert.equal(response.status, 404);
+});

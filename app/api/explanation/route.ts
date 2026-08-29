@@ -33,6 +33,8 @@ export async function POST(request: Request) {
     "not-member": { message: "로그인 후 이용하실 수 있습니다.", status: 401 },
     "not-found": { message: "해설이 아직 등록되지 않았습니다.", status: 404 },
     "locked-level": { message: "유료회원에게 열리는 레벨입니다.", status: 403 },
+    "free-tier": { message: "해설 열람은 유료회원에게 열립니다.", status: 403 },
+    "not-answered": { message: "문제를 먼저 풀어 주십시오. 해설은 풀이의 보상입니다.", status: 409 },
     "not-enough-points": { message: "포인트가 모자랍니다. 문제를 더 풀어 주십시오.", status: 402 },
   };
   const { message, status } = messages[result.reason];

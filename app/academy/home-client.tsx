@@ -323,9 +323,6 @@ export default function Home({
   const hero = HERO_VARIANTS[heroVariant];
 
   // Which gate question is on screen
-  const [selectedExamIndex, setSelectedExamIndex] = useState(0);
-
-  const handleSelectExam = (index: number) => setSelectedExamIndex(index);
 
   // 예시 문제 체험 — 채점은 회장 확정 채점이라(보고서 4.4) 웹에서 점수를
   // 매기지 않는다. 답안을 써 보게 하고 평가 기준만 보여 준다.
@@ -801,27 +798,36 @@ export default function Home({
         </div>
 
         <div className="exam-grid">
-          {weeklyExams.map((exam, idx) => (
-            <button
-              key={exam.no}
-              type="button"
-              className={`exam-card ${selectedExamIndex === idx ? "is-active" : ""}`}
-              onClick={() => handleSelectExam(idx)}
-              aria-pressed={selectedExamIndex === idx}
-            >
-              <span className="exam-track-label">{exam.trackLabel}</span>
-              <div className="exam-tags">
-                <span className="exam-tag">예시 문제 {exam.no}</span>
-                <span className={`exam-tag ${exam.levelClass}`}>{exam.level}</span>
-                <span className="exam-tag">{exam.type}</span>
-              </div>
-              <p className="exam-prompt">[문제] {exam.prompt}</p>
-              <span className="exam-select-cue">
-                {selectedExamIndex === idx ? "선택한 문제" : "문제 자세히 보기"}
-                <i style={{ fontStyle: "normal" }}>{selectedExamIndex === idx ? "●" : "→"}</i>
-              </span>
-            </button>
-          ))}
+          {weeklyExams.map((exam) =>
+            exam.id ? (
+              // 정식 출제 문제 — 풀이 화면(답안 제출 → 채점 → 해설)으로 간다
+              <Link key={exam.no} className="exam-card" href={`/academy/quiz/${exam.id}`}>
+                <span className="exam-track-label">{exam.trackLabel}</span>
+                <div className="exam-tags">
+                  <span className="exam-tag">출제 문제 {exam.no}</span>
+                  <span className={`exam-tag ${exam.levelClass}`}>{exam.level}</span>
+                  <span className="exam-tag">{exam.type}</span>
+                </div>
+                <p className="exam-prompt">[문제] {exam.prompt}</p>
+                <span className="exam-select-cue">
+                  문제 풀러 가기
+                  <i style={{ fontStyle: "normal" }}>→</i>
+                </span>
+              </Link>
+            ) : (
+              // 시드(예시) 문제 — DB 연결 전의 미리보기라 풀이 화면이 없다
+              <article key={exam.no} className="exam-card">
+                <span className="exam-track-label">{exam.trackLabel}</span>
+                <div className="exam-tags">
+                  <span className="exam-tag">예시 문제 {exam.no}</span>
+                  <span className={`exam-tag ${exam.levelClass}`}>{exam.level}</span>
+                  <span className="exam-tag">{exam.type}</span>
+                </div>
+                <p className="exam-prompt">[문제] {exam.prompt}</p>
+                <span className="exam-select-cue">정식 출제분에서 풀이가 열립니다</span>
+              </article>
+            )
+          )}
         </div>
 
         <p className="exam-notice">

@@ -3,8 +3,8 @@
 -- Supabase 대시보드 → SQL Editor 에 이 파일 전체를 붙여넣고 실행하십시오.
 -- 여러 번 실행해도 안전합니다 (IF NOT EXISTS).
 --
--- drizzle/0000_*.sql 과 drizzle/0001_*.sql 을 합치고, Supabase에서 반드시
--- 필요한 접근 차단(아래 2부)을 더한 것입니다.
+-- drizzle/0000~0002_*.sql 을 합치고, Supabase에서 반드시 필요한
+-- 접근 차단(아래 2부)을 더한 것입니다.
 
 -- ─────────────────────────────────────────────────────────────
 -- 1부. 테이블
@@ -66,6 +66,24 @@ CREATE TABLE IF NOT EXISTS "unlocked_explanations" (
 CREATE UNIQUE INDEX IF NOT EXISTS "unlocked_member_question_idx"
 	ON "unlocked_explanations" USING btree ("member_id","question_id");
 
+
+-- 답안. 한 문제 한 번 제출 — 객관식은 자동, 주관식은 회장/AI 채점.
+CREATE TABLE IF NOT EXISTS "answers" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"member_id" integer NOT NULL,
+	"question_id" integer NOT NULL,
+	"body" text NOT NULL,
+	"choice_index" integer,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"score" integer,
+	"graded_by" text,
+	"feedback" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"graded_at" timestamp with time zone
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "answers_member_question_idx" ON "answers" USING btree ("member_id","question_id");
+CREATE INDEX IF NOT EXISTS "answers_status_idx" ON "answers" USING btree ("status","created_at");
+
 -- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다
 -- ─────────────────────────────────────────────────────────────
@@ -83,12 +101,14 @@ ALTER TABLE "questions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "point_ledger" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "unlocked_explanations" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "answers" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
 REVOKE ALL ON TABLE "members" FROM anon, authenticated;
 REVOKE ALL ON TABLE "point_ledger" FROM anon, authenticated;
 REVOKE ALL ON TABLE "unlocked_explanations" FROM anon, authenticated;
+REVOKE ALL ON TABLE "answers" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;

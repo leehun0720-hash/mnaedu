@@ -118,3 +118,40 @@ export const unlockedExplanations = pgTable(
 );
 
 export type UnlockedExplanation = typeof unlockedExplanations.$inferSelect;
+
+/**
+ * 회원이 제출한 답안과 채점 결과.
+ *
+ * 한 문제에 한 번만 제출한다(선발 테스트 성격) — (member, question) 유니크.
+ * 객관식은 제출 즉시 자동 채점되고, 주관식은 회장 채점(관리자 화면) 또는
+ * AI 채점(ANTHROPIC_API_KEY 설정 시)을 거쳐 graded로 바뀐다. 통과(60점↑)하면
+ * 포인트가 적립되고 통과 레벨이 올라간다.
+ */
+export const answers = pgTable(
+  "answers",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id").notNull(),
+    questionId: integer("question_id").notNull(),
+    /** 주관식은 서술 본문, 객관식은 고른 보기의 원문 */
+    body: text("body").notNull(),
+    /** 객관식에서 고른 보기 번호 (0부터) — 주관식은 null */
+    choiceIndex: integer("choice_index"),
+    /** pending | graded */
+    status: text("status").notNull().default("pending"),
+    /** 0~100, graded일 때만 존재 */
+    score: integer("score"),
+    /** auto(객관식) | ai | admin(회장) */
+    gradedBy: text("graded_by"),
+    /** 채점 강평 — 본인에게만 보인다 */
+    feedback: text("feedback"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    gradedAt: timestamp("graded_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("answers_member_question_idx").on(t.memberId, t.questionId),
+    index("answers_status_idx").on(t.status, t.createdAt),
+  ]
+);
+
+export type Answer = typeof answers.$inferSelect;

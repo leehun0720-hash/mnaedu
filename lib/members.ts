@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq, sql } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
-import { members, pointLedger, questions, unlockedExplanations } from "@/db/schema";
+import { answers, members, pointLedger, questions, unlockedExplanations } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
 import { POINTS, canAccessLevel, type Tier } from "@/lib/membership";
 
@@ -72,7 +72,10 @@ function toProfile(row: typeof members.$inferSelect): MemberProfile {
 
 export type UnlockResult =
   | { ok: true; explanation: string; pointsLeft: number; alreadyOpen: boolean }
-  | { ok: false; reason: "no-db" | "not-member" | "not-found" | "locked-level" | "not-enough-points" };
+  | {
+      ok: false;
+      reason: "no-db" | "not-member" | "not-found" | "locked-level" | "free-tier" | "not-answered" | "not-enough-points";
+    };
 
 /**
  * 해설 열람.
@@ -93,6 +96,15 @@ export async function unlockExplanation(questionId: number): Promise<UnlockResul
     .limit(1);
   if (!question || !question.explanation) return { ok: false, reason: "not-found" };
   if (!canAccessLevel(member.tier, question.level)) return { ok: false, reason: "locked-level" };
+  // 해설 열람은 유료회원 전용 — 무료회원에게는 모자이크 미리보기만 보인다
+  if (member.tier !== "paid") return { ok: false, reason: "free-tier" };
+  // 풀지 않은 문제의 해설은 열리지 않는다 — 해설은 풀이의 보상이다
+  const [attempted] = await db
+    .select({ id: answers.id })
+    .from(answers)
+    .where(and(eq(answers.memberId, member.id), eq(answers.questionId, questionId)))
+    .limit(1);
+  if (!attempted) return { ok: false, reason: "not-answered" };
 
   const [already] = await db
     .select()
