@@ -202,3 +202,18 @@ export const orders = pgTable(
 );
 
 export type Order = typeof orders.$inferSelect;
+
+/**
+ * 관리자 로그인 실패 기록 (무차별 대입 차단).
+ *
+ * 서버리스에서는 요청마다 다른 인스턴스가 뜨므로 메모리 카운터도, 응답을
+ * 늦추는 것도 소용이 없다 — 지연은 한 요청만 붙잡을 뿐, 동시에 백 번
+ * 두드리면 총 1초다. 세는 곳은 모든 인스턴스가 공유하는 DB여야 한다.
+ */
+export const adminLoginAttempts = pgTable("admin_login_attempts", {
+  /** 요청 출처. 프록시 뒤이므로 x-forwarded-for의 첫 주소를 쓴다 */
+  ip: text("ip").primaryKey(),
+  fails: integer("fails").notNull().default(0),
+  firstFailAt: timestamp("first_fail_at", { withTimezone: true }).notNull().defaultNow(),
+  blockedUntil: timestamp("blocked_until", { withTimezone: true }),
+});

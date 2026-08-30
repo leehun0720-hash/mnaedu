@@ -119,18 +119,28 @@ export async function unlockExplanation(questionId: number): Promise<UnlockResul
     .limit(1);
   if (!attempted) return { ok: false, reason: "not-answered" };
 
-  const [already] = await db
-    .select()
-    .from(unlockedExplanations)
-    .where(
-      and(eq(unlockedExplanations.memberId, member.id), eq(unlockedExplanations.questionId, questionId))
-    )
-    .limit(1);
-  if (already) {
+  if (member.points < POINTS.perExplanation) return { ok: false, reason: "not-enough-points" };
+
+  /**
+   * 열람 기록을 먼저 잡고, 그 자리를 얻은 요청만 차감한다.
+   *
+   * 조회 후 차감 순서로 두면 같은 문제로 동시에 두 번 들어온 요청이 둘 다
+   * '아직 안 열림'을 보고 각각 30P씩 차감한 뒤, 뒤늦게 유니크 제약에 걸려
+   * 한쪽이 터진다 — 60P가 빠졌는데 원장에는 30P만 남는다. (member, question)
+   * 유니크 인덱스를 경합의 심판으로 쓰면 그 창이 아예 없어진다.
+   */
+  const [claim] = await db
+    .insert(unlockedExplanations)
+    .values({ memberId: member.id, questionId })
+    .onConflictDoNothing({
+      target: [unlockedExplanations.memberId, unlockedExplanations.questionId],
+    })
+    .returning();
+
+  if (!claim) {
+    // 이미 연 해설 — 다시 차감하지 않는다
     return { ok: true, explanation: question.explanation, pointsLeft: member.points, alreadyOpen: true };
   }
-
-  if (member.points < POINTS.perExplanation) return { ok: false, reason: "not-enough-points" };
 
   // 잔액을 읽고 쓰는 사이에 다른 요청이 끼어들 수 있으므로, 차감은 조건을
   // 건 UPDATE 한 번으로 처리한다 — 포인트가 모자라면 아무 행도 바뀌지 않는다.
@@ -139,9 +149,16 @@ export async function unlockExplanation(questionId: number): Promise<UnlockResul
     .set({ points: sql`${members.points} - ${POINTS.perExplanation}`, updatedAt: new Date() })
     .where(and(eq(members.id, member.id), sql`${members.points} >= ${POINTS.perExplanation}`))
     .returning();
-  if (!charged) return { ok: false, reason: "not-enough-points" };
 
-  await db.insert(unlockedExplanations).values({ memberId: member.id, questionId });
+  if (!charged) {
+    // 차감에 실패했으면 잡아 둔 자리를 반드시 돌려놓는다 — 그러지 않으면
+    // 돈은 안 냈는데 열린 것으로 남아 다음 요청이 공짜로 통과한다.
+    await db
+      .delete(unlockedExplanations)
+      .where(eq(unlockedExplanations.id, claim.id));
+    return { ok: false, reason: "not-enough-points" };
+  }
+
   await db.insert(pointLedger).values({
     memberId: member.id,
     kind: "spend",

@@ -108,6 +108,21 @@ CREATE INDEX IF NOT EXISTS "orders_status_idx" ON "orders" USING btree ("status"
 -- 구독 만료일. null이면 기한 없음(관리자가 직접 올린 계정).
 ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "paid_until" timestamp with time zone;
 
+
+-- 관리자 로그인 실패 기록. 서버리스에서는 메모리 카운터가 소용없어
+-- 모든 인스턴스가 공유하는 DB에서 센다.
+CREATE TABLE IF NOT EXISTS "admin_login_attempts" (
+	"ip" text PRIMARY KEY NOT NULL,
+	"fails" integer DEFAULT 0 NOT NULL,
+	"first_fail_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"blocked_until" timestamp with time zone
+);
+
+-- 한 회원이 확인 대기 주문을 둘 이상 만들지 못하게 막는다. 애플리케이션의
+-- 사전 조회만으로는 동시에 들어온 두 신청을 걸러내지 못한다.
+CREATE UNIQUE INDEX IF NOT EXISTS "orders_one_pending_per_member_idx"
+	ON "orders" ("member_id") WHERE "status" = 'pending';
+
 -- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다
 -- ─────────────────────────────────────────────────────────────
@@ -127,6 +142,7 @@ ALTER TABLE "point_ledger" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "unlocked_explanations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "answers" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "orders" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "admin_login_attempts" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
@@ -135,6 +151,7 @@ REVOKE ALL ON TABLE "point_ledger" FROM anon, authenticated;
 REVOKE ALL ON TABLE "unlocked_explanations" FROM anon, authenticated;
 REVOKE ALL ON TABLE "answers" FROM anon, authenticated;
 REVOKE ALL ON TABLE "orders" FROM anon, authenticated;
+REVOKE ALL ON TABLE "admin_login_attempts" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;

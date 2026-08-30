@@ -3,7 +3,7 @@ import "server-only";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { members, orders, type Order } from "@/db/schema";
-import { extendUntil, findPlan, newOrderId } from "@/lib/billing";
+import { findPlan, newOrderId } from "@/lib/billing";
 import { getCurrentMember } from "@/lib/members";
 
 /**
@@ -91,17 +91,19 @@ export async function activateOrder(
     .returning();
   if (!order) return { ok: false, reason: "not-pending" };
 
-  const [member] = await db.select().from(members).where(eq(members.id, order.memberId)).limit(1);
-  if (!member) return { ok: false, reason: "no-member" };
-
-  await db
+  // 남은 기간에 이어 붙이는 계산을 DB 안에서 한다. 읽고 쓰는 사이에 다른
+  // 승인이 끼어들면 한쪽 기간이 통째로 사라지기 때문이다 — GREATEST가
+  // 만료된 값과 지금 중 큰 쪽을 고르므로 과거에 이어 붙는 일도 없다.
+  const [updated] = await db
     .update(members)
     .set({
       tier: "paid",
-      paidUntil: extendUntil(member.paidUntil, order.days),
+      paidUntil: sql`GREATEST(COALESCE(${members.paidUntil}, now()), now()) + (${order.days} * interval '1 day')`,
       updatedAt: new Date(),
     })
-    .where(eq(members.id, order.memberId));
+    .where(eq(members.id, order.memberId))
+    .returning();
+  if (!updated) return { ok: false, reason: "no-member" };
 
   return { ok: true };
 }
