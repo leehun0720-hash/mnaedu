@@ -4208,3 +4208,23 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .bill-orders li span[data-status="pending"] { margin-left: auto; font-weight: 700; color: var(--ember-on-dark); }
 .bill-orders li span[data-status="canceled"],
 .bill-orders li span[data-status="failed"] { margin-left: auto; color: rgba(248, 247, 243, 0.5); }
+
+/* 열람자 워터마크 — 캡처를 막지 못하는 대신 출처를 남긴다 (보고서 8장) */
+.watermark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+  z-index: 1;
+}
+/* 워터마크를 얹는 영역은 기준점이 되어야 한다 */
+.quiz-expl-body.is-open { position: relative; }
+.quiz-expl-body.is-open > * { position: relative; z-index: 2; }
+
+/* 모바일 길게 누르기 — 복사·이미지 저장 메뉴가 뜨는 경로 */
+.copy-guarded body,
+.copy-guarded .co-page,
+.copy-guarded main {
+  -webkit-touch-callout: none;
+}
+.copy-guarded img { -webkit-user-drag: none; user-select: none; }

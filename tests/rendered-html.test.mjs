@@ -117,3 +117,22 @@ test("quiz detail pages 404 rather than guess when the database is absent", asyn
   const response = await render("/academy/quiz/1");
   assert.equal(response.status, 404);
 });
+
+test("answers, intent and explanations never reach the public HTML", async () => {
+  // 불변 원칙 (보고서 4.3 · 8장): 정답·출제 의도·해설은 공개 데이터에서
+  // 원천 배제된다. 서버 컴포넌트가 행 전체를 클라이언트 컴포넌트에 넘기면
+  // 렌더하지 않아도 HTML 페이로드에 실려 나가므로 여기서 잡는다.
+  for (const path of ["/academy", "/company", "/"]) {
+    const html = await renderHtml(path);
+    assert.doesNotMatch(html, /"answer"\s*:/, `${path} must not carry answers`);
+    assert.doesNotMatch(html, /"intent"\s*:/, `${path} must not carry authoring intent`);
+    assert.doesNotMatch(html, /"explanation"\s*:/, `${path} must not carry explanations`);
+  }
+});
+
+test("copy protection is mounted on the public faces", async () => {
+  for (const path of ["/", "/company", "/academy"]) {
+    const html = await renderHtml(path);
+    assert.match(html, /copy-guard|copyGuard|CopyGuard/i, `${path} should carry the copy guard`);
+  }
+});

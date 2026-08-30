@@ -9,8 +9,9 @@ import { useEffect } from "react";
  * 입력 요소는 예외로 두어야 문의 양식과 검색이 정상 동작하고, 관리자
  * 화면(/admin)에는 이 컴포넌트를 붙이지 않아 출제 작업이 막히지 않는다.
  *
- * 한계는 보고서 8장에 고지한 그대로다 — 화면 캡처까지 막는 완전 차단은
- * 불가능하므로 핵심 자산은 회원 전용 열람·워터마크로 보완한다.
+ * 한계는 보고서 8장에 고지한 그대로다 — 화면 캡처는 어떤 웹 기술로도 막지
+ * 못한다. 그래서 핵심 자산(회장 해설)은 회원 전용 열람으로 가두고, 그 위에
+ * 열람자 워터마크(app/watermark.tsx)를 깔아 유출 시 출처가 드러나게 한다.
  */
 const isEditable = (target: EventTarget | null): boolean => {
   const el = target as HTMLElement | null;
@@ -27,8 +28,15 @@ export default function CopyGuard() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isEditable(e.target)) return;
       const mod = e.ctrlKey || e.metaKey;
-      // 저장·인쇄·소스 보기와 복사/잘라내기
-      if (mod && ["c", "x", "s", "p", "u"].includes(e.key.toLowerCase())) {
+      const key = e.key.toLowerCase();
+      // 복사·잘라내기·전체선택과 저장·인쇄·소스 보기
+      if (mod && !e.shiftKey && ["c", "x", "a", "s", "p", "u"].includes(key)) {
+        e.preventDefault();
+        return;
+      }
+      // 개발자 도구 — 우회 가능하지만 즉흥적인 시도는 여기서 걸린다.
+      // 이것으로 자산이 지켜진다고 보지는 않는다(보고서 8장).
+      if (e.key === "F12" || (mod && e.shiftKey && ["i", "j", "c"].includes(key))) {
         e.preventDefault();
       }
     };

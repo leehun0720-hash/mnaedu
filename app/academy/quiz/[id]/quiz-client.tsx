@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Watermark from "@/app/watermark";
 import type { QuizQuestion } from "@/lib/questions-db";
 import type { AnswerView } from "@/lib/answers";
 import { PASS_SCORE, POINTS } from "@/lib/membership";
@@ -27,6 +28,7 @@ export default function QuizClient({
   correctChoiceIndex: initialCorrect,
   unlockedExplanation,
   authConfigured,
+  watermarkLabel,
 }: {
   question: QuizQuestion;
   member: MemberSummary;
@@ -34,6 +36,8 @@ export default function QuizClient({
   correctChoiceIndex?: number;
   unlockedExplanation?: string;
   authConfigured: boolean;
+  /** 해설 위에 깔릴 열람자 표시 — 서버가 만든다 (회원 식별 정보) */
+  watermarkLabel: string;
 }) {
   const [myAnswer, setMyAnswer] = useState<AnswerView | null>(initialAnswer);
   const [correctIndex, setCorrectIndex] = useState<number | undefined>(initialCorrect);
@@ -229,6 +233,8 @@ export default function QuizClient({
               <h2>성보경 회장 해설</h2>
               {explanation ? (
                 <div className="quiz-expl-body is-open">
+                  {/* 캡처는 막을 수 없으므로 열람자를 남긴다 (보고서 8장) */}
+                  <Watermark label={watermarkLabel} />
                   {explanation.split(/\n{2,}/).map((p, i) => (
                     <p key={i}>{p}</p>
                   ))}

@@ -65,7 +65,22 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
         correctChoiceIndex={correctChoiceIndex}
         unlockedExplanation={unlockedExplanation}
         authConfigured={isAuthConfigured()}
+        watermarkLabel={member ? watermarkLabel(member.email) : ""}
       />
     </AuthShell>
   );
+}
+
+/**
+ * 워터마크에 실을 열람자 표시.
+ *
+ * 전체 이메일을 그대로 깔면 캡처 한 장으로 회원 주소가 새어 나간다. 앞 세
+ * 글자와 도메인만 남겨 본인은 자기 것임을 알아보고, 운영자는 로그와 대조해
+ * 특정할 수 있되, 화면만 보고 주소를 알아내지는 못하게 한다.
+ */
+function watermarkLabel(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain) return "FRONTIER M&A";
+  const head = local.slice(0, 3);
+  return `${head}${"*".repeat(Math.max(1, local.length - 3))}@${domain}`;
 }
