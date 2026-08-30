@@ -4228,3 +4228,64 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   -webkit-touch-callout: none;
 }
 .copy-guarded img { -webkit-user-drag: none; user-select: none; }
+
+/* ============================================================
+   이용 안내 (/academy/help) — 회원용 도움말
+   ============================================================ */
+.help-page {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: clamp(28px, 4vw, 40px);
+  background: var(--ink);
+  border: 1px solid rgba(248, 247, 243, 0.16);
+}
+.help-page h1 { margin: 0; font: 700 clamp(23px, 3vw, 28px) var(--font-serif); color: var(--white); }
+.help-lead { margin: 0; color: rgba(248, 247, 243, 0.8); line-height: 1.7; word-break: keep-all; }
+.help-toc { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px; }
+.help-toc a {
+  padding: 7px 14px;
+  border: 1px solid rgba(248, 247, 243, 0.2);
+  border-radius: 999px;
+  font-size: 13px;
+  color: rgba(248, 247, 243, 0.85);
+  text-decoration: none;
+}
+.help-toc a:hover { border-color: var(--ember-on-dark); color: var(--white); }
+.help-section { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 24px; }
+.help-section h2 {
+  margin: 8px 0 0;
+  font: 700 12px var(--font-label);
+  letter-spacing: 0.18em;
+  color: var(--heritage-soft);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(248, 247, 243, 0.14);
+}
+.help-section-intro { margin: 0; color: rgba(248, 247, 243, 0.72); line-height: 1.7; word-break: keep-all; }
+.help-blocks { display: flex; flex-direction: column; gap: 8px; }
+.help-block {
+  border: 1px solid rgba(248, 247, 243, 0.12);
+  background: rgba(248, 247, 243, 0.05);
+}
+.help-block summary {
+  cursor: pointer;
+  padding: 14px 16px;
+  font: 700 15px var(--font-sans);
+  color: var(--white);
+  list-style: none;
+  position: relative;
+}
+.help-block summary::-webkit-details-marker { display: none; }
+.help-block summary::after {
+  content: "+";
+  position: absolute;
+  right: 16px;
+  color: var(--heritage-soft);
+  font-weight: 400;
+}
+.help-block[open] summary::after { content: "−"; }
+.help-answer { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.help-answer p { margin: 0; color: rgba(248, 247, 243, 0.85); line-height: 1.75; word-break: keep-all; }
+.help-foot { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.help-foot > p:first-child { margin: 0; color: rgba(248, 247, 243, 0.7); font-size: 14px; }

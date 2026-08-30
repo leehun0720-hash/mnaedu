@@ -125,6 +125,9 @@ export default async function MePage() {
           <Link className="button button-red" href="/academy#exam">
             문제 풀러 가기 <span>→</span>
           </Link>
+          <Link className="button" href="/academy/help">
+            이용 안내
+          </Link>
           <form action="/api/auth/logout" method="post">
             <button type="submit" className="me-logout">
               로그아웃

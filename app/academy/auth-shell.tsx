@@ -23,6 +23,8 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
       <footer className="auth-foot">
         <small>© 2026 ㈜프론티어 M&amp;A</small>
         <small>
+          <Link href="/academy/help">이용 안내</Link>
+          <span aria-hidden="true"> · </span>
           <Link href="/privacy">개인정보처리방침</Link>
           <span aria-hidden="true"> · </span>
           <Link href="/">메인</Link>

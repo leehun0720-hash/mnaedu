@@ -136,3 +136,16 @@ test("copy protection is mounted on the public faces", async () => {
     assert.match(html, /copy-guard|copyGuard|CopyGuard/i, `${path} should carry the copy guard`);
   }
 });
+
+test("the help page renders all its guidance sections", async () => {
+  const html = await renderHtml("/academy/help");
+  assert.match(html, /아카데미 이용 방법/);
+  assert.match(html, /문제 풀이와 채점/);
+  assert.match(html, /포인트와 해설/);
+  assert.match(html, /유료회원 전환/);
+  // 도움말도 회원 화면이므로 검색에서 빠진다
+  assert.match(html, /noindex/);
+  // 안내에도 정답·해설 본문이 실리지 않는다
+  assert.doesNotMatch(html, /"answer"\s*:/);
+  assert.doesNotMatch(html, /"explanation"\s*:/);
+});
