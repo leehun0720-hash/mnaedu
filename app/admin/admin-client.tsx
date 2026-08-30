@@ -31,6 +31,13 @@ type Draft = {
   published: boolean;
 };
 
+/** 분야|레벨 → 그 칸의 문제 수. 출제가 어디에 비어 있는지 보는 지도다. */
+type Coverage = Record<string, { total: number; published: number }>;
+
+type QuestionsResponse = { questions: Row[]; total: number; page: number; coverage: Coverage };
+type AnswersResponse = { answers: AnswerRow[]; total: number; pendingCount: number; page: number };
+type MembersResponse = { members: MemberRow[]; total: number; page: number; freeCount: number; paidCount: number };
+
 type MemberRow = {
   id: number;
   email: string;
@@ -70,6 +77,43 @@ const EMPTY: Draft = {
   published: false,
 };
 
+/** 한 페이지 크기 — 서버(route.ts)와 같은 값이어야 페이지 수가 맞는다 */
+const PAGE_SIZE = 20;
+
+/**
+ * 목록 페이지 이동. 목록이 한 페이지에 다 들어가면 아무것도 그리지 않는다 —
+ * 문제가 세 건일 때까지 페이지 조작을 보여 줄 이유가 없다.
+ */
+function Pager({ page, total, onPage }: { page: number; total: number; onPage: (p: number) => void }) {
+  const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (last <= 1) return null;
+  const from = (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, total);
+  return (
+    <div className="admin-pager">
+      <button
+        type="button"
+        className="admin-btn admin-btn--quiet"
+        disabled={page <= 1}
+        onClick={() => onPage(page - 1)}
+      >
+        ← 이전
+      </button>
+      <span>
+        {from}–{to} / {total}건 · {page}/{last}쪽
+      </span>
+      <button
+        type="button"
+        className="admin-btn admin-btn--quiet"
+        disabled={page >= last}
+        onClick={() => onPage(page + 1)}
+      >
+        다음 →
+      </button>
+    </div>
+  );
+}
+
 export default function AdminClient({
   authed,
   authConfigured,
@@ -89,44 +133,129 @@ export default function AdminClient({
   const [paste, setPaste] = useState("");
   const [notice, setNotice] = useState("");
 
+  // 문제 목록은 서버에서 잘라 온다 — 문제은행이 커져도 화면은 한 페이지다
+  const [qTotal, setQTotal] = useState(0);
+  const [qPage, setQPage] = useState(1);
+  const [qFilter, setQFilter] = useState({ q: "", track: "", level: "", state: "" });
+  const [coverage, setCoverage] = useState<Coverage>({});
+
   // 채점함 — 주관식 답안을 회장이 직접 채점한다 (AI 채점 미설정 시 필수 경로)
   const [inbox, setInbox] = useState<AnswerRow[]>([]);
   const [grades, setGrades] = useState<Record<number, { score: string; feedback: string }>>({});
+  const [inboxStatus, setInboxStatus] = useState("pending");
+  const [inboxPage, setInboxPage] = useState(1);
+  const [inboxTotal, setInboxTotal] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
 
   // 회원 관리 — 결제 연결 전까지 유료 전환은 여기서 수동으로 한다
   const [memberRows, setMemberRows] = useState<MemberRow[]>([]);
+  const [mTotal, setMTotal] = useState(0);
+  const [mPage, setMPage] = useState(1);
+  const [mFilter, setMFilter] = useState({ q: "", tier: "" });
+  const [tierCounts, setTierCounts] = useState({ free: 0, paid: 0 });
 
-  const load = useCallback(async () => {
-    if (!dbConfigured) return;
-    const res = await fetch("/api/admin/questions");
-    if (res.ok) setRows(((await res.json()) as { questions: Row[] }).questions);
-    const ans = await fetch("/api/admin/answers");
-    if (ans.ok) setInbox(((await ans.json()) as { answers: AnswerRow[] }).answers);
-    const mem = await fetch("/api/admin/members");
-    if (mem.ok) setMemberRows(((await mem.json()) as { members: MemberRow[] }).members);
-  }, [dbConfigured]);
+  // 가져오기와 반영을 나눈다 — 효과 훅에서는 콜백 안에서만 상태를 건드리고,
+  // 저장·채점 뒤의 새로고침은 같은 함수를 그대로 다시 쓴다.
+  const fetchQuestions = useCallback(async (): Promise<QuestionsResponse | null> => {
+    if (!dbConfigured) return null;
+    const p = new URLSearchParams({ page: String(qPage) });
+    if (qFilter.q) p.set("q", qFilter.q);
+    if (qFilter.track) p.set("track", qFilter.track);
+    if (qFilter.level) p.set("level", qFilter.level);
+    if (qFilter.state) p.set("state", qFilter.state);
+    const res = await fetch(`/api/admin/questions?${p}`);
+    return res.ok ? ((await res.json()) as QuestionsResponse) : null;
+  }, [dbConfigured, qPage, qFilter]);
 
-  // Initial fetch after login. The guard stops a late response writing state
-  // into a component that has already gone away.
+  const fetchInbox = useCallback(async (): Promise<AnswersResponse | null> => {
+    if (!dbConfigured) return null;
+    const res = await fetch(`/api/admin/answers?status=${inboxStatus}&page=${inboxPage}`);
+    return res.ok ? ((await res.json()) as AnswersResponse) : null;
+  }, [dbConfigured, inboxStatus, inboxPage]);
+
+  const fetchMembers = useCallback(async (): Promise<MembersResponse | null> => {
+    if (!dbConfigured) return null;
+    const p = new URLSearchParams({ page: String(mPage) });
+    if (mFilter.q) p.set("q", mFilter.q);
+    if (mFilter.tier) p.set("tier", mFilter.tier);
+    const res = await fetch(`/api/admin/members?${p}`);
+    return res.ok ? ((await res.json()) as MembersResponse) : null;
+  }, [dbConfigured, mPage, mFilter]);
+
+  const applyQuestions = useCallback((d: QuestionsResponse) => {
+    setRows(d.questions);
+    setQTotal(d.total);
+    setCoverage(d.coverage ?? {});
+  }, []);
+
+  const applyInbox = useCallback((d: AnswersResponse) => {
+    setInbox(d.answers);
+    setInboxTotal(d.total);
+    setPendingCount(d.pendingCount);
+  }, []);
+
+  const applyMembers = useCallback((d: MembersResponse) => {
+    setMemberRows(d.members);
+    setMTotal(d.total);
+    setTierCounts({ free: d.freeCount, paid: d.paidCount });
+  }, []);
+
+  const loadQuestions = useCallback(async () => {
+    const d = await fetchQuestions();
+    if (d) applyQuestions(d);
+  }, [fetchQuestions, applyQuestions]);
+
+  const loadInbox = useCallback(async () => {
+    const d = await fetchInbox();
+    if (d) applyInbox(d);
+  }, [fetchInbox, applyInbox]);
+
+  const loadMembers = useCallback(async () => {
+    const d = await fetchMembers();
+    if (d) applyMembers(d);
+  }, [fetchMembers, applyMembers]);
+
+  // 각 목록은 자기 필터·페이지가 바뀔 때만 다시 불러온다. 하나를 넘겼다고
+  // 나머지 둘까지 새로 받으면 화면이 커질수록 낭비가 커진다. alive 가드는
+  // 늦게 도착한 응답이 이미 사라진 화면에 쓰이는 것을 막는다.
   useEffect(() => {
-    if (!loggedIn || !dbConfigured) return;
+    if (!loggedIn) return;
     let alive = true;
-    Promise.all([
-      fetch("/api/admin/questions").then((r) => (r.ok ? (r.json() as Promise<{ questions: Row[] }>) : null)),
-      fetch("/api/admin/answers").then((r) => (r.ok ? (r.json() as Promise<{ answers: AnswerRow[] }>) : null)),
-      fetch("/api/admin/members").then((r) => (r.ok ? (r.json() as Promise<{ members: MemberRow[] }>) : null)),
-    ])
-      .then(([q, a, m]) => {
-        if (!alive) return;
-        if (q) setRows(q.questions);
-        if (a) setInbox(a.answers);
-        if (m) setMemberRows(m.members);
+    fetchQuestions()
+      .then((d) => {
+        if (alive && d) applyQuestions(d);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [loggedIn, dbConfigured]);
+  }, [loggedIn, fetchQuestions, applyQuestions]);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    let alive = true;
+    fetchInbox()
+      .then((d) => {
+        if (alive && d) applyInbox(d);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [loggedIn, fetchInbox, applyInbox]);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    let alive = true;
+    fetchMembers()
+      .then((d) => {
+        if (alive && d) applyMembers(d);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [loggedIn, fetchMembers, applyMembers]);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -152,6 +281,7 @@ export default function AdminClient({
     setRows([]);
     setInbox([]);
     setMemberRows([]);
+    setCoverage({});
   }
 
   async function updateMember(id: number, patch: { tier?: string; points?: number }) {
@@ -168,7 +298,7 @@ export default function AdminClient({
       return;
     }
     setNotice("회원 정보를 수정했습니다.");
-    void load();
+    void loadMembers();
   }
 
   async function saveGrade(id: number) {
@@ -191,7 +321,7 @@ export default function AdminClient({
       return;
     }
     setNotice("채점을 저장했습니다. 통과한 답안에는 퀴즈 포인트가 적립됩니다.");
-    void load();
+    void loadInbox();
   }
 
   async function save(e: React.FormEvent) {
@@ -215,14 +345,47 @@ export default function AdminClient({
     setNotice(draft.id ? "수정했습니다." : "저장했습니다.");
     setDraft(EMPTY);
     setPaste("");
-    void load();
+    void loadQuestions();
+  }
+
+  /**
+   * 발행 토글 — 목록에서 바로 켜고 끈다. 문제가 수백 건이 되면 발행 하나
+   * 바꾸자고 편집 화면을 오갈 수 없다. 저장 API는 전체 값을 검증하므로
+   * 옛 슬러그·난이도로 저장된 행은 현행 분류로 옮겨서 보낸다.
+   */
+  async function togglePublish(r: Row) {
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/admin/questions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: r.id,
+        track: normalizeTrack(r.track),
+        level: normalizeLevel(r.level),
+        format: r.format,
+        prompt: r.prompt,
+        choices: r.choices ?? [],
+        answer: r.answer ?? "",
+        intent: r.intent ?? "",
+        explanation: r.explanation ?? "",
+        published: !r.published,
+      }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setError(((await res.json()) as { error?: string }).error ?? "발행 상태를 바꾸지 못했습니다.");
+      return;
+    }
+    setNotice(r.published ? "발행을 취소했습니다." : "발행했습니다.");
+    void loadQuestions();
   }
 
   async function remove(id: number) {
     if (!confirm("이 문제를 삭제할까요? 되돌릴 수 없습니다.")) return;
     await fetch(`/api/admin/questions?id=${id}`, { method: "DELETE" });
     if (draft.id === id) setDraft(EMPTY);
-    void load();
+    void loadQuestions();
   }
 
   function edit(r: Row) {
@@ -455,13 +618,55 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         </form>
 
         <section className="admin-card">
-          <h2>회원 관리 ({memberRows.length}명)</h2>
+          <h2>
+            회원 관리 (무료 {tierCounts.free} · 유료 {tierCounts.paid})
+          </h2>
           <p className="admin-note">
             결제 연결 전까지 유료 전환은 여기서 합니다. 등급을 바꾸면 다음 화면 이동부터 바로 적용됩니다 —
             무료회원은 L1 입문 퀴즈까지, 유료회원은 L2~L5와 회장 해설 열람이 열립니다.
           </p>
+
+          <div className="admin-filters">
+            <input
+              type="search"
+              placeholder="이름 · 이메일 검색"
+              value={mFilter.q}
+              onChange={(e) => {
+                setMPage(1);
+                setMFilter({ ...mFilter, q: e.target.value });
+              }}
+            />
+            <select
+              value={mFilter.tier}
+              onChange={(e) => {
+                setMPage(1);
+                setMFilter({ ...mFilter, tier: e.target.value });
+              }}
+            >
+              <option value="">등급 전체</option>
+              <option value="free">무료회원</option>
+              <option value="paid">유료회원</option>
+            </select>
+            {(mFilter.q || mFilter.tier) && (
+              <button
+                type="button"
+                className="admin-btn admin-btn--quiet"
+                onClick={() => {
+                  setMPage(1);
+                  setMFilter({ q: "", tier: "" });
+                }}
+              >
+                필터 해제
+              </button>
+            )}
+          </div>
+
           {memberRows.length === 0 ? (
-            <p className="admin-note">아직 가입한 회원이 없습니다.</p>
+            <p className="admin-note">
+              {mTotal === 0 && !mFilter.q && !mFilter.tier
+                ? "아직 가입한 회원이 없습니다."
+                : "조건에 맞는 회원이 없습니다."}
+            </p>
           ) : (
             <ul className="admin-list">
               {memberRows.map((m) => (
@@ -495,16 +700,42 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               ))}
             </ul>
           )}
+
+          <Pager page={mPage} total={mTotal} onPage={setMPage} />
         </section>
 
         <section className="admin-card">
-          <h2>채점함 ({inbox.filter((a) => a.status === "pending").length}건 대기)</h2>
+          <h2>채점함 ({pendingCount}건 대기)</h2>
           <p className="admin-note">
             주관식 답안입니다. 60점 이상이면 통과로 처리되어 회원에게 퀴즈 포인트가 적립되고,
-            강평은 본인에게만 보입니다.
+            강평은 본인에게만 보입니다. 기본은 채점 대기만 보여 줍니다 — 회원이 늘어도
+            할 일 목록이 지난 채점에 묻히지 않도록.
           </p>
+
+          <div className="admin-filters">
+            {[
+              { key: "pending", label: `채점 대기 (${pendingCount})` },
+              { key: "graded", label: "채점 완료" },
+              { key: "all", label: "전체" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className={inboxStatus === t.key ? "admin-btn" : "admin-btn admin-btn--quiet"}
+                onClick={() => {
+                  setInboxPage(1);
+                  setInboxStatus(t.key);
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
           {inbox.length === 0 ? (
-            <p className="admin-note">아직 제출된 답안이 없습니다.</p>
+            <p className="admin-note">
+              {inboxStatus === "pending" ? "채점할 답안이 없습니다." : "해당하는 답안이 없습니다."}
+            </p>
           ) : (
             <ul className="admin-list">
               {inbox.map((a) => (
@@ -546,12 +777,144 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               ))}
             </ul>
           )}
+
+          <Pager page={inboxPage} total={inboxTotal} onPage={setInboxPage} />
         </section>
 
         <section className="admin-card">
-          <h2>등록된 문제 ({rows.length})</h2>
+          <h2>출제 현황 (분야 × 레벨)</h2>
+          <p className="admin-note">
+            칸의 숫자는 그 분야·레벨에 등록된 문제 수이고, 괄호 안은 발행된 수입니다. 빈 칸이
+            아직 출제되지 않은 자리입니다 — 목록을 훑지 않고 여기서 다음 출제를 정하십시오.
+            칸을 누르면 그 칸의 문제만 아래 목록에 걸립니다.
+          </p>
+          <div className="admin-coverage-scroll">
+            <table className="admin-coverage">
+              <thead>
+                <tr>
+                  <th scope="col">분야</th>
+                  {LEVELS.map((l) => (
+                    <th key={l} scope="col">{l}</th>
+                  ))}
+                  <th scope="col">계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COURSES.map((c) => {
+                  const rowTotal = LEVELS.reduce(
+                    (sum, l) => sum + (coverage[`${c.slug}|${l}`]?.total ?? 0),
+                    0
+                  );
+                  return (
+                    <tr key={c.slug}>
+                      <th scope="row">{c.label}</th>
+                      {LEVELS.map((l) => {
+                        const cell = coverage[`${c.slug}|${l}`];
+                        const picked = qFilter.track === c.slug && qFilter.level === l;
+                        return (
+                          <td key={l} data-empty={!cell} data-picked={picked}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQPage(1);
+                                setQFilter(
+                                  picked
+                                    ? { ...qFilter, track: "", level: "" }
+                                    : { ...qFilter, track: c.slug, level: l }
+                                );
+                              }}
+                              title={`${c.label} · ${l} 문제만 보기`}
+                            >
+                              {cell ? (
+                                <>
+                                  {cell.total}
+                                  <small>({cell.published})</small>
+                                </>
+                              ) : (
+                                "—"
+                              )}
+                            </button>
+                          </td>
+                        );
+                      })}
+                      <td className="admin-coverage-sum">{rowTotal}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="admin-card">
+          <h2>등록된 문제 ({qTotal})</h2>
+
+          <div className="admin-filters">
+            <input
+              type="search"
+              placeholder="문제 본문 검색"
+              value={qFilter.q}
+              onChange={(e) => {
+                setQPage(1);
+                setQFilter({ ...qFilter, q: e.target.value });
+              }}
+            />
+            <select
+              value={qFilter.track}
+              onChange={(e) => {
+                setQPage(1);
+                setQFilter({ ...qFilter, track: e.target.value });
+              }}
+            >
+              <option value="">분야 전체</option>
+              {COURSES.map((c) => (
+                <option key={c.slug} value={c.slug}>{c.label}</option>
+              ))}
+            </select>
+            <select
+              value={qFilter.level}
+              onChange={(e) => {
+                setQPage(1);
+                setQFilter({ ...qFilter, level: e.target.value });
+              }}
+            >
+              <option value="">레벨 전체</option>
+              {LEVELS.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <select
+              value={qFilter.state}
+              onChange={(e) => {
+                setQPage(1);
+                setQFilter({ ...qFilter, state: e.target.value });
+              }}
+            >
+              <option value="">상태 전체</option>
+              <option value="published">발행</option>
+              <option value="draft">임시</option>
+              <option value="incomplete">미완성 (정답·해설 없음)</option>
+            </select>
+            {(qFilter.q || qFilter.track || qFilter.level || qFilter.state) && (
+              <button
+                type="button"
+                className="admin-btn admin-btn--quiet"
+                onClick={() => {
+                  setQPage(1);
+                  setQFilter({ q: "", track: "", level: "", state: "" });
+                }}
+              >
+                필터 해제
+              </button>
+            )}
+          </div>
+
           {rows.length === 0 ? (
-            <p className="admin-note">아직 등록된 문제가 없습니다.</p>
+            <p className="admin-note">
+              {qTotal === 0 && !qFilter.q && !qFilter.track && !qFilter.level && !qFilter.state
+                ? "아직 등록된 문제가 없습니다."
+                : "조건에 맞는 문제가 없습니다."}
+            </p>
           ) : (
             <ul className="admin-list">
               {rows.map((r) => (
@@ -560,19 +923,31 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     <span className={r.published ? "admin-tag admin-tag--on" : "admin-tag"}>
                       {r.published ? "발행" : "임시"}
                     </span>
-                    <span>{COURSES.find((c) => c.slug === r.track)?.label ?? r.track}</span>
-                    <span>{r.level}</span>
+                    <span>{COURSES.find((c) => c.slug === normalizeTrack(r.track))?.label ?? r.track}</span>
+                    <span>{normalizeLevel(r.level)}</span>
                     <span>{r.format}</span>
+                    {/* 발행 전에 무엇이 남았는지 목록에서 바로 보이게 한다 */}
+                    {!r.answer && <span className="admin-tag admin-tag--warn">정답 없음</span>}
+                    {!r.explanation && <span className="admin-tag admin-tag--warn">해설 없음</span>}
                   </div>
                   <p className="admin-list-prompt">{r.prompt}</p>
                   <div className="admin-actions">
                     <button className="admin-btn admin-btn--quiet" onClick={() => edit(r)}>수정</button>
+                    <button
+                      className="admin-btn admin-btn--quiet"
+                      disabled={busy}
+                      onClick={() => togglePublish(r)}
+                    >
+                      {r.published ? "발행 취소" : "발행"}
+                    </button>
                     <button className="admin-btn admin-btn--danger" onClick={() => remove(r.id)}>삭제</button>
                   </div>
                 </li>
               ))}
             </ul>
           )}
+
+          <Pager page={qPage} total={qTotal} onPage={setQPage} />
         </section>
       </div>
     </main>

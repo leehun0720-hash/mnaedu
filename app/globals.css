@@ -4058,3 +4058,77 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .admin-grade-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .admin-grade-row input[type="number"] { width: 90px; }
 .admin-grade-row input:not([type="number"]) { flex: 1; min-width: 200px; }
+
+/* ============================================================
+   출제 관리 — 규모가 커져도 다루는 도구
+   커버리지 격자 · 필터 바 · 페이지 이동
+   ============================================================ */
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.admin-filters input[type="search"] { flex: 1; min-width: 180px; }
+.admin-filters select { min-width: 130px; }
+
+.admin-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--paper-deep);
+  font-size: 13px;
+  color: var(--muted-ink, #5C534E);
+}
+
+/* 분야 × 레벨 격자 — 빈 칸이 곧 다음 출제 대상이다 */
+.admin-coverage-scroll { overflow-x: auto; }
+.admin-coverage {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-coverage th,
+.admin-coverage td {
+  border: 1px solid var(--paper-deep);
+  padding: 0;
+  text-align: center;
+}
+.admin-coverage thead th,
+.admin-coverage tbody th {
+  padding: 9px 10px;
+  background: var(--paper-deep);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.admin-coverage tbody th { text-align: left; }
+.admin-coverage td button {
+  width: 100%;
+  padding: 11px 6px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink-strong);
+  cursor: pointer;
+}
+.admin-coverage td button small { font-weight: 400; color: var(--gold-ink); margin-left: 3px; }
+.admin-coverage td button:hover { background: var(--ember-soft); }
+/* 비어 있는 칸은 눈에 띄어야 한다 — 여기가 아직 출제되지 않은 자리다 */
+.admin-coverage td[data-empty="true"] { background: repeating-linear-gradient(
+  45deg, transparent, transparent 5px, rgba(216, 52, 26, 0.07) 5px, rgba(216, 52, 26, 0.07) 10px); }
+.admin-coverage td[data-empty="true"] button { color: var(--ember-ink); }
+.admin-coverage td[data-picked="true"] { outline: 2px solid var(--ember); outline-offset: -2px; }
+.admin-coverage-sum { padding: 11px 8px; font-weight: 700; background: var(--paper-bg); }
+
+/* 발행 전에 남은 일을 표시하는 배지 */
+.admin-tag--warn {
+  background: var(--ember-soft);
+  color: var(--ember-ink);
+  border-color: rgba(216, 52, 26, 0.3);
+}

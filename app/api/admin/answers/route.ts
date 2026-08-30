@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { answers, members, questions } from "@/db/schema";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth";
@@ -13,12 +13,31 @@ async function requireAdmin() {
   return verifySession(token);
 }
 
-/** 채점함 — 대기 중인 주관식 답안을 회장이 직접 채점한다 */
-export async function GET() {
-  if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  if (!isDbConfigured()) return NextResponse.json({ answers: [] });
+const PAGE_SIZE = 20;
 
-  const rows = await getDb()
+/**
+ * 채점함 — 대기 중인 주관식 답안을 회장이 직접 채점한다.
+ *
+ * 회원이 늘면 답안은 문제보다 훨씬 빨리 쌓인다. 기본은 '채점 대기'만 보여
+ * 주고(할 일 목록), 지난 채점은 따로 불러 본다. 대기 건수는 목록과 별도로
+ * 세어 주므로 페이지를 넘겨도 남은 일이 몇 건인지 알 수 있다.
+ */
+export async function GET(request: Request) {
+  if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!isDbConfigured()) return NextResponse.json({ answers: [], total: 0, pendingCount: 0, page: 1 });
+
+  const params = new URL(request.url).searchParams;
+  const status = params.get("status") ?? "pending"; // pending | graded | all
+  const page = Math.max(1, Number(params.get("page")) || 1);
+  const where =
+    status === "pending"
+      ? eq(answers.status, "pending")
+      : status === "graded"
+        ? eq(answers.status, "graded")
+        : undefined;
+
+  const db = getDb();
+  const rowsPromise = db
     .select({
       id: answers.id,
       status: answers.status,
@@ -37,12 +56,24 @@ export async function GET() {
     .from(answers)
     .leftJoin(questions, eq(answers.questionId, questions.id))
     .leftJoin(members, eq(answers.memberId, members.id))
+    .where(where)
     .orderBy(desc(answers.createdAt))
-    .limit(100);
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
 
-  // 대기 건이 먼저 보이도록 정렬한다
-  rows.sort((a, b) => (a.status === b.status ? 0 : a.status === "pending" ? -1 : 1));
-  return NextResponse.json({ answers: rows });
+  const [rows, [totals], [pending]] = await Promise.all([
+    rowsPromise,
+    db.select({ value: count() }).from(answers).where(where),
+    db.select({ value: count() }).from(answers).where(eq(answers.status, "pending")),
+  ]);
+
+  return NextResponse.json({
+    answers: rows,
+    total: totals?.value ?? 0,
+    pendingCount: pending?.value ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  });
 }
 
 /** 채점 저장 — {id, score, feedback} */

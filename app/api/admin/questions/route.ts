@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ilike, sql, type SQL } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth";
-import { COURSES, FORMATS, LEVELS } from "@/lib/questions";
+import { COURSES, FORMATS, LEVELS, normalizeLevel, normalizeTrack } from "@/lib/questions";
+
+/** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */
+export const PAGE_SIZE = 20;
 
 async function requireAdmin() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
@@ -64,13 +67,78 @@ function validate(body: Payload) {
   };
 }
 
-export async function GET() {
+/**
+ * 문제 목록 — 검색·필터·페이지로 잘라서 준다.
+ *
+ * 58주제 × 5레벨이면 문제는 수백 건이 된다. 전부 한 번에 내려보내면 화면이
+ * 느려지는 것을 넘어 회장이 원하는 문제를 찾지 못한다. 그래서 목록은 항상
+ * 한 페이지 분량만 나가고, 대신 '어디가 비어 있는지'를 보여 주는 커버리지
+ * 집계를 함께 준다 — 출제 계획은 목록이 아니라 이 빈칸을 보고 세운다.
+ */
+export async function GET(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const blocked = guardStorage();
   if (blocked) return blocked;
 
-  const rows = await getDb().select().from(questions).orderBy(desc(questions.createdAt));
-  return NextResponse.json({ questions: rows });
+  const params = new URL(request.url).searchParams;
+  const q = (params.get("q") ?? "").trim();
+  const track = params.get("track") ?? "";
+  const level = params.get("level") ?? "";
+  const state = params.get("state") ?? ""; // published | draft | incomplete
+  const page = Math.max(1, Number(params.get("page")) || 1);
+
+  const filters: SQL[] = [];
+  if (q) filters.push(ilike(questions.prompt, `%${q}%`));
+  if (track) filters.push(eq(questions.track, track));
+  if (level) filters.push(eq(questions.level, level));
+  if (state === "published") filters.push(eq(questions.published, true));
+  if (state === "draft") filters.push(eq(questions.published, false));
+  // 아직 손이 더 가야 하는 문제 — 정답이나 해설이 비어 있다
+  if (state === "incomplete") {
+    filters.push(
+      sql`(${questions.answer} IS NULL OR ${questions.answer} = '' OR ${questions.explanation} IS NULL OR ${questions.explanation} = '')`
+    );
+  }
+  const where = filters.length ? and(...filters) : undefined;
+
+  const db = getDb();
+  const [rows, [totals], coverageRows] = await Promise.all([
+    db
+      .select()
+      .from(questions)
+      .where(where)
+      .orderBy(desc(questions.createdAt))
+      .limit(PAGE_SIZE)
+      .offset((page - 1) * PAGE_SIZE),
+    db.select({ value: count() }).from(questions).where(where),
+    // 커버리지는 필터와 무관하게 전체 기준이어야 한다 — 빈칸을 찾는 지도이므로
+    db
+      .select({
+        track: questions.track,
+        level: questions.level,
+        total: count(),
+        published: sql<number>`count(*) filter (where ${questions.published})`,
+      })
+      .from(questions)
+      .groupBy(questions.track, questions.level),
+  ]);
+
+  // 개편 전 슬러그·난이도로 저장된 행도 현행 분류의 칸에 얹는다
+  const coverage: Record<string, { total: number; published: number }> = {};
+  for (const r of coverageRows) {
+    const key = `${normalizeTrack(r.track)}|${normalizeLevel(r.level)}`;
+    const slot = (coverage[key] ??= { total: 0, published: 0 });
+    slot.total += Number(r.total);
+    slot.published += Number(r.published);
+  }
+
+  return NextResponse.json({
+    questions: rows,
+    total: totals?.value ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+    coverage,
+  });
 }
 
 export async function POST(request: Request) {
