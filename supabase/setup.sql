@@ -84,6 +84,30 @@ CREATE TABLE IF NOT EXISTS "answers" (
 CREATE UNIQUE INDEX IF NOT EXISTS "answers_member_question_idx" ON "answers" USING btree ("member_id","question_id");
 CREATE INDEX IF NOT EXISTS "answers_status_idx" ON "answers" USING btree ("status","created_at");
 
+
+-- 유료 전환 주문. PG 연결 전에는 관리자가 승인해 구독을 연다.
+CREATE TABLE IF NOT EXISTS "orders" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"order_id" text NOT NULL,
+	"member_id" integer NOT NULL,
+	"plan_code" text NOT NULL,
+	"plan_name" text NOT NULL,
+	"amount" integer NOT NULL,
+	"days" integer NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"provider" text DEFAULT 'manual' NOT NULL,
+	"provider_key" text,
+	"note" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"paid_at" timestamp with time zone
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "orders_order_id_idx" ON "orders" USING btree ("order_id");
+CREATE INDEX IF NOT EXISTS "orders_member_idx" ON "orders" USING btree ("member_id","created_at");
+CREATE INDEX IF NOT EXISTS "orders_status_idx" ON "orders" USING btree ("status","created_at");
+
+-- 구독 만료일. null이면 기한 없음(관리자가 직접 올린 계정).
+ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "paid_until" timestamp with time zone;
+
 -- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다
 -- ─────────────────────────────────────────────────────────────
@@ -102,6 +126,7 @@ ALTER TABLE "members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "point_ledger" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "unlocked_explanations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "answers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "orders" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
@@ -109,6 +134,7 @@ REVOKE ALL ON TABLE "members" FROM anon, authenticated;
 REVOKE ALL ON TABLE "point_ledger" FROM anon, authenticated;
 REVOKE ALL ON TABLE "unlocked_explanations" FROM anon, authenticated;
 REVOKE ALL ON TABLE "answers" FROM anon, authenticated;
+REVOKE ALL ON TABLE "orders" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;

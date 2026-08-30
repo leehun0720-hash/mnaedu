@@ -68,6 +68,11 @@ export const members = pgTable(
     points: integer("points").notNull().default(0),
     /** 통과한 최고 레벨 (0 = 아직 없음, 5 = 마스터) */
     clearedLevel: integer("cleared_level").notNull().default(0),
+    /**
+     * 유료 구독 만료 시각. null이면 기한 없음 — 관리자가 직접 올린 계정
+     * (회장·심사용 계정)이 여기 해당한다. 결제로 올라간 계정은 항상 값이 있다.
+     */
+    paidUntil: timestamp("paid_until", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -155,3 +160,45 @@ export const answers = pgTable(
 );
 
 export type Answer = typeof answers.$inferSelect;
+
+/**
+ * 유료 전환 주문.
+ *
+ * PG(토스페이먼츠)를 붙이기 전에도 흐름 전체가 돌아야 하므로, 주문은 결제
+ * 수단과 분리해 둔다 — 회원이 신청하면 pending으로 쌓이고, 관리자가 승인하면
+ * 구독이 열린다. PG를 붙이면 승인 주체만 관리자에서 결제 승인 응답으로
+ * 바뀌고 나머지(구독 연장·이력)는 그대로 쓴다.
+ */
+export const orders = pgTable(
+  "orders",
+  {
+    id: serial("id").primaryKey(),
+    /** 가맹점 주문번호 — PG에 그대로 넘긴다 (토스: 6~64자, 영숫자 -_) */
+    orderId: text("order_id").notNull(),
+    memberId: integer("member_id").notNull(),
+    /** lib/billing.ts의 요금제 코드 */
+    planCode: text("plan_code").notNull(),
+    planName: text("plan_name").notNull(),
+    /** 원 단위. 승인 시점의 금액을 박아 둔다 — 요금이 바뀌어도 과거 주문은 그대로 */
+    amount: integer("amount").notNull(),
+    /** 이 주문이 열어 주는 기간(일) */
+    days: integer("days").notNull(),
+    /** pending | paid | canceled | failed */
+    status: text("status").notNull().default("pending"),
+    /** manual(관리자 승인) | toss */
+    provider: text("provider").notNull().default("manual"),
+    /** PG가 준 결제 식별자 — 취소·조회에 쓴다 */
+    providerKey: text("provider_key"),
+    /** 승인·취소 사유나 메모 */
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("orders_order_id_idx").on(t.orderId),
+    index("orders_member_idx").on(t.memberId, t.createdAt),
+    index("orders_status_idx").on(t.status, t.createdAt),
+  ]
+);
+
+export type Order = typeof orders.$inferSelect;

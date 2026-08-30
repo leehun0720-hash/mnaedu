@@ -109,7 +109,14 @@ export default async function MePage() {
           </p>
           {!isPaid && (
             <p className="me-upgrade">
-              L2~L5 전문가 퀴즈는 유료회원에게 열립니다. 전환은 문의 주시면 개별 안내드립니다.
+              L2~L5 전문가 퀴즈는 유료회원에게 열립니다.{" "}
+              <Link href="/academy/billing">유료회원 전환 안내 →</Link>
+            </p>
+          )}
+          {isPaid && member.paidUntil && (
+            <p className="me-upgrade">
+              이용 기간 {member.paidUntil.toLocaleDateString("ko-KR")}까지 ·{" "}
+              <Link href="/academy/billing">연장하기 →</Link>
             </p>
           )}
         </div>

@@ -254,8 +254,11 @@ export default function QuizClient({
                         <p>유료회원에게 열리는 해설입니다.</p>
                         <small>
                           실전에서 논리가 무너지는 조건까지 짚는 회장 해설은 유료회원 전환 후
-                          포인트로 열람합니다. 전환은 문의 주시면 개별 안내드립니다.
+                          포인트로 열람합니다.
                         </small>
+                        <Link className="button" href="/academy/billing">
+                          유료회원 전환 안내
+                        </Link>
                       </>
                     )}
                     {revealError && <p className="quiz-error">{revealError}</p>}

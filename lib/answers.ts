@@ -4,7 +4,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { answers, members, pointLedger, questions, type Answer, type Question } from "@/db/schema";
 import { PASS_SCORE, POINTS, canAccessLevel } from "@/lib/membership";
-import { getCurrentMember, type MemberProfile } from "@/lib/members";
+import { getCurrentMember, toProfile, type MemberProfile } from "@/lib/members";
 import { levelCode } from "@/lib/questions";
 import { gradeEssayWithAi, isAiGradingConfigured } from "@/lib/grading";
 
@@ -266,15 +266,7 @@ export async function gradeByAdmin(
   const [memberRow] = await db.select().from(members).where(eq(members.id, row.memberId)).limit(1);
   if (!question || !memberRow) return { ok: false };
 
-  const profile: MemberProfile = {
-    id: memberRow.id,
-    authId: memberRow.authId,
-    email: memberRow.email,
-    name: memberRow.name,
-    tier: memberRow.tier === "paid" ? "paid" : "free",
-    points: memberRow.points,
-    clearedLevel: memberRow.clearedLevel,
-  };
-  await applyGrade(answerId, profile, question, score, feedback, "admin");
+  // 만료 판정까지 한곳에서 하도록 같은 변환기를 쓴다
+  await applyGrade(answerId, toProfile(memberRow), question, score, feedback, "admin");
   return { ok: true };
 }

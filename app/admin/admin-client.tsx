@@ -38,6 +38,23 @@ type QuestionsResponse = { questions: Row[]; total: number; page: number; covera
 type AnswersResponse = { answers: AnswerRow[]; total: number; pendingCount: number; page: number };
 type MembersResponse = { members: MemberRow[]; total: number; page: number; freeCount: number; paidCount: number };
 
+type OrderRow = {
+  id: number;
+  orderId: string;
+  planName: string;
+  amount: number;
+  days: number;
+  status: string;
+  provider: string;
+  note: string | null;
+  createdAt: string;
+  paidAt: string | null;
+  memberEmail: string | null;
+  memberName: string | null;
+};
+
+type OrdersResponse = { orders: OrderRow[]; total: number; pendingCount: number; page: number };
+
 type LedgerEntry = {
   id: number;
   kind: string;
@@ -165,6 +182,13 @@ export default function AdminClient({
   const [ledgerFor, setLedgerFor] = useState<number | null>(null);
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
 
+  // 결제 관리 — 유료 전환 신청 승인 (PG 연결 전에는 유일한 승인 경로)
+  const [orderRows, setOrderRows] = useState<OrderRow[]>([]);
+  const [orderStatus, setOrderStatus] = useState("pending");
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderTotal, setOrderTotal] = useState(0);
+  const [orderPending, setOrderPending] = useState(0);
+
   // 가져오기와 반영을 나눈다 — 효과 훅에서는 콜백 안에서만 상태를 건드리고,
   // 저장·채점 뒤의 새로고침은 같은 함수를 그대로 다시 쓴다.
   const fetchQuestions = useCallback(async (): Promise<QuestionsResponse | null> => {
@@ -192,6 +216,23 @@ export default function AdminClient({
     const res = await fetch(`/api/admin/members?${p}`);
     return res.ok ? ((await res.json()) as MembersResponse) : null;
   }, [dbConfigured, mPage, mFilter]);
+
+  const fetchOrders = useCallback(async (): Promise<OrdersResponse | null> => {
+    if (!dbConfigured) return null;
+    const res = await fetch(`/api/admin/orders?status=${orderStatus}&page=${orderPage}`);
+    return res.ok ? ((await res.json()) as OrdersResponse) : null;
+  }, [dbConfigured, orderStatus, orderPage]);
+
+  const applyOrders = useCallback((d: OrdersResponse) => {
+    setOrderRows(d.orders);
+    setOrderTotal(d.total);
+    setOrderPending(d.pendingCount);
+  }, []);
+
+  const loadOrders = useCallback(async () => {
+    const d = await fetchOrders();
+    if (d) applyOrders(d);
+  }, [fetchOrders, applyOrders]);
 
   const applyQuestions = useCallback((d: QuestionsResponse) => {
     setRows(d.questions);
@@ -258,6 +299,19 @@ export default function AdminClient({
   useEffect(() => {
     if (!loggedIn) return;
     let alive = true;
+    fetchOrders()
+      .then((d) => {
+        if (alive && d) applyOrders(d);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [loggedIn, fetchOrders, applyOrders]);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    let alive = true;
     fetchMembers()
       .then((d) => {
         if (alive && d) applyMembers(d);
@@ -295,6 +349,30 @@ export default function AdminClient({
     setCoverage({});
     setLedgerFor(null);
     setLedger([]);
+    setOrderRows([]);
+  }
+
+  async function decideOrder(id: number, action: "approve" | "cancel") {
+    if (action === "cancel" && !confirm("이 신청을 취소할까요?")) return;
+    const note =
+      action === "approve"
+        ? (prompt("승인 메모 (결제 수단·입금 확인 등)", "입금 확인") ?? "")
+        : (prompt("취소 사유", "회원 요청") ?? "");
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/admin/orders", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action, note }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setError(((await res.json()) as { error?: string }).error ?? "처리하지 못했습니다.");
+      return;
+    }
+    setNotice(action === "approve" ? "승인했습니다. 이용 기간이 열렸습니다." : "취소했습니다.");
+    void loadOrders();
+    void loadMembers();
   }
 
   /** 원장에 남는 사유는 'admin:…' 접두사로 저장된다 — 화면에서는 읽기 좋게 푼다 */
@@ -677,6 +755,87 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           {error && <p className="admin-error">{error}</p>}
           {notice && <p className="admin-ok">{notice}</p>}
         </form>
+
+        <section className="admin-card">
+          <h2>결제 관리 ({orderPending}건 확인 대기)</h2>
+          <p className="admin-note">
+            유료 전환 신청입니다. 승인하면 그 자리에서 이용 기간이 열립니다 — 남은 기간이
+            있으면 그 끝에 이어 붙으므로 미리 연장해도 기간을 잃지 않습니다. 결제 대행(PG)
+            연결 전까지는 입금 확인 후 여기서 승인하십시오.
+          </p>
+
+          <div className="admin-filters">
+            {[
+              { key: "pending", label: `확인 대기 (${orderPending})` },
+              { key: "paid", label: "결제 완료" },
+              { key: "canceled", label: "취소" },
+              { key: "all", label: "전체" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className={orderStatus === t.key ? "admin-btn" : "admin-btn admin-btn--quiet"}
+                onClick={() => {
+                  setOrderPage(1);
+                  setOrderStatus(t.key);
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {orderRows.length === 0 ? (
+            <p className="admin-note">
+              {orderStatus === "pending" ? "확인할 신청이 없습니다." : "해당하는 신청이 없습니다."}
+            </p>
+          ) : (
+            <ul className="admin-list">
+              {orderRows.map((o) => (
+                <li key={o.id}>
+                  <div className="admin-list-meta">
+                    <span className={o.status === "paid" ? "admin-tag admin-tag--on" : "admin-tag"}>
+                      {o.status === "pending"
+                        ? "확인 대기"
+                        : o.status === "paid"
+                          ? "결제 완료"
+                          : o.status === "canceled"
+                            ? "취소"
+                            : "실패"}
+                    </span>
+                    <span>{o.memberName ?? o.memberEmail ?? "회원"}</span>
+                    <span>{o.planName}</span>
+                    <span>{o.amount.toLocaleString("ko-KR")}원 · {o.days}일</span>
+                  </div>
+                  <p className="admin-list-prompt">
+                    {o.orderId} · 신청 {new Date(o.createdAt).toLocaleString("ko-KR")}
+                    {o.note && ` · ${o.note}`}
+                  </p>
+                  {o.status === "pending" && (
+                    <div className="admin-actions">
+                      <button
+                        className="admin-btn"
+                        disabled={busy}
+                        onClick={() => decideOrder(o.id, "approve")}
+                      >
+                        승인 (이용 기간 열기)
+                      </button>
+                      <button
+                        className="admin-btn admin-btn--danger"
+                        disabled={busy}
+                        onClick={() => decideOrder(o.id, "cancel")}
+                      >
+                        취소
+                      </button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <Pager page={orderPage} total={orderTotal} onPage={setOrderPage} />
+        </section>
 
         <section className="admin-card">
           <h2>

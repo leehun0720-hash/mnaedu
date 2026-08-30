@@ -5,6 +5,7 @@ import { getDb, isDbConfigured } from "@/db";
 import { answers, members, pointLedger, questions, unlockedExplanations } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
 import { POINTS, canAccessLevel, type Tier } from "@/lib/membership";
+import { isPaidNow } from "@/lib/billing";
 
 /**
  * 회원 저장소 — 프로필 조회·생성과 포인트 차감.
@@ -18,7 +19,16 @@ export type MemberProfile = {
   authId: string;
   email: string;
   name: string | null;
+  /**
+   * 지금 실제로 유효한 등급. 구독이 만료된 계정은 저장된 값이 paid여도
+   * free로 내려온다 — 권한 판정이 전부 이 값을 보므로, 만료 처리를 각
+   * 화면이 따로 기억할 필요가 없다.
+   */
   tier: Tier;
+  /** 저장된 등급 (만료 여부와 무관) — 관리자 화면에서 구분해 보여 준다 */
+  storedTier: Tier;
+  /** 구독 만료 시각. null이면 기한 없음 */
+  paidUntil: Date | null;
   points: number;
   clearedLevel: number;
 };
@@ -58,13 +68,16 @@ export async function getCurrentMember(): Promise<MemberProfile | null> {
   return raced ? toProfile(raced) : null;
 }
 
-function toProfile(row: typeof members.$inferSelect): MemberProfile {
+export function toProfile(row: typeof members.$inferSelect): MemberProfile {
+  const stored: Tier = row.tier === "paid" ? "paid" : "free";
   return {
     id: row.id,
     authId: row.authId,
     email: row.email,
     name: row.name,
-    tier: row.tier === "paid" ? "paid" : "free",
+    tier: isPaidNow(stored, row.paidUntil) ? "paid" : "free",
+    storedTier: stored,
+    paidUntil: row.paidUntil ?? null,
     points: row.points,
     clearedLevel: row.clearedLevel,
   };
