@@ -4132,3 +4132,25 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   color: var(--ember-ink);
   border-color: rgba(216, 52, 26, 0.3);
 }
+
+/* 포인트 내역 — 잔액이 왜 이 숫자인지 보여 주는 근거 */
+.admin-ledger {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--paper-bg);
+  border: 1px solid var(--paper-deep);
+}
+.admin-ledger ul { list-style: none; margin: 0; padding: 0; }
+.admin-ledger li {
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--paper-deep);
+}
+.admin-ledger li:last-child { border-bottom: 0; }
+.admin-ledger li span[data-kind="earn"] { font-weight: 700; color: var(--gold-ink); }
+.admin-ledger li span[data-kind="spend"] { font-weight: 700; color: var(--ember-ink); }
+.admin-ledger time { color: var(--muted-ink, #5C534E); font-size: 12px; white-space: nowrap; }

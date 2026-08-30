@@ -38,6 +38,14 @@ type QuestionsResponse = { questions: Row[]; total: number; page: number; covera
 type AnswersResponse = { answers: AnswerRow[]; total: number; pendingCount: number; page: number };
 type MembersResponse = { members: MemberRow[]; total: number; page: number; freeCount: number; paidCount: number };
 
+type LedgerEntry = {
+  id: number;
+  kind: string;
+  amount: number;
+  reason: string;
+  createdAt: string;
+};
+
 type MemberRow = {
   id: number;
   email: string;
@@ -153,6 +161,9 @@ export default function AdminClient({
   const [mPage, setMPage] = useState(1);
   const [mFilter, setMFilter] = useState({ q: "", tier: "" });
   const [tierCounts, setTierCounts] = useState({ free: 0, paid: 0 });
+  // 포인트 내역 — 펼친 회원 하나만 들고 있는다
+  const [ledgerFor, setLedgerFor] = useState<number | null>(null);
+  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
 
   // 가져오기와 반영을 나눈다 — 효과 훅에서는 콜백 안에서만 상태를 건드리고,
   // 저장·채점 뒤의 새로고침은 같은 함수를 그대로 다시 쓴다.
@@ -282,9 +293,52 @@ export default function AdminClient({
     setInbox([]);
     setMemberRows([]);
     setCoverage({});
+    setLedgerFor(null);
+    setLedger([]);
   }
 
-  async function updateMember(id: number, patch: { tier?: string; points?: number }) {
+  /** 원장에 남는 사유는 'admin:…' 접두사로 저장된다 — 화면에서는 읽기 좋게 푼다 */
+  function ledgerReason(raw: string): string {
+    if (raw === "join") return "가입 축하";
+    if (raw.startsWith("quiz:")) return `퀴즈 통과 (문제 #${raw.slice(5)})`;
+    if (raw.startsWith("explanation:")) return `해설 열람 (문제 #${raw.slice(12)})`;
+    if (raw.startsWith("admin:")) return `관리자 조정 — ${raw.slice(6)}`;
+    return raw;
+  }
+
+  async function toggleLedger(memberId: number) {
+    if (ledgerFor === memberId) {
+      setLedgerFor(null);
+      return;
+    }
+    setLedgerFor(memberId);
+    setLedger([]);
+    const res = await fetch(`/api/admin/ledger?memberId=${memberId}`);
+    if (res.ok) setLedger(((await res.json()) as { entries: LedgerEntry[] }).entries);
+  }
+
+  /** 증감으로 조정 — 0 아래로는 내려가지 않는다 */
+  function adjustPoints(m: MemberRow, delta: number) {
+    const next = Math.max(0, m.points + delta);
+    if (next === m.points) return;
+    void updateMember(m.id, { points: next, reason: delta > 0 ? "지급" : "차감" });
+  }
+
+  /** 정확한 잔액으로 맞춘다 — 이월·정정처럼 목표값이 정해진 경우 */
+  function setPointsExact(m: MemberRow) {
+    const input = prompt(`${m.name ?? m.email}의 포인트를 얼마로 맞출까요?`, String(m.points));
+    if (input === null) return;
+    const value = Math.round(Number(input));
+    if (!Number.isFinite(value) || value < 0) {
+      setError("포인트는 0 이상의 숫자여야 합니다.");
+      return;
+    }
+    if (value === m.points) return;
+    const why = prompt("사유를 적어 주십시오 (포인트 내역에 남습니다)", "수동 정정") ?? "수동 정정";
+    void updateMember(m.id, { points: value, reason: why });
+  }
+
+  async function updateMember(id: number, patch: { tier?: string; points?: number; reason?: string }) {
     setBusy(true);
     setError("");
     const res = await fetch("/api/admin/members", {
@@ -299,6 +353,13 @@ export default function AdminClient({
     }
     setNotice("회원 정보를 수정했습니다.");
     void loadMembers();
+    // 내역을 펼쳐 둔 상태라면 방금 남은 기록까지 바로 보이게 한다
+    if (ledgerFor === id) {
+      void fetch(`/api/admin/ledger?memberId=${id}`)
+        .then((r) => (r.ok ? (r.json() as Promise<{ entries: LedgerEntry[] }>) : null))
+        .then((d) => d && setLedger(d.entries))
+        .catch(() => {});
+    }
   }
 
   async function saveGrade(id: number) {
@@ -622,8 +683,10 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             회원 관리 (무료 {tierCounts.free} · 유료 {tierCounts.paid})
           </h2>
           <p className="admin-note">
-            결제 연결 전까지 유료 전환은 여기서 합니다. 등급을 바꾸면 다음 화면 이동부터 바로 적용됩니다 —
+            등급과 포인트를 여기서 관리합니다. 등급을 바꾸면 다음 화면 이동부터 바로 적용됩니다 —
             무료회원은 L1 입문 퀴즈까지, 유료회원은 L2~L5와 회장 해설 열람이 열립니다.
+            포인트 조정은 사유와 함께 내역에 남으므로, 회원이 문의하면 「포인트 내역」으로
+            언제 얼마가 오갔는지 그대로 보여 줄 수 있습니다.
           </p>
 
           <div className="admin-filters">
@@ -691,11 +754,50 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     <button
                       className="admin-btn admin-btn--quiet"
                       disabled={busy}
-                      onClick={() => updateMember(m.id, { points: m.points + 100 })}
+                      onClick={() => adjustPoints(m, 100)}
                     >
-                      포인트 +100
+                      +100P
+                    </button>
+                    <button
+                      className="admin-btn admin-btn--quiet"
+                      disabled={busy || m.points < 100}
+                      onClick={() => adjustPoints(m, -100)}
+                    >
+                      −100P
+                    </button>
+                    <button
+                      className="admin-btn admin-btn--quiet"
+                      disabled={busy}
+                      onClick={() => setPointsExact(m)}
+                    >
+                      정확히 지정
+                    </button>
+                    <button className="admin-btn admin-btn--quiet" onClick={() => toggleLedger(m.id)}>
+                      {ledgerFor === m.id ? "내역 닫기" : "포인트 내역"}
                     </button>
                   </div>
+
+                  {/* 잔액이 왜 이 숫자인지 — 회원 문의에 답하는 근거 */}
+                  {ledgerFor === m.id && (
+                    <div className="admin-ledger">
+                      {ledger.length === 0 ? (
+                        <p className="admin-note">기록이 없습니다.</p>
+                      ) : (
+                        <ul>
+                          {ledger.map((e) => (
+                            <li key={e.id}>
+                              <span data-kind={e.kind}>
+                                {e.kind === "earn" ? "+" : "−"}
+                                {e.amount}P
+                              </span>
+                              <span>{ledgerReason(e.reason)}</span>
+                              <time>{new Date(e.createdAt).toLocaleString("ko-KR")}</time>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

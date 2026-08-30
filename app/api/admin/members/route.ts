@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { and, count, desc, eq, sql, type SQL } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
-import { members } from "@/db/schema";
+import { members, pointLedger } from "@/db/schema";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +70,13 @@ export async function GET(request: Request) {
   });
 }
 
-/** 등급·포인트 수정 — {id, tier?, points?} */
+/**
+ * 등급·포인트 수정 — {id, tier?, points?, reason?}
+ *
+ * 포인트를 바꿀 때는 반드시 원장(point_ledger)에도 남긴다. 원장은 잔액만
+ * 두면 왜 늘고 줄었는지 설명할 수 없어서 두는 것인데, 관리자 조정만 원장을
+ * 건너뛰면 잔액과 내역이 어긋나 그 목적이 무너진다.
+ */
 export async function PUT(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!isDbConfigured()) return NextResponse.json({ error: "DB가 연결되지 않았습니다." }, { status: 503 });
@@ -78,8 +84,14 @@ export async function PUT(request: Request) {
   let id: number;
   let tier: string | undefined;
   let points: number | undefined;
+  let reason = "";
   try {
-    const json = (await request.json()) as { id?: unknown; tier?: unknown; points?: unknown };
+    const json = (await request.json()) as {
+      id?: unknown;
+      tier?: unknown;
+      points?: unknown;
+      reason?: unknown;
+    };
     id = Number(json.id);
     if (!Number.isInteger(id) || id <= 0) throw new Error("bad id");
     if (json.tier != null) {
@@ -90,6 +102,7 @@ export async function PUT(request: Request) {
       points = Math.round(Number(json.points));
       if (!Number.isFinite(points) || points < 0 || points > 1_000_000) throw new Error("bad points");
     }
+    reason = String(json.reason ?? "").trim().slice(0, 120);
   } catch {
     return NextResponse.json({ error: "등급은 무료/유료, 포인트는 0 이상이어야 합니다." }, { status: 400 });
   }
@@ -98,7 +111,11 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "바꿀 항목이 없습니다." }, { status: 400 });
   }
 
-  const [row] = await getDb()
+  const db = getDb();
+  const [before] = await db.select().from(members).where(eq(members.id, id)).limit(1);
+  if (!before) return NextResponse.json({ error: "회원을 찾을 수 없습니다." }, { status: 404 });
+
+  const [row] = await db
     .update(members)
     .set({
       ...(tier !== undefined ? { tier } : {}),
@@ -107,7 +124,18 @@ export async function PUT(request: Request) {
     })
     .where(eq(members.id, id))
     .returning();
-
   if (!row) return NextResponse.json({ error: "회원을 찾을 수 없습니다." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+
+  const delta = points === undefined ? 0 : points - before.points;
+  if (delta !== 0) {
+    await db.insert(pointLedger).values({
+      memberId: id,
+      kind: delta > 0 ? "earn" : "spend",
+      amount: Math.abs(delta),
+      // 원장에서 관리자 조정임을 알아볼 수 있게 접두사를 고정한다
+      reason: reason ? `admin:${reason}` : "admin:수동 조정",
+    });
+  }
+
+  return NextResponse.json({ ok: true, points: row.points, delta });
 }
