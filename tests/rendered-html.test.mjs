@@ -149,3 +149,16 @@ test("the help page renders all its guidance sections", async () => {
   assert.doesNotMatch(html, /"answer"\s*:/);
   assert.doesNotMatch(html, /"explanation"\s*:/);
 });
+
+test("the theme picker is offered on public faces but not on admin", async () => {
+  for (const path of ["/", "/company", "/academy"]) {
+    const html = await renderHtml(path);
+    assert.match(html, /theme-toggle/, `${path} should offer the theme picker`);
+    // 세 테마가 모두 선택지로 있어야 한다
+    assert.match(html, /엠버/);
+    assert.match(html, /감청/);
+    assert.match(html, /세피아/);
+  }
+  const admin = await renderHtml("/admin");
+  assert.doesNotMatch(admin, /theme-toggle/, "admin must not carry the theme picker");
+});

@@ -9,6 +9,7 @@ import {
   businessArea,
 } from "@/lib/company";
 import CopyGuard from "../../../copy-guard";
+import ThemeToggle from "../../../theme-toggle";
 import SiteRail from "../../../site-rail";
 
 type Params = { slug: string };
@@ -41,6 +42,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
   return (
     <div className="co-page">
       <CopyGuard />
+      <ThemeToggle />
       <SiteRail site="company" />
 
       <header className="co-header">

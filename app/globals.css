@@ -59,6 +59,47 @@
   --header-h: 84px;
 }
 
+/* ============================================================
+   테마 — 색만 갈아 끼운다. 구조·글자 대비를 좌우하는 토큰(--ink,
+   --ink-strong, --ground, --white)은 건드리지 않아 어떤 테마에서도
+   대비가 깨지지 않는다. 바뀌는 것은 액센트 계열과 종이의 온도뿐이다.
+   data-theme 는 <html>에 붙고, 없으면 기본(엠버)이다.
+   ============================================================ */
+
+/* — 감청(Navy): 금융 전문가의 차분한 남색 — */
+:root[data-theme="navy"] {
+  --ember:         #22406B;  /* 채움 · 흰 글자 8:1 */
+  --ember-press:   #182F50;
+  --ember-ink:     #1C3A66;  /* 밝은 바탕 위 액센트 글자 */
+  --ember-glow:    #5FA8E0;  /* 어두운 바탕 위 강조 */
+  --ember-on-dark: #7FB2E6;
+  --ember-soft:    #E7EDF5;
+  --heritage-gold: #4E7DA6;
+  --heritage-soft: #A9C7E4;
+  --gold-ink:      #37567A;
+  --warm-white:    #F7F9FB;
+  --paper-bg:      #F1F3F6;
+  --paper-deep:    #E6EAF0;
+  --line-color:    #D3D9E1;
+}
+
+/* — 세피아(Sepia): 1993년의 무게를 담은 청동빛 — */
+:root[data-theme="sepia"] {
+  --ember:         #7A5B2E;  /* 채움 · 흰 글자 5.5:1 */
+  --ember-press:   #654B25;
+  --ember-ink:     #6B4E23;
+  --ember-glow:    #C79A54;
+  --ember-on-dark: #D9B27A;
+  --ember-soft:    #F3EADA;
+  --heritage-gold: #A8842E;
+  --heritage-soft: #D9B76B;
+  --gold-ink:      #6E551C;
+  --warm-white:    #FBF8F1;
+  --paper-bg:      #F5F1E8;
+  --paper-deep:    #ECE5D6;
+  --line-color:    #DED5C2;
+}
+
 * { box-sizing: border-box; }
 html {
   scroll-behavior: smooth;
@@ -4289,3 +4330,80 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .help-answer p { margin: 0; color: rgba(248, 247, 243, 0.85); line-height: 1.75; word-break: keep-all; }
 .help-foot { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
 .help-foot > p:first-child { margin: 0; color: rgba(248, 247, 243, 0.7); font-size: 14px; }
+
+/* ============================================================
+   테마 선택기 — 왼쪽 아래 고정. 우측 고정 바와 겹치지 않게 반대편에 둔다.
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-toggle-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--line-color);
+  background: var(--warm-white);
+  color: var(--ink-strong);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+.theme-toggle-btn:hover { transform: scale(1.06); }
+.theme-toggle-options {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--warm-white);
+  border: 1px solid var(--line-color);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+  /* 닫힘: 버튼 쪽으로 접혀 사라진다 */
+  opacity: 0;
+  transform: translateX(8px) scale(0.9);
+  transform-origin: right center;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.theme-toggle.is-open .theme-toggle-options {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+.theme-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.theme-swatch.is-current { border-color: var(--ink-strong); }
+.theme-swatch:hover { transform: scale(1.1); }
+
+/* 복사 방지가 켜져 있어도 이 버튼들은 눌러야 하므로 선택만 막지 않는다 */
+.copy-guarded .theme-toggle { -webkit-user-select: none; user-select: none; }
+
+@media (max-width: 640px) {
+  .theme-toggle { left: 12px; bottom: 12px; }
+}
+@media print {
+  .theme-toggle { display: none !important; }
+}

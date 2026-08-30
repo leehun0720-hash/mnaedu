@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MADE_WORDS, SLOGAN } from "@/lib/company";
 import CopyGuard from "./copy-guard";
+import ThemeToggle from "./theme-toggle";
 
 /**
  * 게이트웨이 — 두 사이트의 공통 관문 (기획 보고서 3.1).
@@ -13,6 +14,7 @@ export default function Gate() {
   return (
     <div className="gate">
       <CopyGuard />
+      <ThemeToggle />
 
       <header className="gate-top">
         <span className="gate-wordmark">

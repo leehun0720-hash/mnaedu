@@ -1,11 +1,13 @@
 import Link from "next/link";
 import CopyGuard from "../copy-guard";
+import ThemeToggle from "../theme-toggle";
 
 /** 가입·로그인·내 학습 화면이 함께 쓰는 어두운 톤의 좁은 셸 */
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="auth-page">
       <CopyGuard />
+      <ThemeToggle />
       <header className="auth-top">
         <Link className="auth-brand" href="/academy">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}

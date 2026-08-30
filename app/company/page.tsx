@@ -13,6 +13,7 @@ import {
   TOTAL_TOPICS,
 } from "@/lib/company";
 import CopyGuard from "../copy-guard";
+import ThemeToggle from "../theme-toggle";
 import SiteRail from "../site-rail";
 import ContactForm from "./contact-form";
 import Reveal from "./reveal";
@@ -36,6 +37,7 @@ export default function CompanyPage() {
   return (
     <div className="co-page">
       <CopyGuard />
+      <ThemeToggle />
       <SiteRail site="company" />
 
       <header className="co-header">

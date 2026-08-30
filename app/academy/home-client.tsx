@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { BUSINESS_AREAS, TOTAL_TOPICS } from "@/lib/company";
 import { LEVEL_TIERS, QUESTIONS_PER_QUIZ, type PublicQuestion } from "@/lib/questions";
 import CopyGuard from "../copy-guard";
+import ThemeToggle from "../theme-toggle";
 import SiteRail from "../site-rail";
 import StudioPanel, { HERO_VARIANTS } from "./studio-panel";
 
@@ -341,6 +342,7 @@ export default function Home({
     // has-rail: 우측 고정 바가 본문을 덮지 않도록 폭을 미리 좁혀 둔다
     <main className="has-rail">
       <CopyGuard />
+      <ThemeToggle />
       <SiteRail site="academy" signedIn={signedIn} />
 
       {/* Prevent FOUC by ensuring the loader covers the screen immediately before external CSS loads */}

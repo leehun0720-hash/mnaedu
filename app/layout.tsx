@@ -38,13 +38,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // Runs before the body paints, so a returning visitor never sees the opening
 // curtain flash up and disappear. React then unmounts it on the same tick.
-const INTRO_FLAG = `try{if(sessionStorage.getItem('fma-intro-seen')==='1'){document.documentElement.classList.add('intro-seen')}}catch(e){}`;
+// Also applies the saved colour theme in the same breath, so a chosen theme
+// never flashes the default palette first.
+const BOOT = `try{if(sessionStorage.getItem('fma-intro-seen')==='1'){document.documentElement.classList.add('intro-seen')}}catch(e){}
+try{var t=localStorage.getItem('fma-theme');if(t){document.documentElement.setAttribute('data-theme',t)}}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
       <body className={`${sans.variable} ${serif.variable} ${label.variable} ${display.variable}`}>
-        <script dangerouslySetInnerHTML={{ __html: INTRO_FLAG }} />
+        <script dangerouslySetInnerHTML={{ __html: BOOT }} />
         {children}
       </body>
     </html>
