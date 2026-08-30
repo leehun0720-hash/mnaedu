@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     "locked-level": { message: "유료회원에게 열리는 레벨입니다.", status: 403 },
     "free-tier": { message: "해설 열람은 유료회원에게 열립니다.", status: 403 },
     "not-answered": { message: "문제를 먼저 풀어 주십시오. 해설은 풀이의 보상입니다.", status: 409 },
-    "not-enough-points": { message: "포인트가 모자랍니다. 문제를 더 풀어 주십시오.", status: 402 },
+    "not-enough-points": { message: "포인트가 부족합니다. 문제 풀이로 적립한 뒤 다시 열람해 주십시오.", status: 402 },
   };
   const { message, status } = messages[result.reason];
   return NextResponse.json({ error: message }, { status });

@@ -30,7 +30,7 @@ const memberTiers = [
     key: "free",
     name: "무료회원",
     scope: "기초적인 초기 정보 + L1 입문 퀴즈",
-    purpose: "먼저 풀어보며 수준을 가늠하는 단계입니다.",
+    purpose: "L1 문제로 자신의 현재 수준을 진단하는 단계입니다.",
     items: ["L1 입문 퀴즈 응시", "포인트 적립", "포인트로 해설 열람"],
   },
   {
@@ -47,7 +47,7 @@ const funnelSteps = [
   {
     index: "STEP 01",
     name: "무료 가입",
-    desc: "기초 정보와 L1 입문 퀴즈를 무료로 풀며 지금 수준을 가늠합니다.",
+    desc: "기초 자료와 L1 입문 퀴즈를 무료로 풀며 현재 수준을 진단합니다.",
     gate: false
   },
   {

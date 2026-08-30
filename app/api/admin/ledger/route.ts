@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
   const memberId = Number(new URL(request.url).searchParams.get("memberId"));
   if (!Number.isInteger(memberId) || memberId <= 0) {
-    return NextResponse.json({ error: "회원을 지정해 주세요." }, { status: 400 });
+    return NextResponse.json({ error: "회원을 지정해 주십시오." }, { status: 400 });
   }
 
   const entries = await getDb()

@@ -102,10 +102,10 @@ export default async function MePage() {
         </div>
 
         <div className="me-points">
-          <h2>포인트는 이렇게 씁니다</h2>
+          <h2>포인트 적립과 사용</h2>
           <p>
-            퀴즈 1건({POINTS.perQuiz}P 적립)을 풀어 포인트를 쌓고, 문제별 성보경 회장 해설을 열 때{" "}
-            {POINTS.perExplanation}P를 씁니다. 한 번 연 해설은 다시 차감하지 않습니다.
+            문제 풀이에 통과하면 건당 {POINTS.perQuiz}P가 적립되고, 문제별 성보경 회장 해설을 열람할 때{" "}
+            {POINTS.perExplanation}P가 차감됩니다. 한 번 열람한 해설은 다시 차감되지 않습니다.
           </p>
           {!isPaid && (
             <p className="me-upgrade">

@@ -645,7 +645,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
           <div className="admin-row">
             <label>
-              과정
+              분야
               <select value={draft.track} onChange={(e) => setDraft({ ...draft, track: e.target.value })} required>
                 <option value="">선택</option>
                 {COURSES.map((c) => (

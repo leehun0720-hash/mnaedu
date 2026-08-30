@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     planCode = String(body.planCode ?? "");
     if (!planCode) throw new Error("no plan");
   } catch {
-    return NextResponse.json({ error: "요금제를 선택해 주십시오." }, { status: 400 });
+    return NextResponse.json({ error: "이용권을 선택해 주십시오." }, { status: 400 });
   }
 
   const result = await createOrder(planCode);

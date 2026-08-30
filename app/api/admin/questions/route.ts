@@ -17,7 +17,7 @@ async function requireAdmin() {
 function guardStorage() {
   if (isDbConfigured()) return null;
   return NextResponse.json(
-    { error: "데이터베이스가 연결되지 않았습니다. Vercel에서 Postgres를 생성해 주세요." },
+    { error: "데이터베이스가 연결되지 않았습니다. SUPABASE.md의 절차로 연결해 주십시오." },
     { status: 503 }
   );
 }
@@ -39,9 +39,9 @@ type Payload = {
 function validate(body: Payload) {
   const prompt = (body.prompt ?? "").trim();
   if (prompt.length < 10) return { error: "문제 본문이 너무 짧습니다." as const };
-  if (!COURSES.some((c) => c.slug === body.track)) return { error: "과정을 선택해 주세요." as const };
-  if (!LEVELS.includes(body.level as never)) return { error: "난이도를 선택해 주세요." as const };
-  if (!FORMATS.includes(body.format as never)) return { error: "유형을 선택해 주세요." as const };
+  if (!COURSES.some((c) => c.slug === body.track)) return { error: "분야를 선택해 주십시오." as const };
+  if (!LEVELS.includes(body.level as never)) return { error: "난이도를 선택해 주십시오." as const };
+  if (!FORMATS.includes(body.format as never)) return { error: "유형을 선택해 주십시오." as const };
 
   let choices: string[] | null = null;
   if (body.format === "객관식") {

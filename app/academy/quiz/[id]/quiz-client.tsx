@@ -143,7 +143,7 @@ export default function QuizClient({
         <form className="quiz-form" onSubmit={submit}>
           {isChoiceFormat ? (
             <fieldset className="quiz-choices">
-              <legend>보기 중 하나를 고르십시오</legend>
+              <legend>정답이라고 판단하는 보기를 하나 선택하십시오</legend>
               {(question.choices ?? []).map((c, i) => (
                 <label key={i} className={choice === i ? "is-picked" : ""}>
                   <input
