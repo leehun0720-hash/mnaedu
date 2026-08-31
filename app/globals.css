@@ -4407,3 +4407,75 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 @media print {
   .theme-toggle { display: none !important; }
 }
+
+/* ============================================================
+   업무 오피스 — 5개 분야를 M&A 오피스(3) · 시크릿 오피스(2)로 묶는 축
+   ============================================================ */
+
+/* 기업 홈페이지 쪽 그룹 헤더 */
+.co-office { margin-top: 34px; }
+.co-office:first-of-type { margin-top: 6px; }
+.co-office-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--ink-strong);
+}
+.co-office-en {
+  margin: 0;
+  font: 700 11px var(--font-label);
+  letter-spacing: 0.22em;
+  color: var(--ember-ink);
+}
+.co-office-head h3 {
+  margin: 0;
+  font: 700 clamp(19px, 2.4vw, 24px) var(--font-serif);
+  color: var(--ink-strong);
+}
+.co-office-head h3 small {
+  margin-left: 8px;
+  font: 600 13px var(--font-sans);
+  color: var(--muted);
+}
+.co-office-line {
+  margin: 0 0 0 auto;
+  font-size: 13px;
+  color: var(--muted);
+  word-break: keep-all;
+}
+@media (max-width: 720px) {
+  .co-office-line { margin-left: 0; }
+}
+
+/* 상세 페이지 배지 */
+.co-office-badge {
+  display: inline-block;
+  margin-right: 10px;
+  padding: 3px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font: 700 11px var(--font-label);
+  letter-spacing: 0.14em;
+}
+.co-office-badge[data-office="secret"] { color: var(--gold-ink); }
+
+/* 아카데미 쪽 — 분야 선택 그리드를 오피스별로 묶는다 */
+.track-offices { display: flex; flex-direction: column; gap: 26px; margin: 32px 0; }
+.track-office-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-color);
+}
+.track-office-en {
+  font: 700 11px var(--font-label);
+  letter-spacing: 0.22em;
+  color: var(--ember-ink);
+}
+.track-office-head strong { font: 700 17px var(--font-sans); color: var(--ink-strong); }
+.track-office-count { font-size: 13px; color: var(--muted); }

@@ -104,13 +104,56 @@ export type BusinessArea = {
    * (패밀리오피스·투자가 클럽 — 보고서 3.5절).
    */
   offlineOnly?: boolean;
+  /** 소속 오피스 — 상단 분류의 축이다 */
+  office: OfficeId;
 };
+
+/**
+ * 업무 오피스 — 5개 분야를 성격에 따라 두 축으로 묶는 상위 분류.
+ *
+ * M&A 오피스는 실전 거래를 다루는 전문 3개 분야, 시크릿 오피스는 세부를
+ * 웹에 두지 않고 상담 후 오프라인으로 진행하는 2개 분야(패밀리오피스·
+ * 투자가 클럽)다. 분야 자체(5분야 58주제)는 문제은행·게시판의 정본
+ * 분류로 그대로 유지되고, 오피스는 그 위에 얹히는 표기 축이다.
+ */
+export type OfficeId = "mna" | "secret";
+
+export type Office = {
+  id: OfficeId;
+  name: string;
+  en: string;
+  line: string;
+};
+
+export const OFFICES: Office[] = [
+  {
+    id: "mna",
+    name: "M&A 오피스",
+    en: "M&A OFFICE",
+    line: "실전 거래를 다루는 전문 3개 분야 — M&A 중개 · 경영권 분쟁 · M&A 자금조달",
+  },
+  {
+    id: "secret",
+    name: "시크릿 오피스",
+    en: "SECRET OFFICE",
+    line: "상담 후 오프라인으로 진행하는 2개 분야 — 패밀리오피스 · 투자가 클럽",
+  },
+];
+
+export function areasInOffice(id: OfficeId): BusinessArea[] {
+  return BUSINESS_AREAS.filter((b) => b.office === id);
+}
+
+export function officeOf(area: BusinessArea): Office {
+  return OFFICES.find((o) => o.id === area.office) ?? OFFICES[0];
+}
 
 export const BUSINESS_AREAS: BusinessArea[] = [
   {
     slug: "brokerage",
     name: "M&A 중개",
     en: "M&A Advisory & Brokerage",
+    office: "mna",
     line: "100일 M&A 계획부터 소싱·실사·협상·PMI까지 전 과정을 총괄합니다.",
     intro:
       "당사는 단순한 M&A 중개 및 자문 서비스의 차원을 넘어 M&A 중개서비스 계약을 체결하는 순간부터 고객과의 협력을 바탕으로 100일 M&A 계획(100-Day Plan)을 세우고, M&A TF팀을 구축하여 M&A전략을 수립하는 것은 물론 대상기업의 소싱, 대상기업에 대한 M&A 가치평가, 비밀유지계약 및 인수의향서 검토, 정밀실사, 협상 및 계약서 체결 그리고 사후관리 및 사후 시너지의 창출까지 모든 과정을 총괄 진행합니다.",
@@ -131,6 +174,7 @@ export const BUSINESS_AREAS: BusinessArea[] = [
     slug: "dispute",
     name: "경영권 분쟁",
     en: "Control Contest & Defense",
+    office: "mna",
     // 경영권 투자 자문은 별도 메뉴 없이 이 분야에 통합한다 (보고서 9장-3 기본안)
     line: "경영권 방어·공격과 경영권 투자 자문 — 40여 년의 실전 노하우로 분쟁에서 승리합니다.",
     intro:
@@ -165,6 +209,7 @@ export const BUSINESS_AREAS: BusinessArea[] = [
     slug: "financing",
     name: "M&A 자금조달",
     en: "Acquisition Financing",
+    office: "mna",
     line: "LBO·파생금융 구조화와 금융 네트워크로 거래를 완성하는 자본을 설계합니다.",
     intro:
       "M&A는 레버리지(LBO 및 파생금융)와 시너지 효과를 최대화하는 경영 및 금융 전략이며, M&A에서 자금조달은 M&A거래를 완성하는 최후의 보루입니다. M&A자금은 M&A거래가 종결된 이후에 기업의 생존과 직결되고 투자 수익률(ROI)을 극대화하는 기초이며, 고도의 LBO 구조화 기법을 통해 자기자본 유출을 최소화하고, 인수 기업의 재무 건전성을 유지하면서도 신속하게 신성장 동력을 확보할 수 있는 자본 구조를 만들 수 있습니다. 특히, M&A거래에서 가장 많이 사용하고 있는 차입거래(LBO)와 파생금융상품의 활용은 철저한 리스크 헤징(Hedging) 및 법적 소송에 대한 대비가 선결되어야 합니다. 당사는 최상위 딜 메이커의 역할과 함께 시중은행, 소버린 펀드, 사모펀드, 연기금 등을 아우르는 막강한 금융 네트워크를 가동하여, 담보조건, 상환 계획, 재무적 준수사항, 영구자본의 확보 등을 기초로 최적의 조건으로 M&A 거래자금을 조달해드릴 것입니다.",
@@ -195,6 +240,7 @@ export const BUSINESS_AREAS: BusinessArea[] = [
     slug: "family-office",
     name: "패밀리오피스",
     en: "Family Office",
+    office: "secret",
     line: "가문의 자산 보존과 승계를 설계하는 패밀리오피스 설립·운영 자문.",
     // 3.5절 — 기초 소개·목차·상담 접점까지 웹, 설립·운영·가입 세부는 전면 오프라인
     offlineOnly: true,
@@ -226,6 +272,7 @@ export const BUSINESS_AREAS: BusinessArea[] = [
     slug: "investor-club",
     name: "투자가 클럽",
     en: "Investor Club",
+    office: "secret",
     line: "폐쇄적으로 운영되는 프라이빗 투자 클럽의 설립·운영 자문.",
     offlineOnly: true,
     intro:

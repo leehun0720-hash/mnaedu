@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { BUSINESS_AREAS, TOTAL_TOPICS } from "@/lib/company";
+import { BUSINESS_AREAS, OFFICES, TOTAL_TOPICS, type OfficeId } from "@/lib/company";
 import { LEVEL_TIERS, QUESTIONS_PER_QUIZ, type PublicQuestion } from "@/lib/questions";
 import CopyGuard from "../copy-guard";
 import ThemeToggle from "../theme-toggle";
@@ -23,6 +23,7 @@ const tracks = BUSINESS_AREAS.map((b, i) => ({
   topics: b.curriculum,
   masterTip: b.masterTip,
   offlineOnly: b.offlineOnly ?? false,
+  office: b.office,
 }));
 
 // 회원 등급 — 가입 창구는 아카데미 하나뿐이다 (보고서 4.3)
@@ -101,7 +102,8 @@ const permissionMatrix = {
 // The five programmes are listed in the menu outright. They share one
 // section, so each entry scrolls there and selects that programme.
 const sectionItems = [
-  { href: "#courses", label: "5개 분야", courseIndex: -1 },
+  { href: "#courses", label: "M&A 오피스", courseIndex: 0 },
+  { href: "#courses", label: "시크릿 오피스", courseIndex: 3 },
   { href: "#funnel", label: "수강 여정", courseIndex: -1 },
   { href: "#membership", label: "회원 등급", courseIndex: -1 },
   { href: "#levels", label: "5레벨 체계", courseIndex: -1 },
@@ -513,7 +515,7 @@ export default function Home({
           <p className="hero-description">{hero.desc}</p>
           <div className="hero-actions">
             <a className="button button-red on-dark" href="#exam">예시 문제 풀기 <span>↗</span></a>
-            <a className="button button-gold on-dark" href="#courses">5개 분야 보기 <span>↓</span></a>
+            <a className="button button-gold on-dark" href="#courses">M&amp;A·시크릿 오피스 <span>↓</span></a>
           </div>
         </div>
 
@@ -525,8 +527,8 @@ export default function Home({
               <span>L1–L5 승급 체계</span>
             </div>
             <div>
-              <strong>5개 분야</strong>
-              <span>실전 M&amp;A 커리큘럼</span>
+              <strong>2 OFFICES</strong>
+              <span>M&amp;A 오피스 3분야 · 시크릿 2분야</span>
             </div>
             <div>
               <strong>소수정예</strong>
@@ -556,31 +558,47 @@ export default function Home({
         <span className="section-marker" aria-hidden="true">PROGRAMS</span>
         <div className="section-heading">
           <div>
-            <p className="section-index">5개 분야 <i>Business Areas</i></p>
-            <h2>다섯 개의 분야,<br /><em>{TOTAL_TOPICS}개의 주제</em></h2>
+            <p className="section-index">M&amp;A 오피스 · 시크릿 오피스 <i>Two Offices</i></p>
+            <h2>M&amp;A 오피스 3개 분야,<br /><em>시크릿 오피스 2개 분야</em></h2>
           </div>
           <p>
-            문제은행은 두 축으로 짜여 있습니다. 세로축은 난이도 L1~L5, 가로축은 기업 홈페이지와 같은 5개 분야 {TOTAL_TOPICS}개 주제입니다. 한 문제는 &lsquo;경영권 분쟁 &gt; 델라웨어 판례 &gt; L5&rsquo;처럼 분류됩니다.
+            문제은행은 두 축으로 짜여 있습니다. 세로축은 난이도 L1~L5, 가로축은 기업 홈페이지와 같은 두 오피스 5개 분야 {TOTAL_TOPICS}개 주제입니다. 한 문제는 &lsquo;경영권 분쟁 &gt; 델라웨어 판례 &gt; L5&rsquo;처럼 분류됩니다.
           </p>
         </div>
 
-        {/* Track Selection Buttons */}
-        <div className="track-grid" style={{ marginTop: "32px", marginBottom: "32px" }}>
-          {tracks.map((t, idx) => (
-            <button
-              key={t.slug}
-              className={`track-card ${selectedTrackIndex === idx ? "is-selected" : ""}`}
-              onClick={() => {
-                setSelectedTrackIndex(idx);
-              }}
-            >
-              <span className="track-number">{t.number}</span>
-              <strong>{t.title}</strong>
-              <span className="track-hook">{t.en}</span>
-              <p>{t.description}</p>
-              <span className="track-meta">{t.topics.length}개 주제 <i>↗</i></span>
-            </button>
-          ))}
+        {/* 분야 선택 — 오피스 두 축으로 묶어 보여 준다 */}
+        <div className="track-offices">
+          {OFFICES.map((office) => {
+            const members = tracks
+              .map((t, idx) => ({ t, idx }))
+              .filter(({ t }) => t.office === (office.id as OfficeId));
+            return (
+              <div key={office.id} className="track-office">
+                <div className="track-office-head">
+                  <span className="track-office-en">{office.en}</span>
+                  <strong>{office.name}</strong>
+                  <span className="track-office-count">{members.length}개 분야</span>
+                </div>
+                <div className="track-grid">
+                  {members.map(({ t, idx }) => (
+                    <button
+                      key={t.slug}
+                      className={`track-card ${selectedTrackIndex === idx ? "is-selected" : ""}`}
+                      onClick={() => {
+                        setSelectedTrackIndex(idx);
+                      }}
+                    >
+                      <span className="track-number">{t.number}</span>
+                      <strong>{t.title}</strong>
+                      <span className="track-hook">{t.en}</span>
+                      <p>{t.description}</p>
+                      <span className="track-meta">{t.topics.length}개 주제 <i>↗</i></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* 선택한 분야의 주제 목록 — 주제마다 L1~L5가 걸린다 */}
@@ -795,7 +813,7 @@ export default function Home({
             <h2>여기서 걸러집니다<br /><em>분야별 · L1~L5</em></h2>
           </div>
           <p>
-성보경 회장이 40년간 쌓은 실전 사례에서 뽑아낸 문제입니다. 5개 분야마다 L1부터 L5까지 출제되며, 상급(L4)과 마스터(L5)는 회장 검수를 거친 문제만 발행됩니다.
+성보경 회장이 40년간 쌓은 실전 사례에서 뽑아낸 문제입니다. 두 오피스 5개 분야마다 L1부터 L5까지 출제되며, 상급(L4)과 마스터(L5)는 회장 검수를 거친 문제만 발행됩니다.
           </p>
         </div>
 
@@ -1102,7 +1120,7 @@ export default function Home({
 
           <nav className="footer-nav" aria-label="푸터 메뉴">
             <span className="footer-nav-title">과정 안내</span>
-            <a href="#courses">5개 분야</a>
+            <a href="#courses">M&amp;A·시크릿 오피스</a>
             <a href="#funnel">수강 여정</a>
             <a href="#levels">5레벨 체계</a>
             <a href="#exam">선발 테스트</a>

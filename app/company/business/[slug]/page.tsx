@@ -7,6 +7,7 @@ import {
   OFFLINE_ONLY_NOTICE,
   TENURE_NOTE,
   businessArea,
+  officeOf,
 } from "@/lib/company";
 import CopyGuard from "../../../copy-guard";
 import ThemeToggle from "../../../theme-toggle";
@@ -73,7 +74,10 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
           <a className="co-backlink" href="/company#business">
             <i aria-hidden="true">←</i> 주요 업무
           </a>
-          <p className="co-detail-en">{area.en}</p>
+          <p className="co-detail-en">
+            <span className="co-office-badge" data-office={area.office}>{officeOf(area).name}</span>
+            {area.en}
+          </p>
           <h1>{area.name}</h1>
           <p className="co-detail-lede">{area.intro}</p>
           <div className="co-hero-actions">

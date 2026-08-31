@@ -162,3 +162,17 @@ test("the theme picker is offered on public faces but not on admin", async () =>
   const admin = await renderHtml("/admin");
   assert.doesNotMatch(admin, /theme-toggle/, "admin must not carry the theme picker");
 });
+
+test("the five areas are presented under the two offices", async () => {
+  // 상단 분류: M&A 오피스(중개·분쟁·자금조달) / 시크릿 오피스(패밀리·클럽)
+  for (const path of ["/company", "/academy"]) {
+    const html = await renderHtml(path);
+    assert.match(html, /M&(amp;)?A 오피스/, `${path} should show the M&A office`);
+    assert.match(html, /시크릿 오피스/, `${path} should show the secret office`);
+  }
+  // 상세 페이지에는 소속 오피스 배지가 붙는다
+  const secret = await renderHtml("/company/business/family-office");
+  assert.match(secret, /시크릿 오피스/);
+  const mna = await renderHtml("/company/business/brokerage");
+  assert.match(mna, /M&(amp;)?A 오피스/);
+});

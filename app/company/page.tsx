@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import {
   ABOUT,
   BUSINESS_AREAS,
+  OFFICES,
+  areasInOffice,
   CAREERS,
   CONTACT,
   FAQS,
@@ -202,31 +204,43 @@ export default function CompanyPage() {
           </p>
         </section>
 
-        {/* ── 주요업무 5분야 ─────────────────────────────────────────── */}
+        {/* ── 주요업무 — M&A 오피스(3분야) · 시크릿 오피스(2분야) ────── */}
         <section className="co-section co-section--tint" id="business">
           <div className="co-section-head co-reveal">
             <p className="co-section-index">02 · BUSINESS</p>
             <h2>주요 업무</h2>
             <p className="co-section-note">
-              5개 분야 {TOTAL_TOPICS}개 주제의 커리큘럼으로 구성되어 있습니다. 각 주제에는
-              업무자료와 아카데미 평가시험이 함께 붙습니다.
+              M&amp;A 오피스 3개 분야와 시크릿 오피스 2개 분야, 합계 {TOTAL_TOPICS}개 주제의
+              커리큘럼으로 구성되어 있습니다. 각 주제에는 업무자료와 아카데미 평가시험이 함께
+              붙습니다.
             </p>
           </div>
-          <div className="co-biz-grid co-reveal">
-            {BUSINESS_AREAS.map((b) => (
-              <Link key={b.slug} className="co-biz co-biz--open" href={`/company/business/${b.slug}`}>
-                <span className="co-biz-en">{b.en}</span>
-                <strong>{b.name}</strong>
-                <p>{b.line}</p>
-                <span className="co-biz-foot">
-                  <span className="co-biz-count">{b.curriculum.length}개 주제</span>
-                  {/* 두 분야는 세부를 웹에 두지 않는다 (보고서 3.5) */}
-                  {b.offlineOnly && <span className="co-biz-lock">상담 후 오프라인</span>}
-                  <i aria-hidden="true">→</i>
-                </span>
-              </Link>
-            ))}
-          </div>
+          {OFFICES.map((office) => (
+            <div key={office.id} className="co-office co-reveal">
+              <div className="co-office-head">
+                <p className="co-office-en">{office.en}</p>
+                <h3>
+                  {office.name} <small>{areasInOffice(office.id).length}개 분야</small>
+                </h3>
+                <p className="co-office-line">{office.line}</p>
+              </div>
+              <div className="co-biz-grid">
+                {areasInOffice(office.id).map((b) => (
+                  <Link key={b.slug} className="co-biz co-biz--open" href={`/company/business/${b.slug}`}>
+                    <span className="co-biz-en">{b.en}</span>
+                    <strong>{b.name}</strong>
+                    <p>{b.line}</p>
+                    <span className="co-biz-foot">
+                      <span className="co-biz-count">{b.curriculum.length}개 주제</span>
+                      {/* 시크릿 오피스는 세부를 웹에 두지 않는다 (보고서 3.5) */}
+                      {b.offlineOnly && <span className="co-biz-lock">상담 후 오프라인</span>}
+                      <i aria-hidden="true">→</i>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* ── 직원채용 ─────────────────────────────────────────────── */}
