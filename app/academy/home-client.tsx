@@ -573,7 +573,7 @@ export default function Home({
               .map((t, idx) => ({ t, idx }))
               .filter(({ t }) => t.office === (office.id as OfficeId));
             return (
-              <div key={office.id} className="track-office">
+              <div key={office.id} className="track-office" data-office={office.id}>
                 <div className="track-office-head">
                   <span className="track-office-en">{office.en}</span>
                   <strong>{office.name}</strong>
