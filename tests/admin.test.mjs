@@ -41,28 +41,27 @@ test("tampered and forged sessions are rejected", async () => {
 test("pasted question is split into fields", () => {
   const parsed = parseQuestion(
     [
-      "난이도: 상급",
       "적대적 M&A",
-      "대상회사가 포이즌필을 발동했을 때 이를 무력화할 논거를 서술하시오.",
+      "대상회사가 방어수단을 발동했을 때 이를 다툴 논거를 서술하시오.",
       "① 신주발행 무효의 소",
       "② 주주총회 결의 취소",
       "정답: ①",
-      "출제 의도: 방어수단의 법적 한계를 아는지",
+      "해설: 방어수단의 법적 한계를 아는지",
     ].join("\n")
   );
 
-  assert.equal(parsed.level, "상급");
   assert.equal(parsed.track, "hostile");
   assert.equal(parsed.format, "객관식");
   assert.deepEqual(parsed.choices, ["신주발행 무효의 소", "주주총회 결의 취소"]);
   assert.equal(parsed.answer, "①");
-  assert.match(parsed.intent, /법적 한계/);
+  assert.match(parsed.explanation, /법적 한계/);
+  // The level system is gone; the parser must not resurrect it
+  assert.equal(parsed.level, undefined);
 
-  // Metadata and the withheld fields must not leak into the visible prompt
-  assert.ok(parsed.prompt.includes("포이즌필"));
-  assert.ok(!parsed.prompt.includes("난이도"));
+  // Labelled fields must not leak back into the visible prompt
+  assert.ok(parsed.prompt.includes("방어수단"));
   assert.ok(!parsed.prompt.includes("정답"));
-  assert.ok(!parsed.prompt.includes("출제 의도"));
+  assert.ok(!parsed.prompt.includes("해설"));
 });
 
 test("plain prose stays a written question", () => {
@@ -71,4 +70,69 @@ test("plain prose stays a written question", () => {
   );
   assert.equal(parsed.format, "주관식");
   assert.deepEqual(parsed.choices, []);
+});
+
+
+// ── 회원 인증 ─────────────────────────────────────────────────────────────
+process.env.MEMBER_SESSION_SECRET = "member-test-secret-" + "y".repeat(32);
+const memberUrl = new URL("../lib/member-auth.ts", import.meta.url).href;
+const {
+  hashPassword,
+  verifyPassword: verifyMemberPassword,
+  createMemberSession,
+  readMemberSession,
+} = await import(memberUrl);
+
+test("member password is stored as a salted derivation, never in the clear", async () => {
+  const stored = await hashPassword("m4-pass-phrase");
+  assert.ok(!stored.includes("m4-pass-phrase"));
+  assert.match(stored, /^pbkdf2[$]\d+[$]/);
+
+  // Same password, different salt -> different stored value
+  const again = await hashPassword("m4-pass-phrase");
+  assert.notEqual(stored, again);
+
+  assert.equal(await verifyMemberPassword("m4-pass-phrase", stored), true);
+  assert.equal(await verifyMemberPassword("m4-pass-phras", stored), false);
+  assert.equal(await verifyMemberPassword("", stored), false);
+  assert.equal(await verifyMemberPassword("m4-pass-phrase", "garbage"), false);
+});
+
+test("member session cannot be forged or extended in the browser", async () => {
+  const token = await createMemberSession(42);
+  assert.equal(await readMemberSession(token), 42);
+
+  const [id, expiry, signature] = token.split(".");
+
+  // Claiming to be someone else keeps the old signature - must fail
+  assert.equal(await readMemberSession(`99.${expiry}.${signature}`), null);
+  // Pushing the expiry out fails too, because it is inside the signed payload
+  assert.equal(await readMemberSession(`${id}.${Number(expiry) + 8.64e7}.${signature}`), null);
+  // Already expired
+  const stale = await createMemberSession(7);
+  const [sid, , ssig] = stale.split(".");
+  assert.equal(await readMemberSession(`${sid}.${Date.now() - 1000}.${ssig}`), null);
+  // Malformed and absent
+  assert.equal(await readMemberSession("nonsense"), null);
+  assert.equal(await readMemberSession(undefined), null);
+});
+
+test("an admin session is not accepted as a member session", async () => {
+  const adminToken = await createSession();
+  assert.equal(await readMemberSession(adminToken), null);
+});
+
+// ── 공개 payload 에 정답이 실리지 않는다 ─────────────────────────────────
+const questionsUrl = new URL("../lib/questions.ts", import.meta.url).href;
+const { getPublicQuestions } = await import(questionsUrl);
+
+test("public questions carry no answer and no explanation", async () => {
+  const rows = await getPublicQuestions();
+  assert.ok(rows.length > 0);
+  for (const row of rows) {
+    assert.equal("answer" in row, false);
+    assert.equal("explanation" in row, false);
+    assert.equal("level" in row, false);
+    assert.ok(row.prompt.length > 0);
+  }
 });

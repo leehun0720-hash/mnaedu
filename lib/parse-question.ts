@@ -1,28 +1,25 @@
-import { COURSES, LEVELS, type Format, type Level } from "./questions";
+import { TRACKS, type Format } from "./questions";
 
 export type ParsedDraft = {
   track: string;
-  level: Level;
   format: Format;
   prompt: string;
   choices: string[];
   answer: string;
-  intent: string;
+  explanation: string;
 };
 
-/** Keywords that point at a programme, beyond its own name. */
-const COURSE_HINTS: Record<string, string[]> = {
-  friendly: ["우호적", "PMI", "실사", "밸류에이션", "시너지"],
-  hostile: ["적대적", "포이즌", "공개매수", "백기사", "위임장", "경영권 방어"],
-  control: ["경영권 투자", "바이아웃", "SPA", "Exit", "지분 인수", "PEF"],
-  family: ["패밀리", "가문", "승계", "상속", "신탁"],
-  club: ["투자클럽", "클럽딜", "조합", "펀드 운용", "LP", "GP"],
+/** Keywords that point at a practice area, beyond its own name. */
+const TRACK_HINTS: Record<string, string[]> = {
+  friendly: ["우호적", "PMI", "실사", "밸류에이션", "시너지", "Locked-Box", "진술보장", "에스크로"],
+  hostile: ["적대적", "포이즌", "공개매수", "백기사", "위임장", "경영권 방어", "지분 매집", "5%"],
+  control: ["경영권 투자", "바이아웃", "SPA", "Exit", "지분 인수", "PEF", "주주간", "콜옵션"],
 };
 
 const CHOICE_LINE =
   /^\s*(?:[①②③④⑤⑥⑦⑧⑨⑩]|\(?\d{1,2}[).]|[가나다라마][).]|[A-Ea-e][).])\s*(.+)$/;
 
-const LABELLED = /^\s*(정답|답|출제\s*의도|의도|해설)\s*[:：]\s*(.+)$/;
+const LABELLED = /^\s*(정답|답|해설|설명|풀이)\s*[:：]\s*(.+)$/;
 
 /**
  * Turns pasted text into a draft. Deliberately conservative: it fills what it
@@ -32,12 +29,11 @@ const LABELLED = /^\s*(정답|답|출제\s*의도|의도|해설)\s*[:：]\s*(.+)
 export function parseQuestion(raw: string): ParsedDraft {
   const draft: ParsedDraft = {
     track: "",
-    level: "중급",
     format: "주관식",
     prompt: "",
     choices: [],
     answer: "",
-    intent: "",
+    explanation: "",
   };
   if (!raw.trim()) return draft;
 
@@ -49,7 +45,7 @@ export function parseQuestion(raw: string): ParsedDraft {
     if (labelled) {
       const [, key, value] = labelled;
       if (key === "정답" || key === "답") draft.answer = value.trim();
-      else draft.intent = value.trim();
+      else draft.explanation = value.trim();
       continue;
     }
     const choice = line.match(CHOICE_LINE);
@@ -65,20 +61,14 @@ export function parseQuestion(raw: string): ParsedDraft {
 
   const text = raw;
 
-  // Level: explicit labels first, then the 상/중/하 shorthand
-  const explicit = LEVELS.find((l) => text.includes(l));
-  if (explicit) draft.level = explicit;
-  else if (/난이도\s*[:：]?\s*하/.test(text)) draft.level = "초급";
-  else if (/난이도\s*[:：]?\s*상/.test(text)) draft.level = "상급";
-
-  // Course: exact name wins, otherwise the strongest keyword match
-  const byName = COURSES.find((c) => text.includes(c.label));
+  // Practice area: exact name wins, otherwise the strongest keyword match
+  const byName = TRACKS.find((t) => text.includes(t.label));
   if (byName) {
     draft.track = byName.slug;
   } else {
     let best = "";
     let bestHits = 0;
-    for (const [slug, hints] of Object.entries(COURSE_HINTS)) {
+    for (const [slug, hints] of Object.entries(TRACK_HINTS)) {
       const hits = hints.filter((h) => text.includes(h)).length;
       if (hits > bestHits) {
         best = slug;
@@ -91,7 +81,7 @@ export function parseQuestion(raw: string): ParsedDraft {
   draft.prompt = promptLines
     .join("\n")
     // Strip the metadata we have already pulled out of the body
-    .replace(/^\s*(난이도|과정|유형)\s*[:：].*$/gm, "")
+    .replace(/^\s*(과정|영역|유형)\s*[:：].*$/gm, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 

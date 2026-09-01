@@ -1,18 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { COURSES, FORMATS, LEVELS } from "@/lib/questions";
+import { TRACKS, FORMATS } from "@/lib/questions";
 import { parseQuestion } from "@/lib/parse-question";
 
 type Row = {
   id: number;
   track: string;
-  level: string;
   format: string;
   prompt: string;
   choices: string[] | null;
   answer: string | null;
-  intent: string | null;
+  explanation: string | null;
   published: boolean;
   createdAt: string;
 };
@@ -20,23 +19,21 @@ type Row = {
 type Draft = {
   id?: number;
   track: string;
-  level: string;
   format: string;
   prompt: string;
   choices: string[];
   answer: string;
-  intent: string;
+  explanation: string;
   published: boolean;
 };
 
 const EMPTY: Draft = {
   track: "",
-  level: "중급",
   format: "주관식",
   prompt: "",
   choices: ["", ""],
   answer: "",
-  intent: "",
+  explanation: "",
   published: false,
 };
 
@@ -140,12 +137,11 @@ export default function AdminClient({
     setDraft({
       id: r.id,
       track: r.track,
-      level: r.level,
       format: r.format,
       prompt: r.prompt,
       choices: r.choices?.length ? r.choices : ["", ""],
       answer: r.answer ?? "",
-      intent: r.intent ?? "",
+      explanation: r.explanation ?? "",
       published: r.published,
     });
     setNotice("");
@@ -157,12 +153,11 @@ export default function AdminClient({
     setDraft((prev) => ({
       ...prev,
       track: d.track || prev.track,
-      level: d.level,
       format: d.format,
       prompt: d.prompt || prev.prompt,
       choices: d.choices.length ? d.choices : prev.choices,
       answer: d.answer || prev.answer,
-      intent: d.intent || prev.intent,
+      explanation: d.explanation || prev.explanation,
     }));
     setNotice("초안을 채웠습니다. 분류가 맞는지 확인한 뒤 저장하십시오.");
   }
@@ -233,13 +228,13 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         <section className="admin-card">
           <h2>붙여넣기로 초안 만들기</h2>
           <p className="admin-note">
-            문제를 그대로 붙여넣으면 과정·난이도·유형을 추정해 아래 항목을 채웁니다. 추정이므로 반드시 확인하십시오.
+            문제를 그대로 붙여넣으면 업무 영역·유형을 추정해 아래 항목을 채웁니다. 추정이므로 반드시 확인하십시오.
           </p>
           <textarea
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
             rows={6}
-            placeholder={"예)\n난이도: 상급\n적대적 M&A\n포이즌필이 발동된 상황에서…\n① 첫 번째 보기\n② 두 번째 보기\n정답: ②\n출제 의도: 방어수단의 한계를 아는지"}
+            placeholder={"예)\n적대적 M&A\n방어수단이 발동된 상황에서…\n① 첫 번째 보기\n② 두 번째 보기\n정답: ②\n해설: 왜 그 논거가 성립하는지"}
           />
           <button type="button" className="admin-btn admin-btn--quiet" onClick={applyPaste} disabled={!paste.trim()}>
             초안 채우기
@@ -251,18 +246,12 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
           <div className="admin-row">
             <label>
-              과정
+              업무 영역
               <select value={draft.track} onChange={(e) => setDraft({ ...draft, track: e.target.value })} required>
                 <option value="">선택</option>
-                {COURSES.map((c) => (
-                  <option key={c.slug} value={c.slug}>{c.label}</option>
+                {TRACKS.map((t) => (
+                  <option key={t.slug} value={t.slug}>{t.label}</option>
                 ))}
-              </select>
-            </label>
-            <label>
-              난이도
-              <select value={draft.level} onChange={(e) => setDraft({ ...draft, level: e.target.value })}>
-                {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </label>
             <label>
@@ -320,12 +309,20 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
           <div className="admin-row">
             <label className="admin-field">
-              정답 <small>공개되지 않음</small>
-              <input value={draft.answer} onChange={(e) => setDraft({ ...draft, answer: e.target.value })} />
+              정답 · 모범답안 <small>회원에게 공개됩니다</small>
+              <textarea
+                rows={4}
+                value={draft.answer}
+                onChange={(e) => setDraft({ ...draft, answer: e.target.value })}
+              />
             </label>
             <label className="admin-field">
-              출제 의도 <small>공개되지 않음</small>
-              <input value={draft.intent} onChange={(e) => setDraft({ ...draft, intent: e.target.value })} />
+              해설 <small>회원에게 공개 — 실무에서 갈리는 지점</small>
+              <textarea
+                rows={4}
+                value={draft.explanation}
+                onChange={(e) => setDraft({ ...draft, explanation: e.target.value })}
+              />
             </label>
           </div>
 
@@ -364,8 +361,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     <span className={r.published ? "admin-tag admin-tag--on" : "admin-tag"}>
                       {r.published ? "발행" : "임시"}
                     </span>
-                    <span>{COURSES.find((c) => c.slug === r.track)?.label ?? r.track}</span>
-                    <span>{r.level}</span>
+                    <span>{TRACKS.find((t) => t.slug === r.track)?.label ?? r.track}</span>
                     <span>{r.format}</span>
                   </div>
                   <p className="admin-list-prompt">{r.prompt}</p>

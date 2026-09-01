@@ -4,7 +4,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth";
-import { COURSES, FORMATS, LEVELS } from "@/lib/questions";
+import { TRACKS, FORMATS } from "@/lib/questions";
 
 async function requireAdmin() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
@@ -22,12 +22,11 @@ function guardStorage() {
 type Payload = {
   id?: number;
   track?: string;
-  level?: string;
   format?: string;
   prompt?: string;
   choices?: unknown;
   answer?: string;
-  intent?: string;
+  explanation?: string;
   published?: boolean;
 };
 
@@ -35,8 +34,7 @@ type Payload = {
 function validate(body: Payload) {
   const prompt = (body.prompt ?? "").trim();
   if (prompt.length < 10) return { error: "문제 본문이 너무 짧습니다." as const };
-  if (!COURSES.some((c) => c.slug === body.track)) return { error: "과정을 선택해 주세요." as const };
-  if (!LEVELS.includes(body.level as never)) return { error: "난이도를 선택해 주세요." as const };
+  if (!TRACKS.some((t) => t.slug === body.track)) return { error: "업무 영역을 선택해 주세요." as const };
   if (!FORMATS.includes(body.format as never)) return { error: "유형을 선택해 주세요." as const };
 
   let choices: string[] | null = null;
@@ -51,12 +49,11 @@ function validate(body: Payload) {
   return {
     value: {
       track: body.track as string,
-      level: body.level as string,
       format: body.format as string,
       prompt,
       choices,
       answer: (body.answer ?? "").trim() || null,
-      intent: (body.intent ?? "").trim() || null,
+      explanation: (body.explanation ?? "").trim() || null,
       published: Boolean(body.published),
     },
   };
