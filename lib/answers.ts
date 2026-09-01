@@ -5,7 +5,7 @@ import { getDb, isDbConfigured } from "@/db";
 import { answers, members, pointLedger, questions, type Answer, type Question } from "@/db/schema";
 import { PASS_SCORE, POINTS, canAccessLevel } from "@/lib/membership";
 import { getCurrentMember, toProfile, type MemberProfile } from "@/lib/members";
-import { levelCode } from "@/lib/questions";
+import { isOfflineTrack, levelCode } from "@/lib/questions";
 import { gradeEssayWithAi, isAiGradingConfigured } from "@/lib/grading";
 
 /**
@@ -138,7 +138,8 @@ export async function submitAnswer(
     .from(questions)
     .where(and(eq(questions.id, questionId), eq(questions.published, true)))
     .limit(1);
-  if (!question) return { ok: false, reason: "not-found" };
+  // 시크릿 오피스 분야는 블라인드 — 풀이 화면이 없으니 직접 API 호출도 막는다
+  if (!question || isOfflineTrack(question.track)) return { ok: false, reason: "not-found" };
   if (!canAccessLevel(member.tier, question.level)) return { ok: false, reason: "locked-level" };
 
   const existing = await getMyAnswer(member.id, questionId);

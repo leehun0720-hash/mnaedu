@@ -592,7 +592,9 @@ export default function Home({
                       <strong>{t.title}</strong>
                       <span className="track-hook">{t.en}</span>
                       <p>{t.description}</p>
-                      <span className="track-meta">{t.topics.length}개 주제 <i>↗</i></span>
+                      <span className="track-meta">
+                        {t.offlineOnly ? "오프라인 전용" : `${t.topics.length}개 주제`} <i>↗</i>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -609,7 +611,9 @@ export default function Home({
               <h3>{currentTrack.title}</h3>
             </div>
             <p className="bank-axis">
-              {currentTrack.topics.length}개 주제 × 5레벨 · 퀴즈 1건은 {QUESTIONS_PER_QUIZ}문제로 구성됩니다.
+              {currentTrack.offlineOnly
+                ? "오프라인 전용 분야 — 온라인 문제은행에는 출제하지 않습니다."
+                : `${currentTrack.topics.length}개 주제 × 5레벨 · 퀴즈 1건은 ${QUESTIONS_PER_QUIZ}문제로 구성됩니다.`}
             </p>
           </div>
 
@@ -620,19 +624,47 @@ export default function Home({
             </div>
           )}
 
-          <ol className="bank-topics">
-            {currentTrack.topics.map((topic, i) => (
-              <li key={topic.label} className="bank-topic">
-                <span className="bank-topic-no" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-                <span className="bank-topic-title">{topic.label}</span>
-                <span className="bank-topic-levels" aria-label="난이도 L1부터 L5까지">
-                  {levelLadder.map((lv) => (
-                    <i key={lv.code} data-free={lv.access === "무료회원"}>{lv.code}</i>
-                  ))}
-                </span>
-              </li>
-            ))}
-          </ol>
+          {currentTrack.offlineOnly ? (
+            /* 시크릿 오피스 — 주제는 흐릿하게만 비치고, 문제는 출제되지 않는다 */
+            <div className="bank-blind">
+              <ol className="bank-topics" aria-hidden="true">
+                {currentTrack.topics.map((topic, i) => (
+                  <li key={topic.label} className="bank-topic">
+                    <span className="bank-topic-no">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="bank-topic-title">{topic.label}</span>
+                    <span className="bank-topic-levels">
+                      {levelLadder.map((lv) => (
+                        <i key={lv.code}>{lv.code}</i>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <div className="bank-blind-card" role="note">
+                <span className="bank-blind-badge">SECRET OFFICE · OFFLINE ONLY</span>
+                <strong>이 분야는 문제은행에서 블라인드입니다</strong>
+                <p>
+                  패밀리오피스와 투자가 클럽의 교육과 커뮤니티는 오직 오프라인으로만
+                  진행합니다. 온라인에는 문제를 출제하지 않으며, 과정 안내는 상담을
+                  통해 드립니다.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <ol className="bank-topics">
+              {currentTrack.topics.map((topic, i) => (
+                <li key={topic.label} className="bank-topic">
+                  <span className="bank-topic-no" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="bank-topic-title">{topic.label}</span>
+                  <span className="bank-topic-levels" aria-label="난이도 L1부터 L5까지">
+                    {levelLadder.map((lv) => (
+                      <i key={lv.code} data-free={lv.access === "무료회원"}>{lv.code}</i>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
 
           <p className="bank-note">
             {currentTrack.offlineOnly

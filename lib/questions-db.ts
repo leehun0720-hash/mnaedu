@@ -1,9 +1,9 @@
 import "server-only";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, notInArray } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
-import { SEED_QUESTIONS, courseLabel, levelClass, normalizeLevel, type PublicQuestion } from "@/lib/questions";
+import { OFFLINE_TRACKS, SEED_QUESTIONS, courseLabel, isOfflineTrack, levelClass, normalizeLevel, type PublicQuestion } from "@/lib/questions";
 
 /**
  * 서버 전용 — postgres 드라이버는 Node 소켓을 쓰므로 클라이언트 번들에
@@ -21,7 +21,8 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
     const rows = await getDb()
       .select()
       .from(questions)
-      .where(eq(questions.published, true))
+      // 시크릿 오피스 분야는 발행돼 있어도 공개 화면에 오르지 않는다 (블라인드)
+      .where(and(eq(questions.published, true), notInArray(questions.track, OFFLINE_TRACKS)))
       .orderBy(desc(questions.createdAt))
       .limit(limit);
 
@@ -65,7 +66,8 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
       .from(questions)
       .where(eq(questions.id, id))
       .limit(1);
-    if (!r || !r.published) return null;
+    // 오프라인 전용 분야의 문제는 직접 링크로도 열리지 않는다
+    if (!r || !r.published || isOfflineTrack(r.track)) return null;
     return {
       id: r.id,
       track: r.track,

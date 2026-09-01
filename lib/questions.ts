@@ -93,6 +93,24 @@ export function normalizeTrack(slug: string): string {
   return LEGACY_TRACKS[slug] ?? slug;
 }
 
+/**
+ * 시크릿 오피스(패밀리오피스·투자가 클럽)는 오직 오프라인 교육·커뮤니티로만
+ * 진행한다 — 문제은행에서는 블라인드다. 발행 여부와 무관하게 공개 목록·풀이·
+ * 해설 경로 어디에도 오르지 않는다. 어느 분야가 오프라인 전용인지는 정본
+ * (lib/company.ts)의 offlineOnly 표시 한 곳에서만 정한다.
+ */
+export const OFFLINE_TRACKS: string[] = [
+  ...BUSINESS_AREAS.filter((b) => b.offlineOnly).map((b) => b.slug),
+  // 옛 슬러그로 저장된 문제도 같은 분야다 — DB 조회는 원문 값으로 거른다
+  ...Object.entries(LEGACY_TRACKS)
+    .filter(([, target]) => BUSINESS_AREAS.some((b) => b.slug === target && b.offlineOnly))
+    .map(([legacy]) => legacy),
+];
+
+export function isOfflineTrack(slug: string): boolean {
+  return BUSINESS_AREAS.some((b) => b.slug === normalizeTrack(slug) && b.offlineOnly);
+}
+
 export function courseLabel(slug: string): string {
   return COURSES.find((c) => c.slug === normalizeTrack(slug))?.label ?? slug;
 }

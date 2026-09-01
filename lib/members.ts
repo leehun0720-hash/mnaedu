@@ -6,6 +6,7 @@ import { answers, members, pointLedger, questions, unlockedExplanations } from "
 import { getAuthUser } from "@/lib/supabase/server";
 import { POINTS, canAccessLevel, type Tier } from "@/lib/membership";
 import { isPaidNow } from "@/lib/billing";
+import { isOfflineTrack } from "@/lib/questions";
 
 /**
  * 회원 저장소 — 프로필 조회·생성과 포인트 차감.
@@ -107,7 +108,8 @@ export async function unlockExplanation(questionId: number): Promise<UnlockResul
     .from(questions)
     .where(and(eq(questions.id, questionId), eq(questions.published, true)))
     .limit(1);
-  if (!question || !question.explanation) return { ok: false, reason: "not-found" };
+  // 시크릿 오피스 분야는 블라인드 — 해설도 온라인 경로로는 나가지 않는다
+  if (!question || !question.explanation || isOfflineTrack(question.track)) return { ok: false, reason: "not-found" };
   if (!canAccessLevel(member.tier, question.level)) return { ok: false, reason: "locked-level" };
   // 해설 열람은 유료회원 전용 — 무료회원에게는 모자이크 미리보기만 보인다
   if (member.tier !== "paid") return { ok: false, reason: "free-tier" };
