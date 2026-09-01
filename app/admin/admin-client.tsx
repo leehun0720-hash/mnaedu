@@ -55,6 +55,12 @@ type OrderRow = {
 
 type OrdersResponse = { orders: OrderRow[]; total: number; pendingCount: number; page: number };
 
+/** 목록 불러오기 실패 — 응답 대신 이 값이 돌아오면 화면에 이유를 띄운다 */
+type FetchFailure = { failed: true; expired: boolean; message: string };
+function isFailure(d: unknown): d is FetchFailure {
+  return typeof d === "object" && d !== null && "failed" in d;
+}
+
 type LedgerEntry = {
   id: number;
   kind: string;
@@ -191,37 +197,60 @@ export default function AdminClient({
 
   // 가져오기와 반영을 나눈다 — 효과 훅에서는 콜백 안에서만 상태를 건드리고,
   // 저장·채점 뒤의 새로고침은 같은 함수를 그대로 다시 쓴다.
-  const fetchQuestions = useCallback(async (): Promise<QuestionsResponse | null> => {
+  //
+  // 실패는 조용히 삼키지 않는다 — 목록이 그냥 비어 보이면 "회원이 없다"와
+  // "불러오다 실패했다"를 구분할 수 없어, 세션 만료 하나로 화면 전체가
+  // 이유 없이 텅 비어 보이는 사고가 난다. 가져오기 함수는 실패를 값으로
+  // 돌려주기만 하고, 상태 반영은 호출한 쪽의 콜백에서 한다.
+  const adminGet = useCallback(async <T,>(url: string): Promise<T | FetchFailure> => {
+    const res = await fetch(url);
+    if (res.status === 401) {
+      return { failed: true, expired: true, message: "세션이 만료되었습니다. 다시 로그인해 주세요." };
+    }
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      return {
+        failed: true,
+        expired: false,
+        message: body.error ?? `목록을 불러오지 못했습니다 (오류 ${res.status}). 잠시 후 다시 시도해 주세요.`,
+      };
+    }
+    return (await res.json()) as T;
+  }, []);
+
+  const reportFailure = useCallback((f: FetchFailure) => {
+    // 세션이 끝났으면 로그인 화면으로 되돌려 이유를 보여 준다
+    if (f.expired) setLoggedIn(false);
+    setError(f.message);
+  }, []);
+
+  const fetchQuestions = useCallback(async (): Promise<QuestionsResponse | FetchFailure | null> => {
     if (!dbConfigured) return null;
     const p = new URLSearchParams({ page: String(qPage) });
     if (qFilter.q) p.set("q", qFilter.q);
     if (qFilter.track) p.set("track", qFilter.track);
     if (qFilter.level) p.set("level", qFilter.level);
     if (qFilter.state) p.set("state", qFilter.state);
-    const res = await fetch(`/api/admin/questions?${p}`);
-    return res.ok ? ((await res.json()) as QuestionsResponse) : null;
-  }, [dbConfigured, qPage, qFilter]);
+    return adminGet<QuestionsResponse>(`/api/admin/questions?${p}`);
+  }, [dbConfigured, qPage, qFilter, adminGet]);
 
-  const fetchInbox = useCallback(async (): Promise<AnswersResponse | null> => {
+  const fetchInbox = useCallback(async (): Promise<AnswersResponse | FetchFailure | null> => {
     if (!dbConfigured) return null;
-    const res = await fetch(`/api/admin/answers?status=${inboxStatus}&page=${inboxPage}`);
-    return res.ok ? ((await res.json()) as AnswersResponse) : null;
-  }, [dbConfigured, inboxStatus, inboxPage]);
+    return adminGet<AnswersResponse>(`/api/admin/answers?status=${inboxStatus}&page=${inboxPage}`);
+  }, [dbConfigured, inboxStatus, inboxPage, adminGet]);
 
-  const fetchMembers = useCallback(async (): Promise<MembersResponse | null> => {
+  const fetchMembers = useCallback(async (): Promise<MembersResponse | FetchFailure | null> => {
     if (!dbConfigured) return null;
     const p = new URLSearchParams({ page: String(mPage) });
     if (mFilter.q) p.set("q", mFilter.q);
     if (mFilter.tier) p.set("tier", mFilter.tier);
-    const res = await fetch(`/api/admin/members?${p}`);
-    return res.ok ? ((await res.json()) as MembersResponse) : null;
-  }, [dbConfigured, mPage, mFilter]);
+    return adminGet<MembersResponse>(`/api/admin/members?${p}`);
+  }, [dbConfigured, mPage, mFilter, adminGet]);
 
-  const fetchOrders = useCallback(async (): Promise<OrdersResponse | null> => {
+  const fetchOrders = useCallback(async (): Promise<OrdersResponse | FetchFailure | null> => {
     if (!dbConfigured) return null;
-    const res = await fetch(`/api/admin/orders?status=${orderStatus}&page=${orderPage}`);
-    return res.ok ? ((await res.json()) as OrdersResponse) : null;
-  }, [dbConfigured, orderStatus, orderPage]);
+    return adminGet<OrdersResponse>(`/api/admin/orders?status=${orderStatus}&page=${orderPage}`);
+  }, [dbConfigured, orderStatus, orderPage, adminGet]);
 
   const applyOrders = useCallback((d: OrdersResponse) => {
     setOrderRows(d.orders);
@@ -231,8 +260,10 @@ export default function AdminClient({
 
   const loadOrders = useCallback(async () => {
     const d = await fetchOrders();
-    if (d) applyOrders(d);
-  }, [fetchOrders, applyOrders]);
+    if (!d) return;
+    if (isFailure(d)) reportFailure(d);
+    else applyOrders(d);
+  }, [fetchOrders, applyOrders, reportFailure]);
 
   const applyQuestions = useCallback((d: QuestionsResponse) => {
     setRows(d.questions);
@@ -254,18 +285,24 @@ export default function AdminClient({
 
   const loadQuestions = useCallback(async () => {
     const d = await fetchQuestions();
-    if (d) applyQuestions(d);
-  }, [fetchQuestions, applyQuestions]);
+    if (!d) return;
+    if (isFailure(d)) reportFailure(d);
+    else applyQuestions(d);
+  }, [fetchQuestions, applyQuestions, reportFailure]);
 
   const loadInbox = useCallback(async () => {
     const d = await fetchInbox();
-    if (d) applyInbox(d);
-  }, [fetchInbox, applyInbox]);
+    if (!d) return;
+    if (isFailure(d)) reportFailure(d);
+    else applyInbox(d);
+  }, [fetchInbox, applyInbox, reportFailure]);
 
   const loadMembers = useCallback(async () => {
     const d = await fetchMembers();
-    if (d) applyMembers(d);
-  }, [fetchMembers, applyMembers]);
+    if (!d) return;
+    if (isFailure(d)) reportFailure(d);
+    else applyMembers(d);
+  }, [fetchMembers, applyMembers, reportFailure]);
 
   // 각 목록은 자기 필터·페이지가 바뀔 때만 다시 불러온다. 하나를 넘겼다고
   // 나머지 둘까지 새로 받으면 화면이 커질수록 낭비가 커진다. alive 가드는
@@ -275,52 +312,60 @@ export default function AdminClient({
     let alive = true;
     fetchQuestions()
       .then((d) => {
-        if (alive && d) applyQuestions(d);
+        if (!alive || !d) return;
+        if (isFailure(d)) reportFailure(d);
+        else applyQuestions(d);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [loggedIn, fetchQuestions, applyQuestions]);
+  }, [loggedIn, fetchQuestions, applyQuestions, reportFailure]);
 
   useEffect(() => {
     if (!loggedIn) return;
     let alive = true;
     fetchInbox()
       .then((d) => {
-        if (alive && d) applyInbox(d);
+        if (!alive || !d) return;
+        if (isFailure(d)) reportFailure(d);
+        else applyInbox(d);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [loggedIn, fetchInbox, applyInbox]);
+  }, [loggedIn, fetchInbox, applyInbox, reportFailure]);
 
   useEffect(() => {
     if (!loggedIn) return;
     let alive = true;
     fetchOrders()
       .then((d) => {
-        if (alive && d) applyOrders(d);
+        if (!alive || !d) return;
+        if (isFailure(d)) reportFailure(d);
+        else applyOrders(d);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [loggedIn, fetchOrders, applyOrders]);
+  }, [loggedIn, fetchOrders, applyOrders, reportFailure]);
 
   useEffect(() => {
     if (!loggedIn) return;
     let alive = true;
     fetchMembers()
       .then((d) => {
-        if (alive && d) applyMembers(d);
+        if (!alive || !d) return;
+        if (isFailure(d)) reportFailure(d);
+        else applyMembers(d);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [loggedIn, fetchMembers, applyMembers]);
+  }, [loggedIn, fetchMembers, applyMembers, reportFailure]);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -391,8 +436,9 @@ export default function AdminClient({
     }
     setLedgerFor(memberId);
     setLedger([]);
-    const res = await fetch(`/api/admin/ledger?memberId=${memberId}`);
-    if (res.ok) setLedger(((await res.json()) as { entries: LedgerEntry[] }).entries);
+    const d = await adminGet<{ entries: LedgerEntry[] }>(`/api/admin/ledger?memberId=${memberId}`);
+    if (isFailure(d)) reportFailure(d);
+    else setLedger(d.entries);
   }
 
   /** 증감으로 조정 — 0 아래로는 내려가지 않는다 */
@@ -841,6 +887,8 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           <h2>
             회원 관리 (무료 {tierCounts.free} · 유료 {tierCounts.paid})
           </h2>
+          {/* 화면 위쪽 배너는 여기까지 스크롤하면 안 보인다 — 실패는 이 자리에서도 알린다 */}
+          {error && <p className="admin-error">{error}</p>}
           <p className="admin-note">
             등급과 포인트를 여기서 관리합니다. 등급을 바꾸면 다음 화면 이동부터 바로 적용됩니다 —
             무료회원은 L1 입문 퀴즈까지, 유료회원은 L2~L5와 회장 해설 열람이 열립니다.
