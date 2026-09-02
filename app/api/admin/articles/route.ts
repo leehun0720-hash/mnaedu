@@ -22,6 +22,29 @@ function guardStorage() {
   );
 }
 
+/**
+ * 데이터베이스 오류를 화면이 읽을 수 있는 형태로 바꾼다.
+ *
+ * 이걸 두지 않으면 표가 없을 때 500 HTML 페이지가 나가고, 화면은 그것을
+ * JSON 으로 읽다 실패해 아무 말도 못 한다 — 버튼을 눌러도 반응이 없는 것처럼
+ * 보인다. 원인을 그대로 알려 주는 편이 낫다.
+ */
+function failed(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  // 42P01 = 그런 표가 없음
+  if (/relation .* does not exist|42P01/i.test(message)) {
+    return NextResponse.json(
+      {
+        error:
+          "칼럼 표가 아직 만들어지지 않았습니다. Supabase SQL 편집기에서 drizzle/0006_insights.sql 을 실행해 주십시오.",
+      },
+      { status: 503 }
+    );
+  }
+  console.error("[admin/articles]", err);
+  return NextResponse.json({ error: "저장 중 문제가 발생했습니다." }, { status: 500 });
+}
+
 type Payload = {
   id?: number;
   title?: string;
@@ -74,16 +97,17 @@ export async function GET(request: Request) {
   if (blocked) return blocked;
 
   // 수정하려면 본문이 필요하다. 목록에는 본문을 싣지 않으므로 한 건만 따로 준다.
-  const id = Number(new URL(request.url).searchParams.get("id"));
-  if (id) {
-    const [one] = await getDb().select().from(articles).where(eq(articles.id, id)).limit(1);
-    if (!one) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
-    return NextResponse.json({ article: one });
-  }
+  try {
+    const id = Number(new URL(request.url).searchParams.get("id"));
+    if (id) {
+      const [one] = await getDb().select().from(articles).where(eq(articles.id, id)).limit(1);
+      if (!one) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+      return NextResponse.json({ article: one });
+    }
 
-  const rows = await getDb()
-    .select({
-      id: articles.id,
+    const rows = await getDb()
+      .select({
+        id: articles.id,
       slug: articles.slug,
       title: articles.title,
       lede: articles.lede,
@@ -93,10 +117,13 @@ export async function GET(request: Request) {
       published: articles.published,
       createdAt: articles.createdAt,
     })
-    .from(articles)
-    .orderBy(desc(articles.publishedOn), desc(articles.createdAt));
+      .from(articles)
+      .orderBy(desc(articles.publishedOn), desc(articles.createdAt));
 
-  return NextResponse.json({ articles: rows });
+    return NextResponse.json({ articles: rows });
+  } catch (err) {
+    return failed(err);
+  }
 }
 
 export async function POST(request: Request) {
@@ -107,13 +134,17 @@ export async function POST(request: Request) {
   const parsed = validate((await request.json()) as Payload);
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const slug = await uniqueSlug(parsed.value.title);
-  const [row] = await getDb()
-    .insert(articles)
-    .values({ ...parsed.value, slug })
-    .returning({ id: articles.id, slug: articles.slug });
+  try {
+    const slug = await uniqueSlug(parsed.value.title);
+    const [row] = await getDb()
+      .insert(articles)
+      .values({ ...parsed.value, slug })
+      .returning({ id: articles.id, slug: articles.slug });
 
-  return NextResponse.json({ article: row }, { status: 201 });
+    return NextResponse.json({ article: row }, { status: 201 });
+  } catch (err) {
+    return failed(err);
+  }
 }
 
 export async function PUT(request: Request) {
@@ -128,14 +159,18 @@ export async function PUT(request: Request) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   // slug는 고치지 않는다 — 주소가 바뀌면 이미 걸린 링크와 검색 색인이 끊긴다
-  const [row] = await getDb()
-    .update(articles)
-    .set({ ...parsed.value, updatedAt: new Date() })
-    .where(eq(articles.id, input.id))
-    .returning({ id: articles.id, slug: articles.slug });
+  try {
+    const [row] = await getDb()
+      .update(articles)
+      .set({ ...parsed.value, updatedAt: new Date() })
+      .where(eq(articles.id, input.id))
+      .returning({ id: articles.id, slug: articles.slug });
 
-  if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
-  return NextResponse.json({ article: row });
+    if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+    return NextResponse.json({ article: row });
+  } catch (err) {
+    return failed(err);
+  }
 }
 
 export async function DELETE(request: Request) {
@@ -146,6 +181,10 @@ export async function DELETE(request: Request) {
   const id = Number(new URL(request.url).searchParams.get("id"));
   if (!id) return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
 
-  await getDb().delete(articles).where(eq(articles.id, id));
-  return NextResponse.json({ ok: true });
+  try {
+    await getDb().delete(articles).where(eq(articles.id, id));
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return failed(err);
+  }
 }

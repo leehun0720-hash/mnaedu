@@ -213,10 +213,22 @@ export default function AdminClient({
   }, [readJson]);
 
   const loadArticles = useCallback(async () => {
-    const data = await readJson<{ articles: ArticleRow[] }>("/api/admin/articles");
-    if ("failed" in data) return;
-    setArticles(data.articles ?? []);
-  }, [readJson]);
+    try {
+      const res = await fetch("/api/admin/articles");
+      const text = await res.text();
+      const data = text ? (JSON.parse(text) as { articles?: ArticleRow[]; error?: string }) : {};
+      if (!res.ok) {
+        // 표가 없을 때 이유를 화면에 드러낸다 — 빈 목록으로 두면 원인을 알 수 없다
+        setError(data.error ?? "칼럼 목록을 불러오지 못했습니다.");
+        setArticles([]);
+        return;
+      }
+      setArticles(data.articles ?? []);
+    } catch {
+      setError("칼럼 목록을 불러오지 못했습니다.");
+      setArticles([]);
+    }
+  }, []);
 
   // 상태 갱신은 반드시 await 뒤에서 일어나야 한다 — 탭을 빠르게 오갈 때
   // 먼저 띄운 요청이 나중에 도착해 화면을 덮어쓰지 않도록 alive로 막는다.
@@ -349,6 +361,20 @@ export default function AdminClient({
   }
 
 
+  /**
+   * 응답을 JSON 으로 읽되, 본문이 JSON 이 아니면 던지지 않는다.
+   * 서버가 오류 페이지(HTML)를 돌려줄 때 화면이 조용히 멎는 것을 막는다.
+   */
+  async function readResponse(res: Response): Promise<Record<string, unknown>> {
+    const text = await res.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      return { error: `서버가 예상 밖의 응답을 보냈습니다 (${res.status}).` };
+    }
+  }
+
   async function saveArticle(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -360,18 +386,22 @@ export default function AdminClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(articleDraft),
       });
-      const data = (await res.json()) as { error?: string; article?: { slug: string } };
+      const data = await readResponse(res);
       if (!res.ok) {
-        setError(data.error ?? "저장하지 못했습니다.");
+        setError((data.error as string) ?? "저장하지 못했습니다.");
         return;
       }
+      const saved = data.article as { slug?: string } | undefined;
       setNotice(
         articleDraft.id
           ? "칼럼을 수정했습니다."
-          : `칼럼을 올렸습니다. 주소: /insights/${data.article?.slug ?? ""}`
+          : `칼럼을 올렸습니다. 주소: /insights/${saved?.slug ?? ""}`
       );
       setArticleDraft(EMPTY_ARTICLE);
       await loadArticles();
+    } catch {
+      // 연결 자체가 끊긴 경우. 아무 말 없이 끝나면 눌러도 반응이 없어 보인다.
+      setError("연결에 실패했습니다. 잠시 후 다시 시도해 주십시오.");
     } finally {
       setBusy(false);
     }
@@ -427,8 +457,8 @@ export default function AdminClient({
       body: JSON.stringify({ ...(await articlePayload(row)), published: !row.published }),
     });
     if (!res.ok) {
-      const data = (await res.json()) as { error?: string };
-      setError(data.error ?? "발행 상태를 바꾸지 못했습니다.");
+      const data = await readResponse(res);
+      setError((data.error as string) ?? "발행 상태를 바꾸지 못했습니다.");
       return;
     }
     await loadArticles();
@@ -436,7 +466,12 @@ export default function AdminClient({
 
   async function removeArticle(id: number) {
     if (!window.confirm("이 칼럼을 삭제할까요? 검색에 걸린 주소도 함께 사라집니다.")) return;
-    await fetch(`/api/admin/articles?id=${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/articles?id=${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await readResponse(res);
+      setError((data.error as string) ?? "삭제하지 못했습니다.");
+      return;
+    }
     await loadArticles();
   }
 
