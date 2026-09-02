@@ -2038,6 +2038,26 @@ textarea:focus-visible {
   /* Phone and mail are tapped, not read, so they get a real target */
   .footer-contact a, .footer-admin { min-height: 44px; display: flex; align-items: center; }
   .exam-card, .track-card { -webkit-tap-highlight-color: transparent; }
+  /* 하단 고정 레일은 이 화면의 주 내비게이션이므로 최소 타겟을 지킨다 */
+  .rail-item { min-height: 44px; }
+  /* 색 스와치는 28px 원이라야 나란히 놓이므로, 보이는 크기는 그대로 두고
+     누를 수 있는 영역만 44px로 넓힌다. */
+  .theme-swatch { position: relative; }
+  .theme-swatch::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+  /* 푸터의 링크·전화·메일은 줄글 높이(약 19px)라 손가락으로는 겨냥이 안 된다.
+     글자 크기는 그대로 두고 세로 여백만 주어 24px 최소 타겟을 채운다. */
+  .co-footer a,
+  .qa-foot a,
+  .co-form-note a,
+  .co-contact-card a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+  }
 }
 
 /* ==========================================================================
@@ -3442,6 +3462,13 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   .rail-item { flex: 1; width: auto; flex-direction: row; gap: 7px; padding: 12px 6px; }
   .rail-label br { display: none; }
   .rail-label { font-size: 12px; }
+  /* 레일이 화면 아래에 고정되므로, 그만큼 지면을 비워 두지 않으면 마지막
+     줄(저작권 표기)이 레일에 덮여 끝내 읽히지 않는다. */
+  .co-page,
+  .auth-shell,
+  .admin {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* — 복사 방지: 본문 선택 차단, 입력 요소는 예외 (설계서 지시 · 8장 한계 고지) — */
