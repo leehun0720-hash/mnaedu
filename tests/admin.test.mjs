@@ -91,3 +91,35 @@ test("legacy rows still map onto the current taxonomy", async () => {
   }
 });
 
+
+
+// ── DB 오류 해설 ─────────────────────────────────────────────────────────
+const dbErrorUrl = new URL("../lib/db-error.ts", import.meta.url).href;
+const { describeDbError, isMissingTable } = await import(dbErrorUrl);
+
+test("표가 없다는 사실은 drizzle 이 감싼 안쪽에 있다", () => {
+  // Drizzle 은 실패한 질의를 자기 오류로 감싸고 진짜 원인을 cause 에 넣는다.
+  // 겉면만 보면 안내를 못 하고 "문제가 발생했습니다"만 남는다 — 실제로 그랬다.
+  const inner = new Error('relation "articles" does not exist');
+  inner.code = "42P01";
+  const outer = new Error('Failed query: select "id" from "articles" where slug = $1');
+  outer.cause = inner;
+
+  assert.equal(/does not exist/.test(outer.message), false, "겉면에는 원인이 없다");
+  assert.equal(isMissingTable(outer), true, "cause 까지 보면 알아낸다");
+  assert.match(describeDbError(outer), /relation "articles" does not exist/);
+  assert.match(describeDbError(outer), /42P01/);
+});
+
+test("표와 무관한 오류를 표 없음으로 오인하지 않는다", () => {
+  const outer = new Error("Failed query: insert into articles");
+  outer.cause = new Error("connection timed out");
+  assert.equal(isMissingTable(outer), false);
+  assert.match(describeDbError(outer), /connection timed out/);
+});
+
+test("cause 가 자기 자신을 가리켜도 멈춘다", () => {
+  const loop = new Error("bad");
+  loop.cause = loop;
+  assert.match(describeDbError(loop), /bad/);
+});

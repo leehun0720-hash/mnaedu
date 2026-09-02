@@ -6,6 +6,7 @@ import { articles } from "@/db/schema";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth";
 import { COURSES } from "@/lib/questions";
 import { uniqueSlug } from "@/lib/articles";
+import { describeDbError, isMissingTable } from "@/lib/db-error";
 
 export const dynamic = "force-dynamic";
 // 칼럼 한 편은 본문이 길고, Supabase 풀러가 식은 상태에서 첫 연결이 느릴 수
@@ -33,9 +34,8 @@ function guardStorage() {
  * 보인다. 원인을 그대로 알려 주는 편이 낫다.
  */
 function failed(err: unknown) {
-  const message = err instanceof Error ? err.message : String(err);
-  // 42P01 = 그런 표가 없음
-  if (/relation .* does not exist|42P01/i.test(message)) {
+  const message = describeDbError(err);
+  if (isMissingTable(err)) {
     return NextResponse.json(
       {
         error:
