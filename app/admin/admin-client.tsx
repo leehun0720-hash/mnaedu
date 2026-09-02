@@ -82,7 +82,40 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-type Tab = "questions" | "documents" | "members";
+type Tab = "questions" | "articles" | "documents" | "members";
+
+type ArticleRow = {
+  id: number;
+  slug: string;
+  title: string;
+  lede: string | null;
+  source: string | null;
+  track: string | null;
+  publishedOn: string | null;
+  published: boolean;
+  createdAt: string;
+};
+
+type ArticleDraft = {
+  id?: number;
+  title: string;
+  lede: string;
+  body: string;
+  source: string;
+  publishedOn: string;
+  track: string;
+  published: boolean;
+};
+
+const EMPTY_ARTICLE: ArticleDraft = {
+  title: "",
+  lede: "",
+  body: "",
+  source: "아주경제",
+  publishedOn: "",
+  track: "",
+  published: true,
+};
 
 export default function AdminClient({
   authed,
@@ -119,6 +152,10 @@ export default function AdminClient({
   const [docTrack, setDocTrack] = useState("");
   const [docKind, setDocKind] = useState("자료");
   const [docPublished, setDocPublished] = useState(true);
+
+  // 칼럼
+  const [articles, setArticles] = useState<ArticleRow[]>([]);
+  const [articleDraft, setArticleDraft] = useState<ArticleDraft>(EMPTY_ARTICLE);
 
   // 회원
   const [members, setMembers] = useState<MemberRow[]>([]);
@@ -175,20 +212,32 @@ export default function AdminClient({
     setMemberTotal(data.total);
   }, [readJson]);
 
+  const loadArticles = useCallback(async () => {
+    const data = await readJson<{ articles: ArticleRow[] }>("/api/admin/articles");
+    if ("failed" in data) return;
+    setArticles(data.articles ?? []);
+  }, [readJson]);
+
   // 상태 갱신은 반드시 await 뒤에서 일어나야 한다 — 탭을 빠르게 오갈 때
   // 먼저 띄운 요청이 나중에 도착해 화면을 덮어쓰지 않도록 alive로 막는다.
   useEffect(() => {
     if (!loggedIn || !dbConfigured) return;
     let alive = true;
     const load =
-      tab === "questions" ? loadQuestions : tab === "documents" ? loadDocuments : loadMembers;
+      tab === "questions"
+        ? loadQuestions
+        : tab === "articles"
+          ? loadArticles
+          : tab === "documents"
+            ? loadDocuments
+            : loadMembers;
     Promise.resolve()
       .then(() => (alive ? load() : undefined))
       .catch(() => undefined);
     return () => {
       alive = false;
     };
-  }, [loggedIn, dbConfigured, tab, loadQuestions, loadDocuments, loadMembers]);
+  }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers]);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -297,6 +346,98 @@ export default function AdminClient({
       }),
     });
     await loadQuestions();
+  }
+
+
+  async function saveArticle(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/admin/articles", {
+        method: articleDraft.id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(articleDraft),
+      });
+      const data = (await res.json()) as { error?: string; article?: { slug: string } };
+      if (!res.ok) {
+        setError(data.error ?? "저장하지 못했습니다.");
+        return;
+      }
+      setNotice(
+        articleDraft.id
+          ? "칼럼을 수정했습니다."
+          : `칼럼을 올렸습니다. 주소: /insights/${data.article?.slug ?? ""}`
+      );
+      setArticleDraft(EMPTY_ARTICLE);
+      await loadArticles();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function editArticle(row: ArticleRow) {
+    setError(null);
+    setNotice(null);
+    const res = await fetch(`/api/admin/articles?id=${row.id}`);
+    if (!res.ok) {
+      setError("칼럼을 불러오지 못했습니다.");
+      return;
+    }
+    const data = (await res.json()) as {
+      article: { body: string; publishedOn: string | null };
+    };
+    setArticleDraft({
+      id: row.id,
+      title: row.title,
+      lede: row.lede ?? "",
+      body: data.article.body,
+      source: row.source ?? "",
+      publishedOn: data.article.publishedOn ? data.article.publishedOn.slice(0, 10) : "",
+      track: row.track ?? "",
+      published: row.published,
+    });
+    window.scrollTo({ top: 0 });
+  }
+
+  /** 발행 토글처럼 일부만 바꿀 때도 PUT이 요구하는 전체를 갖춰 보낸다 */
+  async function articlePayload(row: ArticleRow) {
+    const res = await fetch(`/api/admin/articles?id=${row.id}`);
+    const data = (await res.json()) as {
+      article: { title: string; lede: string | null; body: string; source: string | null; publishedOn: string | null; track: string | null };
+    };
+    return {
+      id: row.id,
+      title: data.article.title,
+      lede: data.article.lede ?? "",
+      body: data.article.body,
+      source: data.article.source ?? "",
+      publishedOn: data.article.publishedOn ?? "",
+      track: data.article.track ?? "",
+    };
+  }
+
+  async function toggleArticlePublish(row: ArticleRow) {
+    setError(null);
+    const res = await fetch("/api/admin/articles", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      // PUT은 제목·본문을 검증하므로 토글만 보내면 400이 된다. 본문을 함께 싣는다.
+      body: JSON.stringify({ ...(await articlePayload(row)), published: !row.published }),
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      setError(data.error ?? "발행 상태를 바꾸지 못했습니다.");
+      return;
+    }
+    await loadArticles();
+  }
+
+  async function removeArticle(id: number) {
+    if (!window.confirm("이 칼럼을 삭제할까요? 검색에 걸린 주소도 함께 사라집니다.")) return;
+    await fetch(`/api/admin/articles?id=${id}`, { method: "DELETE" });
+    await loadArticles();
   }
 
   // ── 자료실 ──────────────────────────────────────────────────────────
@@ -426,6 +567,9 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         <nav className="admin-tabs">
           <button data-on={tab === "questions"} onClick={() => setTab("questions")}>
             문제 출제
+          </button>
+          <button data-on={tab === "articles"} onClick={() => setTab("articles")}>
+            칼럼
           </button>
           <button data-on={tab === "documents"} onClick={() => setTab("documents")}>
             자료실
@@ -684,6 +828,161 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     다음
                   </button>
                 </div>
+              )}
+            </section>
+          </>
+        )}
+
+        {/* ── 칼럼 ── */}
+        {tab === "articles" && (
+          <>
+            <form className="admin-card" onSubmit={saveArticle}>
+              <h2>{articleDraft.id ? `칼럼 수정 (#${articleDraft.id})` : "칼럼 올리기"}</h2>
+              <p className="admin-note">
+                아주경제 연재분을 옮기실 때 쓰십시오. 제목과 본문만 붙여넣으면 됩니다.
+                자료실과 달리 <strong>웹 페이지로 발행되어 검색에 잡힙니다.</strong>
+              </p>
+
+              <label className="admin-field">
+                제목
+                <input
+                  value={articleDraft.title}
+                  onChange={(e) => setArticleDraft({ ...articleDraft, title: e.target.value })}
+                  maxLength={200}
+                  required
+                />
+              </label>
+
+              <label className="admin-field">
+                본문 <small>워드에서 그대로 붙여넣으십시오. 빈 줄이 문단을 나눕니다.</small>
+                <textarea
+                  rows={14}
+                  value={articleDraft.body}
+                  onChange={(e) => setArticleDraft({ ...articleDraft, body: e.target.value })}
+                  required
+                />
+              </label>
+
+              <label className="admin-field">
+                요약 <small>비우면 본문 앞부분을 씁니다 — 검색 결과에 보이는 설명입니다.</small>
+                <input
+                  value={articleDraft.lede}
+                  onChange={(e) => setArticleDraft({ ...articleDraft, lede: e.target.value })}
+                  maxLength={300}
+                />
+              </label>
+
+              <div className="admin-row">
+                <label>
+                  게재처
+                  <input
+                    value={articleDraft.source}
+                    onChange={(e) => setArticleDraft({ ...articleDraft, source: e.target.value })}
+                    maxLength={60}
+                  />
+                </label>
+                <label>
+                  게재일 <small>원문이 실린 날</small>
+                  <input
+                    type="date"
+                    value={articleDraft.publishedOn}
+                    onChange={(e) =>
+                      setArticleDraft({ ...articleDraft, publishedOn: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  분야 <small>선택</small>
+                  <select
+                    value={articleDraft.track}
+                    onChange={(e) => setArticleDraft({ ...articleDraft, track: e.target.value })}
+                  >
+                    <option value="">분류 없음</option>
+                    {COURSES.map((c) => (
+                      <option key={c.slug} value={c.slug}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="admin-check">
+                <input
+                  type="checkbox"
+                  checked={articleDraft.published}
+                  onChange={(e) =>
+                    setArticleDraft({ ...articleDraft, published: e.target.checked })
+                  }
+                />
+                발행 — 체크해야 홈페이지 기사·칼럼에 나타납니다
+              </label>
+
+              <div className="admin-actions">
+                <button className="admin-btn" disabled={busy}>
+                  {busy ? "저장 중…" : articleDraft.id ? "수정 저장" : "칼럼 올리기"}
+                </button>
+                {articleDraft.id && (
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--quiet"
+                    onClick={() => setArticleDraft(EMPTY_ARTICLE)}
+                  >
+                    새 칼럼 쓰기
+                  </button>
+                )}
+              </div>
+            </form>
+
+            <section className="admin-card">
+              <h2>칼럼 ({articles.length}편)</h2>
+              {articles.length === 0 ? (
+                <p className="admin-note">아직 올린 칼럼이 없습니다.</p>
+              ) : (
+                <ul className="admin-list">
+                  {articles.map((a) => (
+                    <li key={a.id}>
+                      <div className="admin-list-meta">
+                        <span className={a.published ? "admin-tag admin-tag--on" : "admin-tag"}>
+                          {a.published ? "발행" : "임시"}
+                        </span>
+                        {a.source && <span>{a.source}</span>}
+                        {a.publishedOn && <span>{a.publishedOn.slice(0, 10)}</span>}
+                      </div>
+                      <p className="admin-list-prompt">{a.title}</p>
+                      <div className="admin-actions">
+                        {a.published && (
+                          <a
+                            className="admin-btn admin-btn--quiet"
+                            href={`/insights/${encodeURIComponent(a.slug)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            보기
+                          </a>
+                        )}
+                        <button
+                          className="admin-btn admin-btn--quiet"
+                          onClick={() => editArticle(a)}
+                        >
+                          수정
+                        </button>
+                        <button
+                          className="admin-btn admin-btn--quiet"
+                          onClick={() => toggleArticlePublish(a)}
+                        >
+                          {a.published ? "발행 취소" : "발행"}
+                        </button>
+                        <button
+                          className="admin-btn admin-btn--danger"
+                          onClick={() => removeArticle(a.id)}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
             </section>
           </>

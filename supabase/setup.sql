@@ -52,6 +52,29 @@ CREATE TABLE IF NOT EXISTS "documents" (
 CREATE INDEX IF NOT EXISTS "documents_published_idx"
 	ON "documents" USING btree ("published","created_at");
 
+-- 칼럼. 자료실이 "내려받는 파일"이라면 이쪽은 "읽히고 검색에 잡히는 글"이다.
+-- .docx 는 검색엔진이 본문을 읽지 못해 브랜드 검색 자산이 되지 않으므로,
+-- 본문을 평문으로 받아 /insights/<slug> 페이지로 세운다.
+CREATE TABLE IF NOT EXISTS "articles" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"slug" text NOT NULL,
+	"title" text NOT NULL,
+	"lede" text,
+	"body" text NOT NULL,
+	"source" text,
+	"published_on" timestamp with time zone,
+	"track" text,
+	"published" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "articles_slug_idx"
+	ON "articles" USING btree ("slug");
+
+CREATE INDEX IF NOT EXISTS "articles_published_idx"
+	ON "articles" USING btree ("published","published_on");
+
 -- 회원. 신원은 Supabase Auth 가 맡고 여기에는 이름만 둔다.
 -- 등급도 포인트도 결제도 없다 — 가입의 목적은 정답과 해설을 여는 것 하나다.
 CREATE TABLE IF NOT EXISTS "members" (
@@ -91,6 +114,7 @@ CREATE TABLE IF NOT EXISTS "admin_login_attempts" (
 -- RLS를 켜고 정책을 하나도 두지 않으면 anon·authenticated 는 아무 행도 못 봅니다.
 ALTER TABLE "questions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "documents" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "articles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "admin_login_attempts" ENABLE ROW LEVEL SECURITY;
 

@@ -22,6 +22,7 @@ import LibrarySection from "./library-section";
 import { getPublicQuestions } from "@/lib/questions-db";
 import { getPublicDocuments } from "@/lib/documents";
 import { getCurrentMember } from "@/lib/members";
+import { countPublishedArticles, getPublishedArticles } from "@/lib/articles";
 
 export const metadata: Metadata = {
   title: "㈜프론티어 M&A",
@@ -43,10 +44,12 @@ const NAV = [
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [questions, documents, member] = await Promise.all([
+  const [questions, documents, member, latestArticles, articleCount] = await Promise.all([
     getPublicQuestions(),
     getPublicDocuments(),
     getCurrentMember(),
+    getPublishedArticles(3),
+    countPublishedArticles(),
   ]);
   const signedIn = member !== null;
 
@@ -140,25 +143,38 @@ export default async function HomePage() {
             </dl>
           </div>
 
-          {/* 기사·칼럼 리스트 — 관리자만 작성 (설계서) */}
+          {/* 기사·칼럼 — 실제 발행된 글에서 온다. 없으면 준비 중으로 안내한다. */}
           <div className="co-insight co-reveal">
             <div className="co-insight-main">
               <strong>기사 · 칼럼</strong>
               <p>
-                아주경제 연재 100회 이상을 비롯한 회장 칼럼과 언론 기사를 이곳으로 옮기고
-                있습니다. 이관이 끝나는 대로 주 1회 새 글이 발행됩니다.
+                {articleCount > 0
+                  ? `성보경 회장이 아주경제 등에 연재한 글을 옮겨 싣고 있습니다. 현재 ${articleCount}편.`
+                  : "아주경제 연재 100회 이상을 비롯한 회장 칼럼과 언론 기사를 이곳으로 옮기고 있습니다."}
               </p>
+              <Link className="co-insight-more" href="/insights">
+                전체 보기 <i aria-hidden="true">→</i>
+              </Link>
             </div>
-            <ul className="co-insight-list" aria-label="기사·칼럼 준비 현황">
-              <li>
-                <span>아주경제 칼럼 연재 (100회 이상)</span>
-                <i>아카이브 이관 중</i>
-              </li>
-              <li>
-                <span>신규 칼럼 주 1회 발행</span>
-                <i>이관 완료 후 시작</i>
-              </li>
-            </ul>
+            {latestArticles.length > 0 ? (
+              <ul className="co-insight-list" aria-label="최근 기사·칼럼">
+                {latestArticles.map((a) => (
+                  <li key={a.id}>
+                    <Link href={`/insights/${encodeURIComponent(a.slug)}`}>
+                      <span>{a.title}</span>
+                      <i>{a.source ? `${a.source} · ${a.date}` : a.date}</i>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <ul className="co-insight-list" aria-label="기사·칼럼 준비 현황">
+                <li>
+                  <span>아주경제 칼럼 연재 (100회 이상)</span>
+                  <i>아카이브 이관 중</i>
+                </li>
+              </ul>
+            )}
           </div>
 
           <div className="co-principles co-reveal">

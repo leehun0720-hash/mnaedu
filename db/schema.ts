@@ -95,6 +95,48 @@ export type Document = typeof documents.$inferSelect;
 export type NewDocument = typeof documents.$inferInsert;
 
 /**
+ * 칼럼 — 회장이 붙여넣으면 그대로 웹 글이 된다.
+ *
+ * 자료실(documents)과 나누는 이유는 하나다: 자료실은 내려받는 파일이고
+ * 칼럼은 **읽히고 검색에 잡혀야 하는 글**이다. .docx는 검색엔진이 사실상
+ * 읽지 못하므로, 아주경제 연재 100여 회를 자료실에 얹으면 브랜드 검색
+ * 자산이 되지 않는다. 그래서 본문을 텍스트로 받아 페이지로 세운다.
+ *
+ * 본문은 HTML이 아니라 평문이다. 화면에서 빈 줄 기준으로 문단만 나눠 그리고
+ * 태그는 해석하지 않는다 — 붙여넣기 한 번으로 끝내려면 서식을 지원하지
+ * 않는 편이 낫고, 남의 마크업을 그대로 실을 일도 없어진다.
+ */
+export const articles = pgTable(
+  "articles",
+  {
+    id: serial("id").primaryKey(),
+    /** 주소에 쓰이는 이름. 제목에서 한 번 만들어 두고 이후 바꾸지 않는다 */
+    slug: text("slug").notNull(),
+    title: text("title").notNull(),
+    /** 목록과 검색 설명에 쓰는 한두 문장. 비우면 본문 앞부분을 쓴다 */
+    lede: text("lede"),
+    /** 평문. 빈 줄이 문단 구분이다 */
+    body: text("body").notNull(),
+    /** 게재처 — 예: 아주경제 */
+    source: text("source"),
+    /** 원문이 실린 날. 지난 연재를 옮길 때 이 날짜로 줄 세운다 */
+    publishedOn: timestamp("published_on", { withTimezone: true }),
+    /** 5분야 중 하나 — 비우면 분류 없음 */
+    track: text("track"),
+    published: boolean("published").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("articles_slug_idx").on(t.slug),
+    index("articles_published_idx").on(t.published, t.publishedOn),
+  ]
+);
+
+export type Article = typeof articles.$inferSelect;
+export type NewArticle = typeof articles.$inferInsert;
+
+/**
  * 회원.
  *
  * 신원(이메일·비밀번호·인증)은 Supabase Auth가 맡고 여기에는 이름만 둔다.
