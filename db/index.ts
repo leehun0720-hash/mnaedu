@@ -53,7 +53,14 @@ export function getDb() {
   }
   if (!cached) {
     // 서버리스: 연결을 오래 붙들지 않는다. 풀러가 실제 풀링을 맡는다.
-    const sql = postgres(url, { prepare: false, max: 1, idle_timeout: 20 });
+    // connect_timeout이 없으면 풀러가 응답하지 않을 때 요청이 끝나지 않고
+    // 화면은 "저장 중"에 갇힌다 — 기다림을 끝내고 오류로 만든다.
+    const sql = postgres(url, {
+      prepare: false,
+      max: 1,
+      idle_timeout: 20,
+      connect_timeout: 15,
+    });
     cached = drizzle(sql, { schema });
   }
   return cached;

@@ -8,6 +8,9 @@ import { COURSES } from "@/lib/questions";
 import { uniqueSlug } from "@/lib/articles";
 
 export const dynamic = "force-dynamic";
+// 칼럼 한 편은 본문이 길고, Supabase 풀러가 식은 상태에서 첫 연결이 느릴 수
+// 있다. 기본 시간으로는 저장이 끊길 수 있어 여유를 준다 (자료실과 동일).
+export const maxDuration = 60;
 
 async function requireAdmin() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
@@ -42,7 +45,12 @@ function failed(err: unknown) {
     );
   }
   console.error("[admin/articles]", err);
-  return NextResponse.json({ error: "저장 중 문제가 발생했습니다." }, { status: 500 });
+  // 이 화면은 관리자 인증을 통과한 사람만 본다. 원인을 감추면 "저장이 안 된다"는
+  // 말만 남고 고칠 단서가 없어지므로, 실제 문구를 그대로 붙여 돌려준다.
+  return NextResponse.json(
+    { error: `저장 중 문제가 발생했습니다 — ${message.slice(0, 200)}` },
+    { status: 500 }
+  );
 }
 
 type Payload = {

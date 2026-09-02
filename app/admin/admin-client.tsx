@@ -381,11 +381,20 @@ export default function AdminClient({
     setError(null);
     setNotice(null);
     try {
-      const res = await fetch("/api/admin/articles", {
-        method: articleDraft.id ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(articleDraft),
-      });
+      // 응답이 영영 오지 않으면 "저장 중…"에 갇힌다. 기다림에 끝을 둔다.
+      const abort = new AbortController();
+      const timer = window.setTimeout(() => abort.abort(), 45000);
+      let res: Response;
+      try {
+        res = await fetch("/api/admin/articles", {
+          method: articleDraft.id ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(articleDraft),
+          signal: abort.signal,
+        });
+      } finally {
+        window.clearTimeout(timer);
+      }
       const data = await readResponse(res);
       if (!res.ok) {
         setError((data.error as string) ?? "저장하지 못했습니다.");
@@ -399,9 +408,13 @@ export default function AdminClient({
       );
       setArticleDraft(EMPTY_ARTICLE);
       await loadArticles();
-    } catch {
-      // 연결 자체가 끊긴 경우. 아무 말 없이 끝나면 눌러도 반응이 없어 보인다.
-      setError("연결에 실패했습니다. 잠시 후 다시 시도해 주십시오.");
+    } catch (err) {
+      // 아무 말 없이 끝나면 눌러도 반응이 없어 보인다. 어느 쪽인지 구분해 알린다.
+      setError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "서버가 응답하지 않아 중단했습니다. 잠시 후 다시 시도해 주십시오. 반복되면 알려 주십시오."
+          : "연결에 실패했습니다. 잠시 후 다시 시도해 주십시오."
+      );
     } finally {
       setBusy(false);
     }
