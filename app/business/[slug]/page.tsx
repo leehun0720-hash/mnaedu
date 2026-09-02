@@ -9,9 +9,9 @@ import {
   businessArea,
   officeOf,
 } from "@/lib/company";
-import CopyGuard from "../../../copy-guard";
-import ThemeToggle from "../../../theme-toggle";
-import SiteRail from "../../../site-rail";
+import CopyGuard from "../../copy-guard";
+import ThemeToggle from "../../theme-toggle";
+import SiteRail from "../../site-rail";
 
 type Params = { slug: string };
 
@@ -44,26 +44,26 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
     <div className="co-page">
       <CopyGuard />
       <ThemeToggle />
-      <SiteRail site="company" />
+      <SiteRail />
 
       <header className="co-header">
-        <a className="co-brand" href="/company" aria-label="프론티어 M&A 기업 홈페이지 처음으로">
+        <Link className="co-brand" href="/" aria-label="㈜프론티어 M&A 처음으로">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
           <img src="/logo-frontier-group.svg" alt="" width={34} height={30} aria-hidden="true" />
           <span className="co-brand-text">
             <b>㈜프론티어 M&amp;A</b>
             <i>FRONTIER M&amp;A · SINCE 1993</i>
           </span>
-        </a>
+        </Link>
         <nav className="co-nav" aria-label="기업 홈페이지 메뉴">
-          <a href="/company#about">회사소개</a>
-          <a href="/company#business">주요업무</a>
-          <a href="/company#careers">직원채용</a>
-          <a href="/company#faq">Q&amp;A</a>
-          <a href="/company#contact">문의사항</a>
+          <Link href="/#about">회사소개</Link>
+          <Link href="/#business">주요업무</Link>
+          <Link href="/#careers">직원채용</Link>
+          <Link href="/#faq">Q&amp;A</Link>
+          <Link href="/#contact">문의사항</Link>
         </nav>
         <div className="co-header-actions">
-          <a className="co-academy-link" href="#contact">
+          <a className="co-cta-link" href="#contact">
             상담신청 <i aria-hidden="true">→</i>
           </a>
         </div>
@@ -71,9 +71,9 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
 
       <main>
         <section className="co-detail-hero">
-          <a className="co-backlink" href="/company#business">
+          <Link className="co-backlink" href="/#business">
             <i aria-hidden="true">←</i> 주요 업무
-          </a>
+          </Link>
           <p className="co-detail-en">
             <span className="co-office-badge" data-office={area.office}>{officeOf(area).name}</span>
             {area.en}
@@ -112,7 +112,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
               <span className="co-mastertip-title">{area.masterTip}</span>
               <span className="co-topic-tags">
                 <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                <Link className="co-tag co-tag--quiz" href="/academy#exam">
+                <Link className="co-tag co-tag--quiz" href="/#questions">
                   평가시험 ↗
                 </Link>
               </span>
@@ -128,7 +128,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
                 <span className="co-topic-title">{topic.label}</span>
                 <span className="co-topic-tags">
                   <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                  <Link className="co-tag co-tag--quiz" href="/academy#exam">
+                  <Link className="co-tag co-tag--quiz" href="/#questions">
                     평가시험 ↗
                   </Link>
                 </span>
@@ -136,10 +136,10 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
             ))}
           </ol>
 
-          {/* 정답·해설은 공개 데이터에서 원천 배제하고, 열람은 아카데미 회원의
+          {/* 정답·해설은 공개 데이터에서 원천 배제하고, 열람은 실무 문제 회원의
               포인트 차감 화면에 한정한다 (보고서 4.3 · 8장). */}
           <p className="co-topic-note">
-            업무자료는 공개를 원칙으로 합니다. 평가시험은 M&amp;A 아카데미에서 진행되며, 정답과
+            업무자료는 공개를 원칙으로 합니다. 평가시험은 M&amp;A 실무 문제에서 진행되며, 정답과
             회장 해설은 공개 영역에 노출되지 않고 회원 화면에서만 열람하실 수 있습니다.
           </p>
         </section>
@@ -157,9 +157,9 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
                 <span aria-hidden="true"> · </span>
                 <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
               </p>
-              <a className="co-btn co-btn--primary" href="/company#contact">
+              <Link className="co-btn co-btn--primary" href="/#contact">
                 상담 신청하기 <i aria-hidden="true">→</i>
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -169,9 +169,9 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
         <div className="co-footer-base">
           <small>© 2026 ㈜프론티어 M&amp;A. ALL RIGHTS RESERVED.</small>
           <small>
-            <Link href="/company">기업 홈페이지</Link>
+            <Link href="/">홈</Link>
             <span aria-hidden="true"> · </span>
-            <Link href="/academy">퀴즈 아카데미</Link>
+            <Link href="/">퀴즈 실무 문제</Link>
             <span aria-hidden="true"> · </span>
             <Link href="/privacy">개인정보처리방침</Link>
             <span aria-hidden="true"> · </span>

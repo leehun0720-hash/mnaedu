@@ -3,9 +3,8 @@ import AuthForm from "../auth-form";
 import AuthShell from "../auth-shell";
 
 export const metadata: Metadata = {
-  title: "회원가입 | M&A 아카데미",
-  description: "M&A 아카데미 회원가입 — 무료회원은 L1 입문 퀴즈를 풀 수 있습니다.",
-  // 가입·로그인 화면은 검색에 걸릴 이유가 없다
+  title: "회원 등록 | ㈜프론티어 M&A",
+  description: "이메일로 등록하시면 실무 문제의 정답과 해설이 열립니다. 별도 비용은 없습니다.",
   robots: { index: false, follow: false },
 };
 

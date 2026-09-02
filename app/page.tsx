@@ -1,85 +1,364 @@
 import Link from "next/link";
-import { MADE_WORDS, SLOGAN } from "@/lib/company";
+import type { Metadata } from "next";
+import {
+  ABOUT,
+  BUSINESS_AREAS,
+  OFFICES,
+  areasInOffice,
+  CAREERS,
+  CONTACT,
+  FAQS,
+  PRINCIPLES,
+  SLOGAN,
+  TOTAL_TOPICS,
+} from "@/lib/company";
 import CopyGuard from "./copy-guard";
 import ThemeToggle from "./theme-toggle";
+import SiteRail from "./site-rail";
+import ContactForm from "./contact-form";
+import Reveal from "./reveal";
+import QuestionsSection from "./questions-section";
+import LibrarySection from "./library-section";
+import { getPublicQuestions } from "@/lib/questions-db";
+import { getPublicDocuments } from "@/lib/documents";
+import { getCurrentMember } from "@/lib/members";
 
-/**
- * 게이트웨이 — 두 사이트의 공통 관문 (기획 보고서 3.1).
- *
- * 설계서의 첫 페이지 요소 그대로: MADE 로고 애니메이션(로고를 중심으로 네
- * 단어가 회전) + 슬로건 + [기업 홈페이지] · [퀴즈 아카데미] 진입 버튼.
- * 의뢰인과 수련자는 목적이 다르므로 어느 쪽도 아닌 중립 지대에서 갈라 보낸다.
- */
-export default function Gate() {
+export const metadata: Metadata = {
+  title: "㈜프론티어 M&A",
+  description:
+    "1993년 국내 최초로 설립된 M&A 전문회사 — M&A 중개, 경영권 분쟁, M&A 자금조달, 패밀리오피스, 투자가 클럽 자문. 검토 단계부터 NDA 체결을 원칙으로 합니다.",
+};
+
+// 한 페이지 안에서 움직인다 — 사이트가 하나로 합쳐지면서 별도 진입 메뉴는 사라졌다
+const NAV = [
+  { href: "#about", label: "회사소개" },
+  { href: "#business", label: "주요업무" },
+  { href: "#questions", label: "실무문제" },
+  { href: "#library", label: "자료실" },
+  { href: "#careers", label: "직원채용" },
+  { href: "#faq", label: "Q&A" },
+  { href: "#contact", label: "문의사항" },
+] as const;
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [questions, documents, member] = await Promise.all([
+    getPublicQuestions(),
+    getPublicDocuments(),
+    getCurrentMember(),
+  ]);
+  const signedIn = member !== null;
+
   return (
-    <div className="gate">
+    <div className="co-page">
       <CopyGuard />
       <ThemeToggle />
+      <SiteRail signedIn={signedIn} />
 
-      <header className="gate-top">
-        <span className="gate-wordmark">
+      <header className="co-header">
+        <Link className="co-brand" href="/" aria-label="㈜프론티어 M&A 처음으로">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
-          <img src="/logo-frontier-group-white.svg" alt="" width={30} height={26} aria-hidden="true" />
-          <span>
-            FRONTIER M&amp;A
-            <i>SINCE 1993</i>
+          <img src="/logo-frontier-group.svg" alt="" width={34} height={30} aria-hidden="true" />
+          <span className="co-brand-text">
+            <b>㈜프론티어 M&amp;A</b>
+            <i>FRONTIER M&amp;A · SINCE 1993</i>
           </span>
-        </span>
+        </Link>
+        <nav className="co-nav" aria-label="기업 홈페이지 메뉴">
+          {NAV.map((n) => (
+            <a key={n.href} href={n.href}>
+              {n.label}
+            </a>
+          ))}
+        </nav>
+        <div className="co-header-actions">
+          <a className="co-cta-link" href="#contact">
+            상담신청 <i aria-hidden="true">→</i>
+          </a>
+        </div>
       </header>
 
-      <main className="gate-main">
-        <div className="gate-hero">
-          <div className="gate-orbitwrap" aria-hidden="true">
-            <div className="gate-ring">
-              {MADE_WORDS.map((w, i) => (
-                <span key={w.word} className="gate-orbit-word" style={{ ["--slot" as string]: i }}>
-                  <b>{w.word.charAt(0)}</b>
-                  {w.word.slice(1)}
-                </span>
-              ))}
-            </div>
-            {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
-            <img className="gate-mark" src="/logo-frontier-group-white.svg" alt="" width={92} height={80} />
+      {/* 모바일 — 고정 헤더 아래 가로 스크롤 메뉴 */}
+      <nav className="co-subnav" aria-label="섹션 바로가기">
+        {NAV.map((n) => (
+          <a key={n.href} href={n.href}>
+            {n.label}
+          </a>
+        ))}
+      </nav>
+
+      <main>
+        {/* ── 메인: 설계서 슬로건이 곧 회사의 첫마디다 ─────────────────── */}
+        <section className="co-hero">
+          <p className="co-hero-eyebrow">
+            <span aria-hidden="true" /> KOREA&rsquo;S FIRST M&amp;A ADVISORY · SINCE 1993
+          </p>
+          <h1>
+            국내 최초의
+            <br />
+            <em>M&amp;A 전문회사</em>
+          </h1>
+          <p className="co-hero-lede">{SLOGAN}</p>
+          <div className="co-hero-actions">
+            <a className="co-btn co-btn--primary" href="#contact">
+              상담 신청하기 <i aria-hidden="true">→</i>
+            </a>
+            <a className="co-btn co-btn--ghost" href="#business">
+              주요 업무 보기 <i aria-hidden="true">↓</i>
+            </a>
+          </div>
+          <ul className="co-hero-strip" aria-label="주요 업무">
+            {BUSINESS_AREAS.map((b) => (
+              <li key={b.slug}>{b.name}</li>
+            ))}
+          </ul>
+        </section>
+
+        
+        {/* ── 회사소개 ──────────────────────────────────────────────── */}
+        <section className="co-section" id="about">
+          <div className="co-section-head co-reveal">
+            <p className="co-section-index">01 · ABOUT</p>
+            <h2>㈜프론티어 M&amp;A는?</h2>
+          </div>
+          <div className="co-about co-reveal">
+            <p className="co-about-body">{ABOUT}</p>
+            <dl className="co-about-facts">
+              <div>
+                <dt>설립</dt>
+                <dd>1993년 · 국내 최초 M&amp;A 전문회사</dd>
+              </div>
+              <div>
+                <dt>업무 영역</dt>
+                <dd>중개 · 경영권 분쟁 · 자금조달 · 패밀리오피스 · 투자가 클럽</dd>
+              </div>
+              <div>
+                <dt>업무 원칙</dt>
+                <dd>검토 단계부터 NDA 체결</dd>
+              </div>
+            </dl>
           </div>
 
-          <h1 className="gate-title">
-            ㈜프론티어 M&amp;A
-            <span className="gate-title-en" aria-hidden="true">
-              {MADE_WORDS.map((w) => w.word).join(" · ")}
-            </span>
-          </h1>
-          <p className="gate-lede">{SLOGAN}</p>
-        </div>
+          {/* 기사·칼럼 리스트 — 관리자만 작성 (설계서) */}
+          <div className="co-insight co-reveal">
+            <div className="co-insight-main">
+              <strong>기사 · 칼럼</strong>
+              <p>
+                아주경제 연재 100회 이상을 비롯한 회장 칼럼과 언론 기사를 이곳으로 옮기고
+                있습니다. 이관이 끝나는 대로 주 1회 새 글이 발행됩니다.
+              </p>
+            </div>
+            <ul className="co-insight-list" aria-label="기사·칼럼 준비 현황">
+              <li>
+                <span>아주경제 칼럼 연재 (100회 이상)</span>
+                <i>아카이브 이관 중</i>
+              </li>
+              <li>
+                <span>신규 칼럼 주 1회 발행</span>
+                <i>이관 완료 후 시작</i>
+              </li>
+            </ul>
+          </div>
 
-        <nav className="gate-doors" aria-label="입장 선택">
-          <Link className="gate-door gate-door--company" href="/company">
-            <span className="gate-door-eyebrow">CORPORATE</span>
-            <strong className="gate-door-name">기업 홈페이지</strong>
-            <span className="gate-door-desc">업무를 의뢰하시는 분을 위한 공간</span>
-            <span className="gate-door-items">회사소개 · 주요업무 5분야 · 채용 · 문의</span>
-            <span className="gate-door-cta">
-              입장하기 <i aria-hidden="true">→</i>
-            </span>
-          </Link>
+          <div className="co-principles co-reveal">
+            <h3>
+              운영원칙 <span>5대 원칙을 바탕으로 업무를 진행합니다</span>
+            </h3>
+            <ol className="co-principle-grid">
+              {PRINCIPLES.map((p) => (
+                <li key={p.no} className="co-principle">
+                  <span className="co-principle-no" aria-hidden="true">
+                    {String(p.no).padStart(2, "0")}
+                  </span>
+                  <strong>{p.title}</strong>
+                  <i>{p.en}</i>
+                  <p>{p.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-          <Link className="gate-door gate-door--academy" href="/academy">
-            <span className="gate-door-eyebrow">ACADEMY</span>
-            <strong className="gate-door-name">퀴즈 아카데미</strong>
-            <span className="gate-door-desc">학습하며 검증받는 공간</span>
-            <span className="gate-door-items">회원가입 · 5레벨 퀴즈 · 포인트 해설</span>
-            <span className="gate-door-cta">
-              입장하기 <i aria-hidden="true">→</i>
-            </span>
-          </Link>
-        </nav>
+          <p className="co-consult-line co-reveal">
+            <a className="co-btn co-btn--ghost" href="#contact">
+              상담 신청하기 <i aria-hidden="true">→</i>
+            </a>
+          </p>
+        </section>
+
+        {/* ── 주요업무 — M&A 오피스(3분야) · 시크릿 오피스(2분야) ────── */}
+        <section className="co-section co-section--tint" id="business">
+          <div className="co-section-head co-reveal">
+            <p className="co-section-index">02 · BUSINESS</p>
+            <h2>주요 업무</h2>
+            <p className="co-section-note">
+              M&amp;A 오피스 3개 분야와 시크릿 오피스 2개 분야, 합계 {TOTAL_TOPICS}개 주제를
+              다룹니다. 각 주제의 업무자료는 자료실에, 실제 판단이 갈렸던 지점은 실무 문제에
+              올려 둡니다.
+            </p>
+          </div>
+          {OFFICES.map((office) => (
+            <div key={office.id} className="co-office co-reveal">
+              <div className="co-office-head">
+                <p className="co-office-en">{office.en}</p>
+                <h3>
+                  {office.name} <small>{areasInOffice(office.id).length}개 분야</small>
+                </h3>
+                <p className="co-office-line">{office.line}</p>
+              </div>
+              <div className="co-biz-grid">
+                {areasInOffice(office.id).map((b) => (
+                  <Link key={b.slug} className="co-biz co-biz--open" href={`/business/${b.slug}`}>
+                    <span className="co-biz-en">{b.en}</span>
+                    <strong>{b.name}</strong>
+                    <p>{b.line}</p>
+                    <span className="co-biz-foot">
+                      <span className="co-biz-count">{b.curriculum.length}개 주제</span>
+                      {/* 시크릿 오피스는 세부를 웹에 두지 않는다 (보고서 3.5) */}
+                      {b.offlineOnly && <span className="co-biz-lock">상담 후 오프라인</span>}
+                      <i aria-hidden="true">→</i>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* ── 직원채용 ─────────────────────────────────────────────── */}
+        <section className="co-section" id="careers">
+          <div className="co-section-head co-reveal">
+            <p className="co-section-index">03 · CAREERS</p>
+            <h2>직원채용</h2>
+          </div>
+          <div className="co-careers co-reveal">
+            <p className="co-careers-lede">{CAREERS.lede}</p>
+            <ul className="co-careers-points">
+              <li>
+                <strong>채용시험 통과 (80점 이상)</strong>
+                <p>{CAREERS.gate}</p>
+              </li>
+              <li>
+                <strong>영문 출제</strong>
+                <p>{CAREERS.examNote}</p>
+              </li>
+              <li>
+                <strong>지원 방법</strong>
+                <p>
+                  채용시험문제 게시판에서 출제 범위를 확인하신 뒤, 아래 문의 양식에서 &lsquo;직원채용&rsquo;을
+                  선택해 지원 의사를 보내주시면 절차를 개별 안내드립니다.
+                </p>
+              </li>
+            </ul>
+            <div className="co-exam-board">
+              <div>
+                <strong>임직원 채용시험문제 게시판</strong>
+                <p>출제 범위는 실무 문제 게시판에서 확인하실 수 있습니다. 지원과 전형 절차는 문의 주시면 개별 안내드립니다.</p>
+              </div>
+              <span className="co-tag co-tag--soon">준비 중</span>
+            </div>
+          </div>
+        </section>
+
+        <QuestionsSection questions={questions} signedIn={signedIn} />
+
+        <LibrarySection documents={documents} />
+
+        {/* ── Q&A ──────────────────────────────────────────────────── */}
+        <section className="co-section co-section--tint" id="faq">
+          <div className="co-section-head co-reveal">
+            <p className="co-section-index">04 · Q&amp;A</p>
+            <h2>자주 묻는 질문</h2>
+            <p className="co-section-note">
+              업무와 채용에 관한 질문을 계속 업데이트합니다. 게시는 관리자만 할 수 있습니다.
+            </p>
+          </div>
+          <div className="co-faq co-reveal">
+            {FAQS.map((f) => (
+              <details key={f.q} className="co-faq-item">
+                <summary>
+                  <span>{f.q}</span>
+                  <i aria-hidden="true">+</i>
+                </summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 문의사항: 양식 + 대화창 ────────────────────────────────── */}
+        <section className="co-section co-section--contact" id="contact">
+          <div className="co-section-head co-reveal">
+            <p className="co-section-index">05 · CONTACT</p>
+            <h2>문의사항</h2>
+            <p className="co-section-note">
+              M&amp;A 중개, 경영권 분쟁, 경영권 투자, M&amp;A 자금조달, 패밀리오피스, 투자가
+              클럽에 관한 문의를 받고 있습니다. 검토 단계부터 비밀유지약정(NDA) 체결을
+              원칙으로 합니다.
+            </p>
+          </div>
+
+          <div className="co-contact co-reveal">
+            <ContactForm />
+
+            <div className="co-contact-side">
+              <address className="co-contact-card">
+                <dl>
+                  <div>
+                    <dt>주소</dt>
+                    <dd>
+                      {CONTACT.addressLines[0]}
+                      <br />
+                      {CONTACT.addressLines[1]}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>전화</dt>
+                    <dd>
+                      <a href={CONTACT.telHref}>{CONTACT.tel}</a>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>이메일</dt>
+                    <dd>
+                      <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+                    </dd>
+                  </div>
+                </dl>
+              </address>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <footer className="gate-base">
-        <small>© 2026 ㈜프론티어 M&amp;A. ALL RIGHTS RESERVED.</small>
-        <small className="gate-partner">
-          AI SYSTEM PARTNER · <a href="https://tenai.kr" target="_blank" rel="noopener noreferrer">TEN AI</a>
-        </small>
+      <footer className="co-footer">
+        <div className="co-footer-inner">
+          <div className="co-footer-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
+            <img src="/logo-frontier-group.svg" alt="" width={30} height={26} aria-hidden="true" />
+            <span>
+              <b>㈜프론티어 M&amp;A</b>
+              <i>Mergers · Acquisitions · Divestitures · Epochmaking</i>
+            </span>
+          </div>
+          <nav className="co-footer-nav" aria-label="푸터 메뉴">
+            {NAV.map((n) => (
+              <a key={n.href} href={n.href}>
+                {n.label}
+              </a>
+            ))}
+            <Link href="/privacy">개인정보처리방침</Link>
+          </nav>
+        </div>
+        <div className="co-footer-base">
+          <small>© 2026 ㈜프론티어 M&amp;A. ALL RIGHTS RESERVED.</small>
+          <small>
+            SITE BY <a href="https://tenai.kr" target="_blank" rel="noopener noreferrer">TEN AI</a>
+          </small>
+        </div>
       </footer>
+
+      <Reveal />
     </div>
   );
 }

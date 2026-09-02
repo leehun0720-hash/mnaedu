@@ -16,8 +16,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const baseUrl = `${protocol}://${host}`;
-  const title = "프론티어 M&A | FRONTIER M&A";
-  const description = "1993년 국내 최초의 M&A 전문기업 — 기업 홈페이지와 M&A 아카데미";
+  const title = "㈜프론티어 M&A | FRONTIER M&A";
+  const description = "1993년 국내 최초로 설립된 M&A 전문회사 — M&A 중개, 경영권 분쟁, 경영권 투자, M&A 자금조달 자문.";
 
   return {
     metadataBase: new URL(baseUrl),

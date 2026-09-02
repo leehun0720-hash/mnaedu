@@ -3,114 +3,72 @@
 -- Supabase 대시보드 → SQL Editor 에 이 파일 전체를 붙여넣고 실행하십시오.
 -- 여러 번 실행해도 안전합니다 (IF NOT EXISTS).
 --
--- drizzle/0000~0002_*.sql 을 합치고, Supabase에서 반드시 필요한
+-- drizzle/ 의 마이그레이션을 합치고, Supabase에서 반드시 필요한
 -- 접근 차단(아래 2부)을 더한 것입니다.
 
 -- ─────────────────────────────────────────────────────────────
 -- 1부. 테이블
 -- ─────────────────────────────────────────────────────────────
 
--- 문제. answer · intent · explanation 은 공개 페이지로 절대 나가지 않는다.
+-- 실무 문제.
+--   prompt·choices 는 누구나 본다.
+--   answer·explanation 은 로그인한 회원에게만, /api/answer 로만 나간다.
+--   intent 는 옛 앱에서 "비공개"를 전제로 쓴 메모라 어디로도 나가지 않는다.
+-- 난이도(레벨) 열은 없다 — 레벨 체계를 폐지했다.
 CREATE TABLE IF NOT EXISTS "questions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"track" text NOT NULL,
-	"level" text NOT NULL,
 	"format" text NOT NULL,
 	"prompt" text NOT NULL,
 	"choices" jsonb,
 	"answer" text,
-	"intent" text,
 	"explanation" text,
+	"intent" text,
 	"published" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
-ALTER TABLE "questions" ADD COLUMN IF NOT EXISTS "explanation" text;
+
 CREATE INDEX IF NOT EXISTS "questions_published_idx"
 	ON "questions" USING btree ("published","created_at");
 
--- 아카데미 회원. 신원은 Supabase Auth가 갖고, 여기에는 등급·포인트만 둔다.
+-- 자료실. 파일 본문은 content 에 base64 로 담는다 — 스토리지 버킷과
+-- 서비스 키를 새로 만들지 않기 위한 선택이다(올리는 사람이 한 명, 규모가 작음).
+CREATE TABLE IF NOT EXISTS "documents" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"title" text NOT NULL,
+	"summary" text,
+	"track" text,
+	"kind" text DEFAULT '자료' NOT NULL,
+	"file_name" text NOT NULL,
+	"mime_type" text DEFAULT 'application/octet-stream' NOT NULL,
+	"file_size" integer DEFAULT 0 NOT NULL,
+	"content" text NOT NULL,
+	"published" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS "documents_published_idx"
+	ON "documents" USING btree ("published","created_at");
+
+-- 회원. 신원은 Supabase Auth 가 맡고 여기에는 이름만 둔다.
+-- 등급도 포인트도 결제도 없다 — 가입의 목적은 정답과 해설을 여는 것 하나다.
 CREATE TABLE IF NOT EXISTS "members" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"auth_id" text NOT NULL,
 	"email" text NOT NULL,
 	"name" text,
-	"tier" text DEFAULT 'free' NOT NULL,
-	"points" integer DEFAULT 0 NOT NULL,
-	"cleared_level" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
+
 CREATE UNIQUE INDEX IF NOT EXISTS "members_auth_id_idx"
 	ON "members" USING btree ("auth_id");
 
--- 포인트 원장. 잔액만 두면 증감을 설명할 수 없어 건별로 남긴다.
-CREATE TABLE IF NOT EXISTS "point_ledger" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"member_id" integer NOT NULL,
-	"kind" text NOT NULL,
-	"amount" integer NOT NULL,
-	"reason" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-CREATE INDEX IF NOT EXISTS "point_ledger_member_idx"
-	ON "point_ledger" USING btree ("member_id","created_at");
-
--- 열어 본 해설. 한 번 낸 포인트로 계속 볼 수 있어야 하므로 따로 기록한다.
-CREATE TABLE IF NOT EXISTS "unlocked_explanations" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"member_id" integer NOT NULL,
-	"question_id" integer NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
-);
-CREATE UNIQUE INDEX IF NOT EXISTS "unlocked_member_question_idx"
-	ON "unlocked_explanations" USING btree ("member_id","question_id");
-
-
--- 답안. 한 문제 한 번 제출 — 객관식은 자동, 주관식은 회장/AI 채점.
-CREATE TABLE IF NOT EXISTS "answers" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"member_id" integer NOT NULL,
-	"question_id" integer NOT NULL,
-	"body" text NOT NULL,
-	"choice_index" integer,
-	"status" text DEFAULT 'pending' NOT NULL,
-	"score" integer,
-	"graded_by" text,
-	"feedback" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"graded_at" timestamp with time zone
-);
-CREATE UNIQUE INDEX IF NOT EXISTS "answers_member_question_idx" ON "answers" USING btree ("member_id","question_id");
-CREATE INDEX IF NOT EXISTS "answers_status_idx" ON "answers" USING btree ("status","created_at");
-
-
--- 유료 전환 주문. PG 연결 전에는 관리자가 승인해 구독을 연다.
-CREATE TABLE IF NOT EXISTS "orders" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"order_id" text NOT NULL,
-	"member_id" integer NOT NULL,
-	"plan_code" text NOT NULL,
-	"plan_name" text NOT NULL,
-	"amount" integer NOT NULL,
-	"days" integer NOT NULL,
-	"status" text DEFAULT 'pending' NOT NULL,
-	"provider" text DEFAULT 'manual' NOT NULL,
-	"provider_key" text,
-	"note" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"paid_at" timestamp with time zone
-);
-CREATE UNIQUE INDEX IF NOT EXISTS "orders_order_id_idx" ON "orders" USING btree ("order_id");
-CREATE INDEX IF NOT EXISTS "orders_member_idx" ON "orders" USING btree ("member_id","created_at");
-CREATE INDEX IF NOT EXISTS "orders_status_idx" ON "orders" USING btree ("status","created_at");
-
--- 구독 만료일. null이면 기한 없음(관리자가 직접 올린 계정).
-ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "paid_until" timestamp with time zone;
-
-
--- 관리자 로그인 실패 기록. 서버리스에서는 메모리 카운터가 소용없어
--- 모든 인스턴스가 공유하는 DB에서 센다.
+-- 관리자 로그인 실패 기록 (무차별 대입 차단).
+-- 서버리스에서는 요청마다 다른 인스턴스가 뜨므로 메모리 카운터도, 응답을
+-- 늦추는 것도 소용이 없다. 세는 곳은 모든 인스턴스가 공유하는 DB여야 한다.
 CREATE TABLE IF NOT EXISTS "admin_login_attempts" (
 	"ip" text PRIMARY KEY NOT NULL,
 	"fails" integer DEFAULT 0 NOT NULL,
@@ -118,18 +76,13 @@ CREATE TABLE IF NOT EXISTS "admin_login_attempts" (
 	"blocked_until" timestamp with time zone
 );
 
--- 한 회원이 확인 대기 주문을 둘 이상 만들지 못하게 막는다. 애플리케이션의
--- 사전 조회만으로는 동시에 들어온 두 신청을 걸러내지 못한다.
-CREATE UNIQUE INDEX IF NOT EXISTS "orders_one_pending_per_member_idx"
-	ON "orders" ("member_id") WHERE "status" = 'pending';
-
 -- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다
 -- ─────────────────────────────────────────────────────────────
 --
 -- Supabase는 public 스키마의 테이블을 자동 생성 REST API(PostgREST)로 노출하고,
 -- 브라우저에 나가는 anon 키로 접근할 수 있게 합니다. 그대로 두면 누구나
--- questions 테이블의 answer·explanation 을 직접 읽어갑니다 — 정답과 회장 해설을
+-- questions 테이블의 answer·explanation 을 직접 읽어갑니다 — 정답과 해설을
 -- 공개 데이터에서 원천 배제한다는 원칙이 무너집니다.
 --
 -- 이 웹사이트는 PostgREST를 전혀 쓰지 않습니다. 서버가 직접 Postgres에
@@ -137,20 +90,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS "orders_one_pending_per_member_idx"
 
 -- RLS를 켜고 정책을 하나도 두지 않으면 anon·authenticated 는 아무 행도 못 봅니다.
 ALTER TABLE "questions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "documents" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "members" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "point_ledger" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "unlocked_explanations" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "answers" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "orders" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "admin_login_attempts" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
+REVOKE ALL ON TABLE "documents" FROM anon, authenticated;
 REVOKE ALL ON TABLE "members" FROM anon, authenticated;
-REVOKE ALL ON TABLE "point_ledger" FROM anon, authenticated;
-REVOKE ALL ON TABLE "unlocked_explanations" FROM anon, authenticated;
-REVOKE ALL ON TABLE "answers" FROM anon, authenticated;
-REVOKE ALL ON TABLE "orders" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_login_attempts" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
@@ -163,3 +110,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authen
 --
 --   SELECT tablename, rowsecurity FROM pg_tables
 --   WHERE schemaname = 'public' ORDER BY tablename;
+--
+-- 이미 옛 구조(레벨·포인트·결제)로 만들어 두셨다면,
+-- drizzle/0005_brand_page.sql 을 실행해 전환하십시오.

@@ -11,12 +11,14 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Questions authored by the chairman in /admin.
+ * 회장이 /admin에서 직접 쓰는 실무 문제.
  *
- * `answer`, `intent`, `explanation` are never sent to the public page: the
- * site's premise is that the model answer is withheld and the reader is judged
- * on how far they get without it. 해설은 로그인 + 포인트 차감 화면에서만
- * 열린다 (기획 보고서 4.3 · 8장).
+ * 난이도(레벨)도, 채점도, 포인트도 없다. 문제는 올라가는 사다리가 아니라
+ * 회사가 어느 수준에서 일하는지 보여 주는 한 장의 증거다 — 잘 만든 문제를
+ * 보고 "이 사람에게 맡겨야겠다"에 이르게 하는 것이 유일한 역할이다.
+ *
+ * 문제 본문은 누구나 본다. `answer`·`explanation`은 공개 데이터에 실리지
+ * 않고, 로그인한 회원에게만 별도 요청으로 나간다.
  */
 export const questions = pgTable(
   "questions",
@@ -24,19 +26,22 @@ export const questions = pgTable(
     id: serial("id").primaryKey(),
     /** 5분야 중 하나 — lib/company.ts의 slug */
     track: text("track").notNull(),
-    /** 입문 | 기본 | 실무 | 상급 | 마스터 (L1~L5) */
-    level: text("level").notNull(),
     /** 주관식 | 객관식 */
     format: text("format").notNull(),
     prompt: text("prompt").notNull(),
-    /** Present only for 객관식; ordered option strings */
+    /** 객관식에만 있다; 순서 있는 보기 문자열 */
     choices: jsonb("choices").$type<string[]>(),
-    /** Withheld from the public page */
+    /** 회원 전용 */
     answer: text("answer"),
-    /** Withheld: what the question is really testing */
-    intent: text("intent"),
-    /** Withheld: 회장 해설 — 포인트를 써야 열린다 */
+    /** 회원 전용 — 왜 그것이 답인지, 실무에서 무엇이 갈리는지 */
     explanation: text("explanation"),
+    /**
+     * 레거시. 옛 앱에서 "비공개"를 전제로 쓰던 출제 의도 메모다. 회원에게
+     * 보이는 explanation으로 자동 전환하면 작성 당시의 전제가 깨지므로,
+     * 데이터는 남기되 어디로도 내보내지 않는다. 관리자 화면에서만 참고용으로
+     * 보여 주고, 공개할 내용은 회장이 직접 explanation에 옮긴다.
+     */
+    intent: text("intent"),
     published: boolean("published").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -48,11 +53,53 @@ export type Question = typeof questions.$inferSelect;
 export type NewQuestion = typeof questions.$inferInsert;
 
 /**
- * 아카데미 회원.
+ * 자료실 — 회장이 워드 문서를 올리면 그대로 목록에 선다.
  *
- * 신원(이메일·비밀번호·인증)은 Supabase Auth가 맡고, 여기에는 업무 데이터만
- * 둔다 — 등급과 포인트, 승급 상태. `authId`가 Supabase auth.users의 id다.
- * 개인정보는 최소 수집 원칙에 따라 이름 외에 담지 않는다 (보고서 8장).
+ * 파일 자체는 Supabase Storage에 두고 여기에는 위치와 설명만 둔다. 올리는
+ * 사람이 회장 한 명뿐이라 승인 절차도, 작성자 필드도 두지 않는다.
+ */
+export const documents = pgTable(
+  "documents",
+  {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    /** 목록에 함께 보이는 한 줄 설명 */
+    summary: text("summary"),
+    /** 5분야 중 하나 — 비워 두면 분류 없음 */
+    track: text("track"),
+    /** 자료 | 칼럼 */
+    kind: text("kind").notNull().default("자료"),
+    /** 내려받을 때 보여 줄 원래 파일 이름 */
+    fileName: text("file_name").notNull(),
+    /** Content-Type — 내려받기 응답 헤더에 그대로 쓴다 */
+    mimeType: text("mime_type").notNull().default("application/octet-stream"),
+    /** 바이트 — 목록에 크기를 적어 준다 */
+    fileSize: integer("file_size").notNull().default(0),
+    /**
+     * 파일 본문.
+     *
+     * Storage 버킷을 따로 두지 않고 여기 담는다 — 올리는 사람이 회장 한
+     * 명이고 워드 문서 수십 건 규모라, 버킷·RLS 정책·서비스 키를 새로
+     * 만드는 대가가 이득보다 크다. 목록 조회는 이 열을 절대 선택하지
+     * 않으므로 큰 값이 오가지 않는다.
+     */
+    content: text("content").notNull(),
+    published: boolean("published").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("documents_published_idx").on(t.published, t.createdAt)]
+);
+
+export type Document = typeof documents.$inferSelect;
+export type NewDocument = typeof documents.$inferInsert;
+
+/**
+ * 회원.
+ *
+ * 신원(이메일·비밀번호·인증)은 Supabase Auth가 맡고 여기에는 이름만 둔다.
+ * 등급도 포인트도 결제도 없다 — 가입의 목적은 정답과 해설을 여는 것,
+ * 그리고 누가 보고 있는지 아는 것 하나다.
  */
 export const members = pgTable(
   "members",
@@ -62,17 +109,6 @@ export const members = pgTable(
     authId: text("auth_id").notNull(),
     email: text("email").notNull(),
     name: text("name"),
-    /** free | paid — 유료 전환은 결제 연결 전까지 관리자가 수동으로 올린다 */
-    tier: text("tier").notNull().default("free"),
-    /** 풀이로 쌓이고 해설을 열 때 차감된다 */
-    points: integer("points").notNull().default(0),
-    /** 통과한 최고 레벨 (0 = 아직 없음, 5 = 마스터) */
-    clearedLevel: integer("cleared_level").notNull().default(0),
-    /**
-     * 유료 구독 만료 시각. null이면 기한 없음 — 관리자가 직접 올린 계정
-     * (회장·심사용 계정)이 여기 해당한다. 결제로 올라간 계정은 항상 값이 있다.
-     */
-    paidUntil: timestamp("paid_until", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -81,127 +117,6 @@ export const members = pgTable(
 
 export type Member = typeof members.$inferSelect;
 export type NewMember = typeof members.$inferInsert;
-
-/**
- * 포인트 원장.
- *
- * 잔액만 두면 왜 늘고 줄었는지 설명할 수 없어, 적립·차감을 건별로 남긴다.
- * 해설 열람은 여기에 기록이 남아야 재열람 시 다시 차감하지 않는다.
- */
-export const pointLedger = pgTable(
-  "point_ledger",
-  {
-    id: serial("id").primaryKey(),
-    memberId: integer("member_id").notNull(),
-    /** earn | spend */
-    kind: text("kind").notNull(),
-    /** 양수로 저장하고 kind로 방향을 읽는다 */
-    amount: integer("amount").notNull(),
-    /** 사유 — 'quiz:12' · 'explanation:12' 처럼 대상까지 남긴다 */
-    reason: text("reason").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [index("point_ledger_member_idx").on(t.memberId, t.createdAt)]
-);
-
-export type PointEntry = typeof pointLedger.$inferSelect;
-
-/**
- * 열어 본 해설.
- *
- * 한 번 포인트를 낸 해설은 계속 볼 수 있어야 하므로 따로 기록한다.
- */
-export const unlockedExplanations = pgTable(
-  "unlocked_explanations",
-  {
-    id: serial("id").primaryKey(),
-    memberId: integer("member_id").notNull(),
-    questionId: integer("question_id").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [uniqueIndex("unlocked_member_question_idx").on(t.memberId, t.questionId)]
-);
-
-export type UnlockedExplanation = typeof unlockedExplanations.$inferSelect;
-
-/**
- * 회원이 제출한 답안과 채점 결과.
- *
- * 한 문제에 한 번만 제출한다(선발 테스트 성격) — (member, question) 유니크.
- * 객관식은 제출 즉시 자동 채점되고, 주관식은 회장 채점(관리자 화면) 또는
- * AI 채점(ANTHROPIC_API_KEY 설정 시)을 거쳐 graded로 바뀐다. 통과(60점↑)하면
- * 포인트가 적립되고 통과 레벨이 올라간다.
- */
-export const answers = pgTable(
-  "answers",
-  {
-    id: serial("id").primaryKey(),
-    memberId: integer("member_id").notNull(),
-    questionId: integer("question_id").notNull(),
-    /** 주관식은 서술 본문, 객관식은 고른 보기의 원문 */
-    body: text("body").notNull(),
-    /** 객관식에서 고른 보기 번호 (0부터) — 주관식은 null */
-    choiceIndex: integer("choice_index"),
-    /** pending | graded */
-    status: text("status").notNull().default("pending"),
-    /** 0~100, graded일 때만 존재 */
-    score: integer("score"),
-    /** auto(객관식) | ai | admin(회장) */
-    gradedBy: text("graded_by"),
-    /** 채점 강평 — 본인에게만 보인다 */
-    feedback: text("feedback"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    gradedAt: timestamp("graded_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("answers_member_question_idx").on(t.memberId, t.questionId),
-    index("answers_status_idx").on(t.status, t.createdAt),
-  ]
-);
-
-export type Answer = typeof answers.$inferSelect;
-
-/**
- * 유료 전환 주문.
- *
- * PG(토스페이먼츠)를 붙이기 전에도 흐름 전체가 돌아야 하므로, 주문은 결제
- * 수단과 분리해 둔다 — 회원이 신청하면 pending으로 쌓이고, 관리자가 승인하면
- * 구독이 열린다. PG를 붙이면 승인 주체만 관리자에서 결제 승인 응답으로
- * 바뀌고 나머지(구독 연장·이력)는 그대로 쓴다.
- */
-export const orders = pgTable(
-  "orders",
-  {
-    id: serial("id").primaryKey(),
-    /** 가맹점 주문번호 — PG에 그대로 넘긴다 (토스: 6~64자, 영숫자 -_) */
-    orderId: text("order_id").notNull(),
-    memberId: integer("member_id").notNull(),
-    /** lib/billing.ts의 요금제 코드 */
-    planCode: text("plan_code").notNull(),
-    planName: text("plan_name").notNull(),
-    /** 원 단위. 승인 시점의 금액을 박아 둔다 — 요금이 바뀌어도 과거 주문은 그대로 */
-    amount: integer("amount").notNull(),
-    /** 이 주문이 열어 주는 기간(일) */
-    days: integer("days").notNull(),
-    /** pending | paid | canceled | failed */
-    status: text("status").notNull().default("pending"),
-    /** manual(관리자 승인) | toss */
-    provider: text("provider").notNull().default("manual"),
-    /** PG가 준 결제 식별자 — 취소·조회에 쓴다 */
-    providerKey: text("provider_key"),
-    /** 승인·취소 사유나 메모 */
-    note: text("note"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    paidAt: timestamp("paid_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("orders_order_id_idx").on(t.orderId),
-    index("orders_member_idx").on(t.memberId, t.createdAt),
-    index("orders_status_idx").on(t.status, t.createdAt),
-  ]
-);
-
-export type Order = typeof orders.$inferSelect;
 
 /**
  * 관리자 로그인 실패 기록 (무차별 대입 차단).

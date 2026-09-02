@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getSupabaseBrowser, isAuthConfigured } from "@/lib/supabase/client";
 
 /**
- * 가입·로그인 화면 (기획 보고서 4.3 — 가입 창구는 아카데미 하나뿐).
+ * 가입·로그인 화면. 회원이 되는 목적은 하나 — 실무 문제의 정답과 해설을 여는 것.
  *
  * 신원 확인은 Supabase Auth가 맡는다. 이메일 인증과 비밀번호 재설정을
  * 직접 안전하게 만들면 품이 많이 드는데, 그쪽이 검증된 구현을 준다.
@@ -48,7 +48,7 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
     setBusy(false);
     if (error) return setError(translate(error.message));
     // 서버 컴포넌트가 새 세션을 읽도록 전체 이동으로 넘긴다
-    window.location.href = "/academy/me";
+    window.location.href = "/";
   }
 
   if (!configured) {
@@ -59,8 +59,8 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
           회원 시스템 준비가 끝나면 이 자리에서 바로 가입하실 수 있습니다. 그동안 문의는
           아래 연락처로 부탁드립니다.
         </p>
-        <Link className="button button-red" href="/academy">
-          아카데미로 돌아가기 <span>→</span>
+        <Link className="button button-red" href="/">
+          홈으로 돌아가기 <span>→</span>
         </Link>
       </div>
     );
@@ -72,9 +72,9 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
         <h1>메일을 확인해 주십시오</h1>
         <p className="auth-note">
           <strong>{email}</strong> 으로 인증 링크를 보냈습니다. 링크를 누르시면 가입이
-          완료되고 L1 입문 퀴즈가 열립니다.
+          완료되고 정답·해설이 열립니다.
         </p>
-        <Link className="button button-red" href="/academy/login">
+        <Link className="button button-red" href="/login">
           로그인 화면으로 <span>→</span>
         </Link>
       </div>
@@ -86,7 +86,7 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
       <h1>{isJoin ? "회원가입" : "로그인"}</h1>
       <p className="auth-note">
         {isJoin
-          ? "가입하시면 L1 입문 퀴즈를 무료로 푸실 수 있습니다. 풀며 쌓은 포인트로 회장 해설을 엽니다."
+          ? "등록하시면 실무 문제의 정답과 해설이 열립니다. 별도 비용은 없습니다."
           : "가입하신 이메일과 비밀번호로 들어오십시오."}
       </p>
 
@@ -134,11 +134,11 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
       <p className="auth-switch">
         {isJoin ? (
           <>
-            이미 회원이십니까? <Link href="/academy/login">로그인</Link>
+            이미 회원이십니까? <Link href="/login">로그인</Link>
           </>
         ) : (
           <>
-            아직 회원이 아니십니까? <Link href="/academy/join">회원가입</Link>
+            아직 회원이 아니십니까? <Link href="/join">회원가입</Link>
           </>
         )}
       </p>

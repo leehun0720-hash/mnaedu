@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFile } from "node:fs/promises";
 
 // Credentials for the tests only; the real ones live in the Vercel project.
 process.env.ADMIN_PASSWORD = "correct-horse";
@@ -42,28 +41,26 @@ test("tampered and forged sessions are rejected", async () => {
 test("pasted question is split into fields", () => {
   const parsed = parseQuestion(
     [
-      "난이도: 상급",
       "적대적 M&A",
-      "대상회사가 포이즌필을 발동했을 때 이를 무력화할 논거를 서술하시오.",
+      "대상회사가 방어수단을 발동했을 때 이를 무력화할 논거를 서술하시오.",
       "① 신주발행 무효의 소",
       "② 주주총회 결의 취소",
       "정답: ①",
-      "출제 의도: 방어수단의 법적 한계를 아는지",
+      "해설: 방어수단의 법적 한계를 아는지",
     ].join("\n")
   );
 
-  assert.equal(parsed.level, "상급");
   assert.equal(parsed.track, "dispute");
   assert.equal(parsed.format, "객관식");
   assert.deepEqual(parsed.choices, ["신주발행 무효의 소", "주주총회 결의 취소"]);
   assert.equal(parsed.answer, "①");
-  assert.match(parsed.intent, /법적 한계/);
+  assert.match(parsed.explanation, /법적 한계/);
 
   // Metadata and the withheld fields must not leak into the visible prompt
-  assert.ok(parsed.prompt.includes("포이즌필"));
-  assert.ok(!parsed.prompt.includes("난이도"));
+  assert.ok(parsed.prompt.includes("방어수단"));
+  
   assert.ok(!parsed.prompt.includes("정답"));
-  assert.ok(!parsed.prompt.includes("출제 의도"));
+  assert.ok(!parsed.prompt.includes("해설"));
 });
 
 test("plain prose stays a written question", () => {
@@ -75,7 +72,7 @@ test("plain prose stays a written question", () => {
 });
 
 test("legacy rows still map onto the current taxonomy", async () => {
-  const { normalizeTrack, normalizeLevel, courseLabel, COURSES, LEVELS } = await import(
+  const { normalizeTrack, courseLabel, COURSES } = await import(
     new URL("../lib/questions.ts", import.meta.url).href
   );
 
@@ -92,38 +89,5 @@ test("legacy rows still map onto the current taxonomy", async () => {
     assert.ok(COURSES.some((c) => c.slug === normalizeTrack(legacy)), `${legacy} must resolve to a listed course`);
     assert.notEqual(courseLabel(legacy), legacy);
   }
-
-  for (const [legacy, expected] of [["초급", "입문"], ["중급", "실무"], ["상급", "상급"]]) {
-    assert.equal(normalizeLevel(legacy), expected);
-    assert.ok(LEVELS.includes(normalizeLevel(legacy)), `${legacy} must resolve to a listed level`);
-  }
 });
 
-test("the admin draft default level is one the API accepts", async () => {
-  const { LEVELS } = await import(new URL("../lib/questions.ts", import.meta.url).href);
-  const source = await readFile(new URL("../app/admin/admin-client.tsx", import.meta.url), "utf8");
-  const [, level] = source.match(/const EMPTY: Draft = \{[^}]*?level: "([^"]+)"/s) ?? [];
-  assert.ok(level, "EMPTY draft must declare a level");
-  assert.ok(LEVELS.includes(level), `default level ${level} must be in ${LEVELS.join("/")}`);
-});
-
-test("free members get L1 only; paid members get every level", async () => {
-  const { levelsFor, canAccessLevel } = await import(
-    new URL("../lib/membership.ts", import.meta.url).href
-  );
-  const { LEVEL_TIERS } = await import(new URL("../lib/questions.ts", import.meta.url).href);
-
-  assert.deepEqual(levelsFor("free"), ["입문"]);
-  assert.equal(levelsFor("paid").length, LEVEL_TIERS.length);
-
-  // 무료회원에게 유료 레벨이 열려서는 안 된다
-  assert.equal(canAccessLevel("free", "입문"), true);
-  for (const name of ["기본", "실무", "상급", "마스터"]) {
-    assert.equal(canAccessLevel("free", name), false, `free must not reach ${name}`);
-    assert.equal(canAccessLevel("paid", name), true, `paid must reach ${name}`);
-  }
-
-  // 개편 전 난이도로 저장된 문제도 같은 규칙을 따른다
-  assert.equal(canAccessLevel("free", "초급"), true);
-  assert.equal(canAccessLevel("free", "중급"), false);
-});
