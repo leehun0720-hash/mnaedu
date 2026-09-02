@@ -1781,35 +1781,50 @@ textarea:focus-visible {
   gap: 18px;
   flex-wrap: wrap;
 }
-.footer-admin {
+/* 저작권 줄 반대편에 'SITE BY'와 출제자 입구를 나란히 둔다 */
+.co-footer-end {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* 출제자(회장) 전용 입구. 의뢰인에게는 쓸모가 없으므로 푸터 끝에 조용히
+   두되, 회장이 매번 주소를 외워 치지는 않도록 반드시 눌러서 갈 수 있게 한다.
+   푸터가 밝은 바탕이므로 색은 본문 계열에서 가져온다 — 아카데미 시절의
+   어두운 푸터용 값(흰 계열)을 그대로 두면 흰 바탕에 흰 글씨가 된다. */
+/* `.co-footer-base a`가 링크 색을 잡고 있으므로 같은 무게로 맞선다 —
+   그냥 `.footer-admin`으로 쓰면 색만 조용히 덮인다. */
+.co-footer-base .footer-admin {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 7px 14px;
   font: 600 11px var(--font-label);
   letter-spacing: 0.1em;
-  color: rgba(248, 247, 243, 0.62);
-  border: 1px solid rgba(248, 247, 243, 0.18);
+  color: var(--co-muted);
+  border: 1px solid var(--co-line);
   transition: color 0.2s ease, border-color 0.2s ease;
 }
-.footer-admin::before {
+.co-footer-base .footer-admin::before {
   content: "";
   width: 5px;
   height: 5px;
-  background: var(--heritage-gold);
+  background: var(--co-gold);
   transform: rotate(45deg);
 }
-.footer-admin i {
+.co-footer-base .footer-admin i {
   font-style: normal;
   font-size: 10px;
-  color: var(--heritage-gold);
+  color: var(--co-gold);
   transition: transform 0.2s ease;
 }
-.footer-admin:hover {
-  color: var(--warm-white);
-  border-color: rgba(248, 247, 243, 0.45);
+.co-footer-base .footer-admin:hover {
+  color: var(--co-ink);
+  border-color: var(--co-ink);
+  text-decoration: none;
 }
-.footer-admin:hover i { transform: translate(1px, -1px); }
+.co-footer-base .footer-admin:hover i { transform: translate(1px, -1px); }
 .footer-base small {
   font: 500 11px var(--font-label);
   letter-spacing: 0.1em;
@@ -2050,7 +2065,10 @@ textarea:focus-visible {
   }
   /* 푸터의 링크·전화·메일은 줄글 높이(약 19px)라 손가락으로는 겨냥이 안 된다.
      글자 크기는 그대로 두고 세로 여백만 주어 24px 최소 타겟을 채운다. */
-  .co-footer a,
+  /* 출제자 입구(.footer-admin)는 위에서 이미 44px를 받으므로 제외한다.
+     여기에 44px 규칙을 따로 더 쓰면 같은 선언이 중복돼 최소화 과정에서
+     사라지고, 남은 24px가 그대로 적용된다. */
+  .co-footer a:not(.footer-admin),
   .qa-foot a,
   .co-form-note a,
   .co-contact-card a {

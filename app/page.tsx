@@ -352,9 +352,16 @@ export default async function HomePage() {
         </div>
         <div className="co-footer-base">
           <small>© 2026 ㈜프론티어 M&amp;A. ALL RIGHTS RESERVED.</small>
-          <small>
-            SITE BY <a href="https://tenai.kr" target="_blank" rel="noopener noreferrer">TEN AI</a>
-          </small>
+          <div className="co-footer-end">
+            <small>
+              SITE BY <a href="https://tenai.kr" target="_blank" rel="noopener noreferrer">TEN AI</a>
+            </small>
+            {/* 회장 전용 출제 화면. 공개 페이지에서 눈에 띌 필요는 없지만,
+                주소를 직접 입력하게 두지는 않는다. /admin은 자체 noindex. */}
+            <Link className="footer-admin" href="/admin" rel="nofollow">
+              출제자 입장 <i aria-hidden="true">→</i>
+            </Link>
+          </div>
         </div>
       </footer>
 
