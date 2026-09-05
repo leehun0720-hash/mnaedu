@@ -1,0 +1,308 @@
+/**
+ * 빌더 화면(작업대) 스타일.
+ *
+ * 만드는 사이트의 스타일(bf-)과 섞이지 않도록 접두사를 bx-로 따로 둔다.
+ * 작업대는 조용해야 한다 — 색은 회색조로 눌러 두고, 시선은 가운데 캔버스가
+ * 가져가게 한다.
+ */
+
+.bx-boot {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  background: #1C1B1A;
+  color: #A29B93;
+  font: 400 13px/1.6 var(--font-sans), "Noto Sans KR", sans-serif;
+}
+
+.bx {
+  --bx-bg: #1C1B1A;
+  --bx-panel: #262523;
+  --bx-panel-2: #2E2D2A;
+  --bx-line: #3A3835;
+  --bx-text: #E9E5E0;
+  --bx-dim: #A29B93;
+  --bx-accent: #D8341A;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bx-bg);
+  color: var(--bx-text);
+  font: 400 13px/1.6 var(--font-sans), "Noto Sans KR", sans-serif;
+  word-break: keep-all;
+}
+.bx button { font: inherit; cursor: pointer; }
+
+/* ── 상단 막대 ── */
+.bx-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 14px;
+  background: var(--bx-panel);
+  border-bottom: 1px solid var(--bx-line);
+  flex: none;
+  overflow-x: auto;
+}
+.bx-logo {
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.bx-logo small {
+  display: block;
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  color: var(--bx-dim);
+  font-weight: 600;
+}
+.bx-title {
+  width: 190px;
+  padding: 7px 10px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-radius: 5px;
+  color: var(--bx-text);
+  font: inherit;
+  font-weight: 600;
+}
+.bx-top-group { display: flex; gap: 2px; flex: none; }
+.bx-top-group button,
+.bx-topfile {
+  padding: 7px 11px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  color: var(--bx-text);
+  border-radius: 5px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.bx-topfile { cursor: pointer; }
+.bx-top-group button:hover:not(:disabled),
+.bx-topfile:hover { background: #3A3835; }
+.bx-top-group button:disabled { opacity: 0.35; cursor: not-allowed; }
+.bx-top-group button.is-on { background: var(--bx-accent); border-color: var(--bx-accent); color: #fff; }
+.bx-saved { margin-left: auto; font-size: 11px; color: var(--bx-dim); white-space: nowrap; }
+
+/* ── 3단 배치 ── */
+.bx-body { flex: 1; display: grid; grid-template-columns: 246px minmax(0, 1fr) 306px; min-height: 0; }
+.bx-left, .bx-right {
+  background: var(--bx-panel);
+  border-right: 1px solid var(--bx-line);
+  overflow-y: auto;
+  min-height: 0;
+}
+.bx-right { border-right: 0; border-left: 1px solid var(--bx-line); }
+
+.bx-tabs { display: flex; position: sticky; top: 0; background: var(--bx-panel); z-index: 2; }
+.bx-tabs button {
+  flex: 1;
+  padding: 11px 4px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--bx-dim);
+  font-weight: 600;
+}
+.bx-tabs button.is-on { color: var(--bx-text); border-bottom-color: var(--bx-accent); }
+
+.bx-panel { padding: 12px 12px 40px; }
+.bx-hint { margin: 0 0 12px; font-size: 11.5px; color: var(--bx-dim); line-height: 1.65; }
+.bx-empty { font-size: 12px; color: var(--bx-dim); padding: 18px 0; text-align: center; }
+
+/* ── 구역 목록 ── */
+.bx-secs { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.bx-secs li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-radius: 6px;
+  padding: 6px 6px 6px 9px;
+}
+.bx-secs li.is-on { border-color: var(--bx-accent); background: #37241F; }
+.bx-secs li[data-hidden="1"] { opacity: 0.45; }
+.bx-sec-name { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: inherit; padding: 2px 0; }
+.bx-sec-kind { display: block; font-size: 9.5px; letter-spacing: 0.12em; color: var(--bx-dim); }
+.bx-sec-name strong { display: block; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bx-sec-acts { display: flex; gap: 1px; flex: none; }
+.bx-sec-acts button {
+  width: 21px; height: 21px;
+  display: grid; place-items: center;
+  background: transparent; border: 0; color: var(--bx-dim);
+  border-radius: 4px; font-size: 11px;
+}
+.bx-sec-acts button:hover:not(:disabled) { background: #46433F; color: var(--bx-text); }
+.bx-sec-acts button:disabled { opacity: 0.25; cursor: not-allowed; }
+
+/* ── 구역 추가 목록 ── */
+.bx-catalog { display: grid; gap: 6px; }
+.bx-catalog button {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-radius: 6px;
+  color: inherit;
+}
+.bx-catalog button:hover { border-color: var(--bx-accent); background: #322A27; }
+.bx-catalog strong { display: block; font-size: 13px; }
+.bx-catalog span { display: block; font-size: 11px; color: var(--bx-dim); margin-top: 2px; }
+
+/* ── 테마 견본 ── */
+.bx-presets { display: grid; gap: 5px; margin-bottom: 16px; }
+.bx-presets button {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 11px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-left-width: 3px;
+  border-radius: 6px;
+  color: inherit;
+  font-size: 12px;
+}
+.bx-presets span { width: 15px; height: 15px; border-radius: 50%; flex: none; }
+
+/* ── 입력 필드 ── */
+.bx-field { display: grid; gap: 5px; margin-bottom: 11px; }
+.bx-field > span:first-child { font-size: 11px; font-weight: 700; color: var(--bx-dim); }
+.bx-field input[type="text"],
+.bx-field input:not([type]),
+.bx-field textarea,
+.bx-list input,
+.bx-list textarea {
+  width: 100%;
+  padding: 7px 9px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-radius: 5px;
+  color: var(--bx-text);
+  font: inherit;
+  font-size: 12px;
+}
+.bx-field textarea, .bx-list textarea { resize: vertical; line-height: 1.6; }
+.bx-field input:focus, .bx-field textarea:focus,
+.bx-list input:focus, .bx-list textarea:focus { outline: 2px solid var(--bx-accent); outline-offset: -1px; }
+.bx-field input[type="range"] { width: 100%; accent-color: var(--bx-accent); }
+
+.bx-color { display: flex; gap: 6px; align-items: center; }
+.bx-color input[type="color"] { width: 34px; height: 30px; padding: 0; border: 1px solid var(--bx-line); border-radius: 5px; background: none; }
+.bx-hex { flex: 1; text-transform: uppercase; }
+
+.bx-choice { display: flex; flex-wrap: wrap; gap: 3px; }
+.bx-choice button {
+  flex: 1;
+  min-width: 42px;
+  padding: 6px 4px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-radius: 5px;
+  color: var(--bx-dim);
+  font-size: 11.5px;
+}
+.bx-choice button.is-on { background: var(--bx-accent); border-color: var(--bx-accent); color: #fff; font-weight: 700; }
+
+.bx-check { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--bx-dim); margin: 8px 0; }
+.bx-check input { accent-color: var(--bx-accent); }
+
+.bx-image { display: grid; gap: 5px; }
+.bx-image-row { display: flex; gap: 4px; }
+.bx-mini {
+  padding: 5px 9px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-radius: 5px;
+  color: var(--bx-dim);
+  font-size: 11px;
+  cursor: pointer;
+}
+.bx-mini:hover { color: var(--bx-text); }
+
+.bx-two { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.bx-cells { display: flex; gap: 4px; }
+.bx-cells input { text-align: center; }
+
+.bx-group {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--bx-dim);
+  margin: 18px 0 9px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bx-line);
+}
+.bx-right-title { font-size: 15px; font-weight: 800; margin: 0 0 14px; }
+.bx-right-title small { display: block; font-size: 11px; font-weight: 500; color: var(--bx-dim); margin-top: 2px; }
+
+/* ── 목록형 속성 ── */
+.bx-list { display: grid; gap: 8px; }
+.bx-list-item { background: var(--bx-panel-2); border: 1px solid var(--bx-line); border-radius: 6px; padding: 8px; display: grid; gap: 5px; }
+.bx-list-bar { display: flex; align-items: center; gap: 3px; }
+.bx-list-bar strong { flex: 1; font-size: 10.5px; color: var(--bx-dim); }
+.bx-list-bar button {
+  padding: 3px 7px;
+  background: transparent;
+  border: 1px solid var(--bx-line);
+  border-radius: 4px;
+  color: var(--bx-dim);
+  font-size: 10.5px;
+}
+.bx-list-bar button:hover:not(:disabled) { color: var(--bx-text); border-color: var(--bx-dim); }
+.bx-list-bar button:disabled { opacity: 0.3; cursor: not-allowed; }
+.bx-add-item {
+  width: 100%;
+  padding: 9px;
+  background: transparent;
+  border: 1px dashed var(--bx-line);
+  border-radius: 6px;
+  color: var(--bx-dim);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.bx-add-item:hover { border-color: var(--bx-accent); color: var(--bx-text); }
+
+/* ── 캔버스 ── */
+.bx-canvas-wrap {
+  overflow: auto;
+  padding: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background:
+    repeating-conic-gradient(#232221 0% 25%, #1C1B1A 0% 50%) 0 0 / 22px 22px;
+  min-height: 0;
+}
+.bx-canvas, .bx-preview {
+  background: #fff;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  max-width: 100%;
+  min-height: 100%;
+}
+.bx-preview { border: 0; height: calc(100vh - 100px); }
+.bx-canvas { position: relative; }
+.bx-canvas-empty {
+  position: absolute; inset: 0;
+  display: grid; place-content: center;
+  padding: 40px; text-align: center;
+  color: #8A8078; font-size: 13px; line-height: 1.8;
+}
+
+/* 편집 중 표시 — 고를 수 있는 구역과 고쳐 쓸 수 있는 글자를 알려 준다 */
+.bx-canvas .bf-sec { outline: 1px dashed transparent; outline-offset: -2px; transition: outline-color 0.12s; }
+.bx-canvas .bf-sec:hover { outline-color: rgba(216, 52, 26, 0.4); }
+.bx-canvas [data-edit] { outline: 1px dotted transparent; outline-offset: 2px; border-radius: 2px; }
+.bx-canvas [data-edit]:hover { outline-color: rgba(216, 52, 26, 0.55); background: rgba(216, 52, 26, 0.05); }
+.bx-canvas [data-edit]:focus { outline: 2px solid var(--bx-accent); background: rgba(216, 52, 26, 0.07); }
+.bx-canvas .bf-btn, .bx-canvas .bf-post { cursor: default; }
+
+@media (max-width: 1180px) {
+  .bx-body { grid-template-columns: 210px minmax(0, 1fr) 270px; }
+}
+@media (max-width: 900px) {
+  .bx-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(320px, 1fr) auto; }
+  .bx-left, .bx-right { max-height: 240px; border: 0; border-bottom: 1px solid var(--bx-line); }
+}

@@ -1,0 +1,216 @@
+/**
+ * 홈페이지 빌더 — 시작 템플릿.
+ *
+ * 빈 화면에서 시작하면 아무것도 만들지 못한다. 프론티어 M&A 아카데미와 같은
+ * 골격(상단 메뉴 → 히어로 → 분야 카드 → 여정 → 권한표 → 목록 → 게시판 →
+ * 배너 → 푸터)을 그대로 얹어 두고, 글자만 바꿔도 사이트 하나가 되게 한다.
+ */
+
+import { DEFAULT_THEME, THEME_PRESETS, newId, type SiteDoc } from "./types";
+
+export function starterDoc(): SiteDoc {
+  return {
+    version: 1,
+    title: "새 홈페이지",
+    theme: { ...DEFAULT_THEME },
+    sections: [
+      {
+        id: newId(),
+        name: "상단 메뉴",
+        kind: "header",
+        background: { kind: "solid", color: "#FFFFFF" },
+        padding: "sm",
+        width: "wide",
+        align: "left",
+        scheme: "light",
+        logo: "프론티어 M&A",
+        sub: "FRONTIER M&A",
+        menu: [{ label: "회사소개" }, { label: "주요업무" }, { label: "아카데미" }, { label: "공지사항" }],
+        cta: "상담 신청",
+      },
+      {
+        id: newId(),
+        name: "히어로",
+        kind: "hero",
+        background: { kind: "gradient", from: "#241A17", to: "#4A2A1E", angle: 155 },
+        padding: "xl",
+        width: "normal",
+        align: "left",
+        scheme: "dark",
+        eyebrow: "SINCE 1993 · 국내 최초 M&A 전문기업",
+        title: "거래의 마지막 10%,",
+        titleEm: "경험이 가릅니다.",
+        desc:
+          "30년간 축적한 실전 사례로 M&A 중개부터 경영권 분쟁, 자금조달까지 다룹니다. 검토 단계부터 비밀유지를 원칙으로 합니다.",
+        primary: "상담 신청",
+        secondary: "업무 소개",
+        stats: [
+          { value: "1993", label: "설립" },
+          { value: "5개", label: "전문 분야" },
+          { value: "58개", label: "커리큘럼 주제" },
+        ],
+      },
+      {
+        id: newId(),
+        name: "주요 업무 카드",
+        kind: "cards",
+        background: { kind: "none" },
+        padding: "lg",
+        width: "normal",
+        align: "left",
+        scheme: "light",
+        eyebrow: "BUSINESS",
+        title: "주요 업무",
+        lead: "실전 거래를 다루는 전문 분야입니다. 각 분야마다 커리큘럼과 사례를 함께 제공합니다.",
+        columns: 3,
+        cards: [
+          {
+            no: "01",
+            title: "M&A 중개",
+            en: "BROKERAGE",
+            desc: "매도·매수 양측의 조건을 좁혀 거래를 성사시킵니다. 기업가치 산정부터 최종 계약까지.",
+            meta: "자세히 보기 ↗",
+            image: "",
+          },
+          {
+            no: "02",
+            title: "경영권 분쟁",
+            en: "CONTROL DISPUTE",
+            desc: "지분 구조와 의결권을 분석해 방어·공격 전략을 세웁니다. 델라웨어 판례까지 다룹니다.",
+            meta: "자세히 보기 ↗",
+            image: "",
+          },
+          {
+            no: "03",
+            title: "M&A 자금조달",
+            en: "FINANCING",
+            desc: "인수금융과 자본조달 구조를 설계합니다. 조건 협상과 담보 구조가 핵심입니다.",
+            meta: "자세히 보기 ↗",
+            image: "",
+          },
+        ],
+      },
+      {
+        id: newId(),
+        name: "진행 절차",
+        kind: "steps",
+        background: { kind: "solid", color: "#FFFFFF" },
+        padding: "lg",
+        width: "normal",
+        align: "left",
+        scheme: "light",
+        eyebrow: "PROCESS",
+        title: "이렇게 진행합니다",
+        lead: "문의부터 종결까지 네 단계로 움직입니다. 세 번째 단계가 가장 중요한 분기점입니다.",
+        steps: [
+          { index: "STEP 01", name: "문의·접수", desc: "상담을 신청하시면 담당자가 연락드립니다.", gate: false },
+          { index: "STEP 02", name: "검토·제안", desc: "요건을 검토하고 방향과 일정을 제안합니다.", gate: false },
+          { index: "STEP 03", name: "계약 체결", desc: "조건을 확정하고 비밀유지 계약과 함께 착수합니다.", gate: true },
+          { index: "STEP 04", name: "수행·종결", desc: "합의한 일정에 따라 수행하고 결과를 보고합니다.", gate: false },
+        ],
+      },
+      {
+        id: newId(),
+        name: "제공 범위 비교",
+        kind: "table",
+        background: { kind: "none" },
+        padding: "lg",
+        width: "normal",
+        align: "left",
+        scheme: "light",
+        eyebrow: "SCOPE",
+        title: "제공 범위",
+        lead: "단계별로 열리는 범위입니다.",
+        columns: ["비회원", "무료회원", "유료회원"],
+        rows: [
+          { label: "업무 소개 열람", cells: ["O", "O", "O"] },
+          { label: "입문 과정", cells: ["X", "O", "O"] },
+          { label: "전문가 과정", cells: ["X", "X", "O"] },
+          { label: "1:1 상담", cells: ["X", "X", "O"] },
+        ],
+      },
+      {
+        id: newId(),
+        name: "공지사항",
+        kind: "board",
+        background: { kind: "solid", color: "#FFFFFF" },
+        padding: "lg",
+        width: "normal",
+        align: "left",
+        scheme: "light",
+        eyebrow: "BOARD",
+        title: "공지사항",
+        lead: "새 소식과 자료를 올리는 자리입니다.",
+        boardKey: newId("b"),
+        pageSize: 8,
+        allowWrite: true,
+        posts: [
+          {
+            id: newId("p"),
+            title: "홈페이지를 새로 열었습니다",
+            author: "관리자",
+            date: "2026-09-01",
+            body: "새 홈페이지를 공개했습니다. 앞으로 이곳에서 공지와 자료를 전해 드리겠습니다.",
+            notice: true,
+          },
+          {
+            id: newId("p"),
+            title: "9월 상담 일정 안내",
+            author: "관리자",
+            date: "2026-09-03",
+            body: "9월 상담은 평일 오전 10시부터 오후 5시까지 진행합니다. 사전 예약을 권해 드립니다.",
+            notice: false,
+          },
+          {
+            id: newId("p"),
+            title: "자료실 이용 안내",
+            author: "관리자",
+            date: "2026-09-04",
+            body: "회원으로 가입하시면 업무 자료를 내려받으실 수 있습니다.",
+            notice: false,
+          },
+        ],
+      },
+      {
+        id: newId(),
+        name: "상담 배너",
+        kind: "cta",
+        background: { kind: "solid", color: "#241A17" },
+        padding: "lg",
+        width: "normal",
+        align: "center",
+        scheme: "dark",
+        title: "거래를 검토하고 계십니까?",
+        desc: "검토 단계부터 비밀유지를 원칙으로 상담해 드립니다.",
+        button: "상담 신청하기",
+        note: "· 상담 내용은 외부에 공개되지 않습니다",
+      },
+      {
+        id: newId(),
+        name: "푸터",
+        kind: "footer",
+        background: { kind: "solid", color: "#1B1310" },
+        padding: "md",
+        width: "wide",
+        align: "left",
+        scheme: "dark",
+        brand: "㈜프론티어 M&A",
+        lines: [
+          "서울특별시 ○○구 ○○로 00, 0층",
+          "대표전화 02-000-0000 · 사업자등록번호 000-00-00000",
+        ],
+        links: [{ label: "개인정보처리방침" }, { label: "이용약관" }, { label: "오시는 길" }],
+      },
+    ],
+  };
+}
+
+/** 빈 문서 — 처음부터 직접 쌓고 싶을 때 */
+export function blankDoc(): SiteDoc {
+  return {
+    version: 1,
+    title: "새 홈페이지",
+    theme: { ...THEME_PRESETS[0].theme },
+    sections: [],
+  };
+}
