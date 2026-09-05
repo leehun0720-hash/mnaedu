@@ -4,7 +4,7 @@ import { and, count, desc, eq, ilike, sql, type SQL } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth";
-import { COURSES, FORMATS, LEVELS, normalizeLevel, normalizeTrack } from "@/lib/questions";
+import { COURSES, FORMATS, normalizeTrack } from "@/lib/questions";
 
 /** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */
 export const PAGE_SIZE = 20;
@@ -25,7 +25,6 @@ function guardStorage() {
 type Payload = {
   id?: number;
   track?: string;
-  level?: string;
   format?: string;
   prompt?: string;
   choices?: unknown;
@@ -40,7 +39,6 @@ function validate(body: Payload) {
   const prompt = (body.prompt ?? "").trim();
   if (prompt.length < 10) return { error: "문제 본문이 너무 짧습니다." as const };
   if (!COURSES.some((c) => c.slug === body.track)) return { error: "분야를 선택해 주십시오." as const };
-  if (!LEVELS.includes(body.level as never)) return { error: "난이도를 선택해 주십시오." as const };
   if (!FORMATS.includes(body.format as never)) return { error: "유형을 선택해 주십시오." as const };
 
   let choices: string[] | null = null;
@@ -55,7 +53,6 @@ function validate(body: Payload) {
   return {
     value: {
       track: body.track as string,
-      level: body.level as string,
       format: body.format as string,
       prompt,
       choices,
@@ -83,14 +80,12 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const q = (params.get("q") ?? "").trim();
   const track = params.get("track") ?? "";
-  const level = params.get("level") ?? "";
   const state = params.get("state") ?? ""; // published | draft | incomplete
   const page = Math.max(1, Number(params.get("page")) || 1);
 
   const filters: SQL[] = [];
   if (q) filters.push(ilike(questions.prompt, `%${q}%`));
   if (track) filters.push(eq(questions.track, track));
-  if (level) filters.push(eq(questions.level, level));
   if (state === "published") filters.push(eq(questions.published, true));
   if (state === "draft") filters.push(eq(questions.published, false));
   // 아직 손이 더 가야 하는 문제 — 정답이나 해설이 비어 있다
@@ -115,18 +110,17 @@ export async function GET(request: Request) {
     db
       .select({
         track: questions.track,
-        level: questions.level,
         total: count(),
         published: sql<number>`count(*) filter (where ${questions.published})`,
       })
       .from(questions)
-      .groupBy(questions.track, questions.level),
+      .groupBy(questions.track),
   ]);
 
-  // 개편 전 슬러그·난이도로 저장된 행도 현행 분류의 칸에 얹는다
+  // 개편 전 슬러그로 저장된 행도 현행 분야의 칸에 얹는다
   const coverage: Record<string, { total: number; published: number }> = {};
   for (const r of coverageRows) {
-    const key = `${normalizeTrack(r.track)}|${normalizeLevel(r.level)}`;
+    const key = normalizeTrack(r.track);
     const slot = (coverage[key] ??= { total: 0, published: 0 });
     slot.total += Number(r.total);
     slot.published += Number(r.published);

@@ -1,12 +1,12 @@
 import { BUSINESS_AREAS } from "@/lib/company";
 
 /**
- * 문제은행 2축 구조 (기획 보고서 4.2).
+ * 문제은행 분류 (기획 보고서 4.2 · 개편).
  *
- * 가로축 = 「업무분야별 카테고리」의 5분야 58주제, 세로축 = 난이도 L1~L5.
- * 가로축은 홈페이지 게시판과 같은 정본을 쓰므로 lib/company.ts에서 가져온다 —
- * 한 문제가 '경영권 분쟁 > 델라웨어 판례 > L5'로 분류되어 두 사이트가 같은
- * 분류 체계를 공유한다.
+ * 분류축은 「업무분야별 카테고리」의 5분야 하나뿐이다. 난이도(레벨) 축은
+ * 폐지했다 — 문제는 올라가는 사다리가 아니라, 회사가 어느 수준에서 일하는지
+ * 보여 주는 하나의 묶음이기 때문이다. 홈페이지 게시판과 같은 정본을 쓰므로
+ * 분야는 lib/company.ts에서 가져온다.
  *
  * 이 파일은 관리자 화면 같은 클라이언트 컴포넌트도 함께 쓰므로 데이터베이스를
  * 건드리지 않는다 — 조회는 lib/questions-db.ts가 맡는다.
@@ -25,68 +25,22 @@ const LEGACY_TRACKS: Record<string, string> = {
   club: "investor-club",
 };
 
-export type LevelCode = "L1" | "L2" | "L3" | "L4" | "L5";
-
-/** 5레벨 승급 체계 (보고서 4.1) — 무료는 L1 하나뿐이다 */
-export const LEVEL_TIERS: {
-  code: LevelCode;
-  name: string;
-  access: "무료회원" | "유료회원";
-  scope: string;
-  authoring: string;
-}[] = [
-  { code: "L1", name: "입문", access: "무료회원", scope: "용어 · 기본 개념", authoring: "AI 출제 · 아바타 해설" },
-  { code: "L2", name: "기본", access: "유료회원", scope: "절차 · 구조 이해", authoring: "AI 출제" },
-  { code: "L3", name: "실무", access: "유료회원", scope: "사례 적용", authoring: "AI 초안 + 운영 검토" },
-  { code: "L4", name: "상급", access: "유료회원", scope: "실전 판단 · 딜 구조", authoring: "회장 출제 · 검수 없이는 발행 불가" },
-  { code: "L5", name: "마스터", access: "유료회원", scope: "델라웨어 판례 · 플레이북 수준", authoring: "회장 전담 출제" },
-];
-
-export const LEVELS = LEVEL_TIERS.map((t) => t.name) as unknown as readonly string[];
 export const FORMATS = ["주관식", "객관식"] as const;
-
-/** 개편 전 난이도 표기를 5레벨로 잇는다 (상급은 이름이 같아 그대로 통과한다) */
-const LEGACY_LEVELS: Record<string, string> = { 초급: "입문", 중급: "실무" };
-
-export type Level = string;
 export type Format = (typeof FORMATS)[number];
 
 /** 퀴즈 1건의 문항 수 — 설계서 지시("퀴즈 1개당 3문제") */
 export const QUESTIONS_PER_QUIZ = 3;
 
-/** What the public page renders. Answers and intent never appear here. */
+/** 공개 페이지가 그리는 모양. 정답·해설은 여기 없다. */
 export type PublicQuestion = {
   /** DB 문제의 id — 예시(시드) 문제에는 없어서 풀이 화면이 열리지 않는다 */
   id?: number;
   no: number;
   trackLabel: string;
-  level: string;
-  levelClass: string;
   type: string;
   prompt: string;
   choices?: string[];
 };
-
-/** 상위 레벨일수록 짙게 — 태그 색은 세 단계로만 나눈다 */
-const LEVEL_CLASS: Record<string, string> = {
-  입문: "level-elementary",
-  기본: "level-elementary",
-  실무: "level-intermediate",
-  상급: "level-advanced",
-  마스터: "level-advanced",
-};
-
-export function normalizeLevel(level: string): string {
-  return LEGACY_LEVELS[level] ?? level;
-}
-
-export function levelClass(level: string): string {
-  return LEVEL_CLASS[normalizeLevel(level)] ?? "level-intermediate";
-}
-
-export function levelCode(level: string): LevelCode | undefined {
-  return LEVEL_TIERS.find((t) => t.name === normalizeLevel(level))?.code;
-}
 
 /** 옛 슬러그를 현행 분야로 옮긴다 — 저장된 값을 그대로 화면에 세우면 선택지에 없다 */
 export function normalizeTrack(slug: string): string {
@@ -116,16 +70,13 @@ export function courseLabel(slug: string): string {
 }
 
 /**
- * Shown until the chairman has published anything of his own. Keeping these
- * means the page never renders an empty gate section, including on the very
- * first deploy before a database exists.
+ * 회장이 직접 출제한 문제가 아직 없을 때 대신 세우는 예시.
+ * 데이터베이스가 없는 첫 배포에서도 빈 화면이 나오지 않게 한다.
  */
 export const SEED_QUESTIONS: PublicQuestion[] = [
   {
     no: 1,
     trackLabel: "M&A 중개",
-    level: "실무",
-    levelClass: "level-intermediate",
     type: "주관식",
     prompt:
       "M&A를 활용한 외적 성장(Buy)이 내적 성장(Build) 대비 갖는 장점 5가지를 설명하고, 각 장점이 실전에서 무너지는 조건을 함께 제시하십시오.",
@@ -133,17 +84,13 @@ export const SEED_QUESTIONS: PublicQuestion[] = [
   {
     no: 2,
     trackLabel: "경영권 분쟁",
-    level: "상급",
-    levelClass: "level-advanced",
     type: "주관식",
     prompt:
-      "대상회사가 포이즌필을 발동한 상황에서 이를 무력화할 법적·전술적 논거를 구성하고, 백기사 연대가 형성될 경우의 대응 시나리오를 서술하십시오.",
+      "대상회사가 경영권 방어 수단을 발동한 상황에서 이를 다툴 법적·전술적 논거를 구성하고, 백기사 연대가 형성될 경우의 대응 시나리오를 서술하십시오.",
   },
   {
     no: 3,
     trackLabel: "M&A 자금조달",
-    level: "입문",
-    levelClass: "level-elementary",
     type: "주관식",
     prompt:
       "SPA 가격조정 방식인 Locked-Box와 Closing Accounts의 구조적 차이를 설명하고, 매수인 관점에서 각 방식이 부담하는 리스크를 비교하십시오.",

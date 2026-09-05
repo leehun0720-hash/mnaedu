@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFile } from "node:fs/promises";
 
 // Credentials for the tests only; the real ones live in the Vercel project.
 process.env.ADMIN_PASSWORD = "correct-horse";
@@ -42,28 +41,26 @@ test("tampered and forged sessions are rejected", async () => {
 test("pasted question is split into fields", () => {
   const parsed = parseQuestion(
     [
-      "난이도: 상급",
       "적대적 M&A",
-      "대상회사가 포이즌필을 발동했을 때 이를 무력화할 논거를 서술하시오.",
+      "대상회사가 방어수단을 발동했을 때 이를 무력화할 논거를 서술하시오.",
       "① 신주발행 무효의 소",
       "② 주주총회 결의 취소",
       "정답: ①",
-      "출제 의도: 방어수단의 법적 한계를 아는지",
+      "해설: 방어수단의 법적 한계를 아는지",
     ].join("\n")
   );
 
-  assert.equal(parsed.level, "상급");
   assert.equal(parsed.track, "dispute");
   assert.equal(parsed.format, "객관식");
   assert.deepEqual(parsed.choices, ["신주발행 무효의 소", "주주총회 결의 취소"]);
   assert.equal(parsed.answer, "①");
-  assert.match(parsed.intent, /법적 한계/);
+  assert.match(parsed.explanation, /법적 한계/);
 
   // Metadata and the withheld fields must not leak into the visible prompt
-  assert.ok(parsed.prompt.includes("포이즌필"));
-  assert.ok(!parsed.prompt.includes("난이도"));
+  assert.ok(parsed.prompt.includes("방어수단"));
+  
   assert.ok(!parsed.prompt.includes("정답"));
-  assert.ok(!parsed.prompt.includes("출제 의도"));
+  assert.ok(!parsed.prompt.includes("해설"));
 });
 
 test("plain prose stays a written question", () => {
@@ -75,7 +72,7 @@ test("plain prose stays a written question", () => {
 });
 
 test("legacy rows still map onto the current taxonomy", async () => {
-  const { normalizeTrack, normalizeLevel, courseLabel, COURSES, LEVELS } = await import(
+  const { normalizeTrack, courseLabel, COURSES } = await import(
     new URL("../lib/questions.ts", import.meta.url).href
   );
 
@@ -92,38 +89,37 @@ test("legacy rows still map onto the current taxonomy", async () => {
     assert.ok(COURSES.some((c) => c.slug === normalizeTrack(legacy)), `${legacy} must resolve to a listed course`);
     assert.notEqual(courseLabel(legacy), legacy);
   }
-
-  for (const [legacy, expected] of [["초급", "입문"], ["중급", "실무"], ["상급", "상급"]]) {
-    assert.equal(normalizeLevel(legacy), expected);
-    assert.ok(LEVELS.includes(normalizeLevel(legacy)), `${legacy} must resolve to a listed level`);
-  }
 });
 
-test("the admin draft default level is one the API accepts", async () => {
-  const { LEVELS } = await import(new URL("../lib/questions.ts", import.meta.url).href);
-  const source = await readFile(new URL("../app/admin/admin-client.tsx", import.meta.url), "utf8");
-  const [, level] = source.match(/const EMPTY: Draft = \{[^}]*?level: "([^"]+)"/s) ?? [];
-  assert.ok(level, "EMPTY draft must declare a level");
-  assert.ok(LEVELS.includes(level), `default level ${level} must be in ${LEVELS.join("/")}`);
+
+
+// ── DB 오류 해설 ─────────────────────────────────────────────────────────
+const dbErrorUrl = new URL("../lib/db-error.ts", import.meta.url).href;
+const { describeDbError, isMissingTable } = await import(dbErrorUrl);
+
+test("표가 없다는 사실은 drizzle 이 감싼 안쪽에 있다", () => {
+  // Drizzle 은 실패한 질의를 자기 오류로 감싸고 진짜 원인을 cause 에 넣는다.
+  // 겉면만 보면 안내를 못 하고 "문제가 발생했습니다"만 남는다 — 실제로 그랬다.
+  const inner = new Error('relation "articles" does not exist');
+  inner.code = "42P01";
+  const outer = new Error('Failed query: select "id" from "articles" where slug = $1');
+  outer.cause = inner;
+
+  assert.equal(/does not exist/.test(outer.message), false, "겉면에는 원인이 없다");
+  assert.equal(isMissingTable(outer), true, "cause 까지 보면 알아낸다");
+  assert.match(describeDbError(outer), /relation "articles" does not exist/);
+  assert.match(describeDbError(outer), /42P01/);
 });
 
-test("free members get L1 only; paid members get every level", async () => {
-  const { levelsFor, canAccessLevel } = await import(
-    new URL("../lib/membership.ts", import.meta.url).href
-  );
-  const { LEVEL_TIERS } = await import(new URL("../lib/questions.ts", import.meta.url).href);
+test("표와 무관한 오류를 표 없음으로 오인하지 않는다", () => {
+  const outer = new Error("Failed query: insert into articles");
+  outer.cause = new Error("connection timed out");
+  assert.equal(isMissingTable(outer), false);
+  assert.match(describeDbError(outer), /connection timed out/);
+});
 
-  assert.deepEqual(levelsFor("free"), ["입문"]);
-  assert.equal(levelsFor("paid").length, LEVEL_TIERS.length);
-
-  // 무료회원에게 유료 레벨이 열려서는 안 된다
-  assert.equal(canAccessLevel("free", "입문"), true);
-  for (const name of ["기본", "실무", "상급", "마스터"]) {
-    assert.equal(canAccessLevel("free", name), false, `free must not reach ${name}`);
-    assert.equal(canAccessLevel("paid", name), true, `paid must reach ${name}`);
-  }
-
-  // 개편 전 난이도로 저장된 문제도 같은 규칙을 따른다
-  assert.equal(canAccessLevel("free", "초급"), true);
-  assert.equal(canAccessLevel("free", "중급"), false);
+test("cause 가 자기 자신을 가리켜도 멈춘다", () => {
+  const loop = new Error("bad");
+  loop.cause = loop;
+  assert.match(describeDbError(loop), /bad/);
 });

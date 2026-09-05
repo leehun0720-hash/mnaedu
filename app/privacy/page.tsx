@@ -12,20 +12,20 @@ export const metadata: Metadata = {
  *
  * 현재 웹사이트는 회원 시스템과 서버 저장소 없이 운영되며, 모든 양식은
  * 방문자의 메일 프로그램을 통해 이메일로만 접수된다 — 방침도 그 사실
- * 그대로만 적는다. 아카데미 회원가입이 도입되면 항목·기간을 갱신한다.
+ * 그대로만 적는다. 수집 항목이 늘어나면 갱신한다.
  */
 const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "1. 총칙",
     body: [
-      "㈜프론티어 M&A(이하 '당사')는 본 웹사이트(기업 홈페이지와 M&A 아카데미)를 이용하시는 분들의 개인정보를 소중히 다루며, 개인정보 보호법 등 관련 법령을 준수합니다. 본 방침은 웹사이트를 통해 접수되는 개인정보에 적용됩니다.",
+      "㈜프론티어 M&A(이하 '당사')는 본 웹사이트를 이용하시는 분들의 개인정보를 소중히 다루며, 개인정보 보호법 등 관련 법령을 준수합니다. 본 방침은 웹사이트를 통해 접수되는 개인정보에 적용됩니다.",
     ],
   },
   {
     title: "2. 수집하는 개인정보 항목과 방법",
     body: [
       "문의 양식: 성함, 소속·직함, 연락처, 이메일 주소, 문의 내용",
-      "오프라인 과정 문의(아카데미): 성함, 소속·직함, 이메일 주소",
+      "회원 등록: 이메일 주소, 성함",
       "채용 관련 문의: 성함, 연락처, 이메일 주소와 지원자가 스스로 제출하는 이력 정보",
       "현재 모든 양식은 작성 내용을 이용자 본인의 메일 프로그램으로 전달하는 방식으로 접수되며, 웹 서버에는 저장되지 않습니다. 접수된 정보는 당사 이메일로만 보관됩니다.",
     ],
@@ -35,7 +35,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     body: [
       "업무 상담과 문의에 대한 회신 및 개별 상담 일정 안내",
       "채용 절차 안내 및 진행",
-      "아카데미 오프라인 과정 안내",
+      "실무 문제의 정답·해설 열람 확인",
     ],
   },
   {
@@ -65,7 +65,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "8. 방침의 변경",
     body: [
-      "아카데미 회원가입 등 새로운 수집 항목이 도입되면 본 방침을 갱신하고 시행 전에 웹사이트에 고지합니다.",
+      "새로운 수집 항목이 도입되면 본 방침을 갱신하고 시행 전에 웹사이트에 고지합니다.",
     ],
   },
 ];
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
   return (
     <div className="co-page">
       <header className="co-header">
-        <Link className="co-brand" href="/company" aria-label="프론티어 M&A 기업 홈페이지로">
+        <Link className="co-brand" href="/" aria-label="㈜프론티어 M&A 처음으로">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
           <img src="/logo-frontier-group.svg" alt="" width={34} height={30} aria-hidden="true" />
           <span className="co-brand-text">
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
           </span>
         </Link>
         <div className="co-header-actions">
-          <Link className="co-academy-link" href="/company">
+          <Link className="co-cta-link" href="/">
             기업 홈페이지 <i aria-hidden="true">→</i>
           </Link>
         </div>
@@ -127,9 +127,9 @@ export default function PrivacyPage() {
         <div className="co-footer-base">
           <small>© 2026 ㈜프론티어 M&amp;A. ALL RIGHTS RESERVED.</small>
           <small>
-            <Link href="/company">기업 홈페이지</Link>
+            <Link href="/">홈</Link>
             <span aria-hidden="true"> · </span>
-            <Link href="/academy">퀴즈 아카데미</Link>
+            <Link href="/#questions">실무 문제</Link>
             <span aria-hidden="true"> · </span>
             <Link href="/">메인</Link>
           </small>

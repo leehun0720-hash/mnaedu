@@ -3,7 +3,7 @@ import "server-only";
 import { and, desc, eq, notInArray } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
-import { OFFLINE_TRACKS, SEED_QUESTIONS, courseLabel, isOfflineTrack, levelClass, normalizeLevel, type PublicQuestion } from "@/lib/questions";
+import { OFFLINE_TRACKS, SEED_QUESTIONS, courseLabel, isOfflineTrack, type PublicQuestion } from "@/lib/questions";
 
 /**
  * 서버 전용 — postgres 드라이버는 Node 소켓을 쓰므로 클라이언트 번들에
@@ -32,8 +32,6 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
       id: r.id,
       no: i + 1,
       trackLabel: courseLabel(r.track),
-      level: normalizeLevel(r.level),
-      levelClass: levelClass(r.level),
       type: r.format,
       prompt: r.prompt,
       choices: r.choices ?? undefined,
@@ -49,8 +47,6 @@ export type QuizQuestion = {
   id: number;
   track: string;
   trackLabel: string;
-  level: string;
-  levelClass: string;
   format: string;
   prompt: string;
   choices: string[] | null;
@@ -72,8 +68,6 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
       id: r.id,
       track: r.track,
       trackLabel: courseLabel(r.track),
-      level: normalizeLevel(r.level),
-      levelClass: levelClass(r.level),
       format: r.format,
       prompt: r.prompt,
       choices: r.choices ?? null,

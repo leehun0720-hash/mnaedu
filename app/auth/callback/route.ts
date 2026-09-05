@@ -14,9 +14,9 @@ export async function GET(request: Request) {
 
   if (code && supabase) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL("/academy/me", url.origin));
+    if (!error) return NextResponse.redirect(new URL("/", url.origin));
   }
 
   // 링크가 만료됐거나 이미 쓴 경우 — 로그인 화면에서 다시 시작하게 한다
-  return NextResponse.redirect(new URL("/academy/login?expired=1", url.origin));
+  return NextResponse.redirect(new URL("/login?expired=1", url.origin));
 }

@@ -1,13 +1,12 @@
-import { COURSES, LEVELS, type Format, type Level } from "./questions";
+import { COURSES, type Format } from "./questions";
 
 export type ParsedDraft = {
   track: string;
-  level: Level;
   format: Format;
   prompt: string;
   choices: string[];
   answer: string;
-  intent: string;
+  explanation: string;
 };
 
 /** Keywords that point at one of the five business areas, beyond its own name. */
@@ -20,22 +19,10 @@ const COURSE_HINTS: Record<string, string[]> = {
   "investor-club": ["투자클럽", "투자가 클럽", "클럽딜", "클럽 딜", "신디케이트", "조합", "LP", "GP"],
 };
 
-/** 난이도 표기를 받아들이는 폭 — L코드 · 레벨명 · 개편 전 초/중/상급 */
-const LEVEL_TOKENS: [RegExp, string][] = [
-  [/\bL1\b|입문/, "입문"],
-  [/\bL2\b/, "기본"],
-  [/\bL3\b|실무/, "실무"],
-  [/\bL4\b/, "상급"],
-  [/\bL5\b|마스터/, "마스터"],
-  [/초급|난이도\s*[:：]?\s*하/, "입문"],
-  [/중급/, "실무"],
-  [/상급|난이도\s*[:：]?\s*상/, "상급"],
-];
-
 const CHOICE_LINE =
   /^\s*(?:[①②③④⑤⑥⑦⑧⑨⑩]|\(?\d{1,2}[).]|[가나다라마][).]|[A-Ea-e][).])\s*(.+)$/;
 
-const LABELLED = /^\s*(정답|답|출제\s*의도|의도|해설)\s*[:：]\s*(.+)$/;
+const LABELLED = /^\s*(정답|답|해설|설명|풀이)\s*[:：]\s*(.+)$/;
 
 /**
  * Turns pasted text into a draft. Deliberately conservative: it fills what it
@@ -45,12 +32,11 @@ const LABELLED = /^\s*(정답|답|출제\s*의도|의도|해설)\s*[:：]\s*(.+)
 export function parseQuestion(raw: string): ParsedDraft {
   const draft: ParsedDraft = {
     track: "",
-    level: "실무",
     format: "주관식",
     prompt: "",
     choices: [],
     answer: "",
-    intent: "",
+    explanation: "",
   };
   if (!raw.trim()) return draft;
 
@@ -62,7 +48,7 @@ export function parseQuestion(raw: string): ParsedDraft {
     if (labelled) {
       const [, key, value] = labelled;
       if (key === "정답" || key === "답") draft.answer = value.trim();
-      else draft.intent = value.trim();
+      else draft.explanation = value.trim();
       continue;
     }
     const choice = line.match(CHOICE_LINE);
@@ -77,16 +63,6 @@ export function parseQuestion(raw: string): ParsedDraft {
   else draft.choices = [];
 
   const text = raw;
-
-  // Level: an exact level name wins, then L-codes and the legacy 초/중/상급.
-  // "기본"은 본문에 흔히 섞이는 낱말이라 이름만으로는 잡지 않는다.
-  const named = LEVELS.find((l) => l !== "기본" && text.includes(l));
-  if (named) {
-    draft.level = named;
-  } else {
-    const token = LEVEL_TOKENS.find(([re]) => re.test(text));
-    if (token) draft.level = token[1];
-  }
 
   // Course: exact name wins, otherwise the strongest keyword match
   const byName = COURSES.find((c) => text.includes(c.label));
@@ -108,7 +84,7 @@ export function parseQuestion(raw: string): ParsedDraft {
   draft.prompt = promptLines
     .join("\n")
     // Strip the metadata we have already pulled out of the body
-    .replace(/^\s*(난이도|과정|유형)\s*[:：].*$/gm, "")
+    .replace(/^\s*(과정|분야|유형)\s*[:：].*$/gm, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
