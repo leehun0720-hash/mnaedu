@@ -15,6 +15,7 @@ import {
 import { renderSite, themeVars, BUILDER_CSS } from "@/lib/builder/render";
 import { exportHtml, parseDoc, serializeDoc } from "@/lib/builder/export";
 import { starterDoc, blankDoc } from "@/lib/builder/template";
+import { HELP_TOPICS, MANUAL, type HelpId, type ManualBlock } from "@/lib/builder/help";
 import "./builder.css";
 
 const STORAGE_KEY = "fma-builder-doc";
@@ -223,6 +224,75 @@ function ListEditor<T>({
   );
 }
 
+/** 매뉴얼 한 토막 — 문단·단계·표·유의사항 */
+function ManualBlocks({ blocks }: { blocks: ManualBlock[] }) {
+  return (
+    <>
+      {blocks.map((b, i) => {
+        if (b.kind === "p") return <p key={i}>{b.text}</p>;
+        if (b.kind === "note")
+          return (
+            <p key={i} className="bx-manual-note">
+              {b.text}
+            </p>
+          );
+        if (b.kind === "steps")
+          return (
+            <ol key={i} className="bx-manual-steps">
+              {b.items.map((item, j) => (
+                <li key={j}>{item}</li>
+              ))}
+            </ol>
+          );
+        return (
+          <table key={i} className="bx-manual-table">
+            <thead>
+              <tr>
+                {b.head.map((h, j) => (
+                  <th key={j}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {b.rows.map((row, j) => (
+                <tr key={j}>
+                  {row.map((cell, k) =>
+                    k === 0 ? (
+                      <th key={k} scope="row">
+                        {cell}
+                      </th>
+                    ) : (
+                      <td key={k}>{cell}</td>
+                    )
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        );
+      })}
+    </>
+  );
+}
+
+/** 메뉴 옆의 「?」 — 누르면 그 메뉴의 사용법이 뜬다 */
+function HelpDot({ id, onOpen }: { id: HelpId; onOpen: (id: HelpId, anchor: HTMLElement) => void }) {
+  return (
+    <button
+      type="button"
+      className="bx-help-dot"
+      title={`${HELP_TOPICS[id].title} 사용법`}
+      aria-label={`${HELP_TOPICS[id].title} 사용법`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen(id, e.currentTarget);
+      }}
+    >
+      ?
+    </button>
+  );
+}
+
 /* ── 본체 ─────────────────────────────────────────────── */
 
 export default function BuilderClient() {
@@ -235,6 +305,9 @@ export default function BuilderClient() {
   const [tab, setTab] = useState<"sections" | "add" | "theme">("sections");
   const [saved, setSaved] = useState("");
   const canvasRef = useRef<HTMLDivElement>(null);
+  // 사용법 — 메뉴 옆 「?」로 여는 쪽지와, 「사용법」으로 여는 전체 매뉴얼
+  const [help, setHelp] = useState<{ id: HelpId; x: number; y: number } | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
   /** 캔버스 이벤트는 한 번만 붙으므로, 최신 문서를 이 그릇을 통해 본다 */
   const docRef = useRef(doc);
 
@@ -380,6 +453,26 @@ export default function BuilderClient() {
     setSelectedId(null);
   };
 
+  // 열려 있는 안내는 Esc로 닫는다
+  useEffect(() => {
+    if (!help && !manualOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setHelp(null);
+      setManualOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [help, manualOpen]);
+
+  /** 「?」를 누른 자리 아래에 쪽지를 띄운다 — 패널이 잘라내지 않도록 화면 기준으로 놓는다 */
+  const openHelp = useCallback((id: HelpId, anchor: HTMLElement) => {
+    const r = anchor.getBoundingClientRect();
+    setHelp((current) =>
+      current?.id === id ? null : { id, x: Math.min(r.left, window.innerWidth - 332), y: r.bottom + 8 }
+    );
+  }, []);
+
   const undo = () => {
     if (past.length < 1) return;
     const previous = past[past.length - 2] ?? starterDoc();
@@ -411,6 +504,7 @@ export default function BuilderClient() {
           onChange={(e) => commit({ ...doc, title: e.target.value })}
           aria-label="사이트 이름"
         />
+        <HelpDot id="title" onOpen={openHelp} />
         <div className="bx-top-group">
           <button type="button" onClick={undo} disabled={past.length === 0} title="되돌리기">
             ↶
@@ -418,6 +512,7 @@ export default function BuilderClient() {
           <button type="button" onClick={redo} disabled={future.length === 0} title="다시 실행">
             ↷
           </button>
+          <HelpDot id="history" onOpen={openHelp} />
         </div>
         <div className="bx-top-group">
           {(
@@ -431,6 +526,7 @@ export default function BuilderClient() {
               {label}
             </button>
           ))}
+          <HelpDot id="device" onOpen={openHelp} />
         </div>
         <div className="bx-top-group">
           <button
@@ -440,6 +536,7 @@ export default function BuilderClient() {
           >
             {mode === "edit" ? "▶ 미리보기" : "✎ 편집으로"}
           </button>
+          <HelpDot id="preview" onOpen={openHelp} />
         </div>
         <span className="bx-saved">{saved ? `${saved} 저장됨` : ""}</span>
         <div className="bx-top-group">
@@ -487,7 +584,11 @@ export default function BuilderClient() {
           >
             처음부터
           </button>
+          <HelpDot id="save" onOpen={openHelp} />
         </div>
+        <button type="button" className="bx-manual-btn" onClick={() => setManualOpen(true)}>
+          ? 사용법
+        </button>
       </header>
 
       <div className="bx-body">
@@ -509,7 +610,10 @@ export default function BuilderClient() {
 
           {tab === "sections" && (
             <div className="bx-panel">
-              <p className="bx-hint">구역을 눌러 고르고, 순서를 바꾸거나 숨길 수 있습니다.</p>
+              <p className="bx-hint">
+                구역을 눌러 고르고, 순서를 바꾸거나 숨길 수 있습니다.
+                <HelpDot id="tab-sections" onOpen={openHelp} />
+              </p>
               {doc.sections.length === 0 && <p className="bx-empty">구역이 없습니다. 「추가」에서 골라 넣으세요.</p>}
               <ul className="bx-secs">
                 {doc.sections.map((s, i) => (
@@ -547,12 +651,19 @@ export default function BuilderClient() {
                   </li>
                 ))}
               </ul>
+              <p className="bx-legend">
+                ↑↓ 순서 · ● 숨기기 · ⧉ 복제 · ✕ 삭제
+                <HelpDot id="sec-actions" onOpen={openHelp} />
+              </p>
             </div>
           )}
 
           {tab === "add" && (
             <div className="bx-panel">
-              <p className="bx-hint">고른 구역 바로 아래에 들어갑니다.</p>
+              <p className="bx-hint">
+                고른 구역 바로 아래에 들어갑니다.
+                <HelpDot id="tab-add" onOpen={openHelp} />
+              </p>
               <div className="bx-catalog">
                 {SECTION_CATALOG.map((c) => (
                   <button key={c.kind} type="button" onClick={() => addSection(c.kind)}>
@@ -566,7 +677,10 @@ export default function BuilderClient() {
 
           {tab === "theme" && (
             <div className="bx-panel">
-              <p className="bx-hint">색과 글꼴은 사이트 전체에 한 번에 적용됩니다.</p>
+              <p className="bx-hint">
+                색과 글꼴은 사이트 전체에 한 번에 적용됩니다.
+                <HelpDot id="tab-theme" onOpen={openHelp} />
+              </p>
               <div className="bx-presets">
                 {THEME_PRESETS.map((p) => (
                   <button
@@ -681,6 +795,7 @@ export default function BuilderClient() {
               <p className="bx-hint">
                 화면에서 구역을 누르면 이곳에서 배경·여백·레이아웃을 조정할 수 있습니다. 글자는 화면에서 바로
                 눌러 고치세요.
+                <HelpDot id="canvas" onOpen={openHelp} />
               </p>
             </div>
           ) : (
@@ -694,7 +809,10 @@ export default function BuilderClient() {
                 <TextInput value={selected.name} onChange={(v) => patchSection(selectedIndex, { name: v })} />
               </Field>
 
-              <h3 className="bx-group">배치</h3>
+              <h3 className="bx-group">
+                배치
+                <HelpDot id="layout" onOpen={openHelp} />
+              </h3>
               <Field label="여백">
                 <Choice
                   value={selected.padding}
@@ -740,18 +858,90 @@ export default function BuilderClient() {
                 />
               </Field>
 
-              <h3 className="bx-group">배경</h3>
+              <h3 className="bx-group">
+                배경
+                <HelpDot id="background" onOpen={openHelp} />
+              </h3>
               <BackgroundEditor
                 value={selected.background}
                 onChange={(bg) => patchSection(selectedIndex, { background: bg })}
               />
 
-              <h3 className="bx-group">내용</h3>
+              <h3 className="bx-group">
+                내용
+                <HelpDot id="content" onOpen={openHelp} />
+              </h3>
               <SectionFields section={selected} onPatch={(patch) => patchSection(selectedIndex, patch)} />
             </div>
           )}
         </aside>
       </div>
+
+      {/* 메뉴 옆 「?」로 여는 쪽지 — 패널이 잘라내지 않도록 화면 기준으로 띄운다 */}
+      {help && (
+        <>
+          <div className="bx-help-scrim" onClick={() => setHelp(null)} />
+          <div
+            className="bx-help-pop"
+            style={{ left: help.x, top: help.y }}
+            role="dialog"
+            aria-label={`${HELP_TOPICS[help.id].title} 사용법`}
+          >
+            <strong>{HELP_TOPICS[help.id].title}</strong>
+            <ul>
+              {HELP_TOPICS[help.id].lines.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="bx-help-more"
+              onClick={() => {
+                setHelp(null);
+                setManualOpen(true);
+              }}
+            >
+              전체 사용법 보기 →
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* 전체 매뉴얼 */}
+      {manualOpen && (
+        <div className="bx-manual" role="dialog" aria-modal="true" aria-label="홈페이지 빌더 사용법">
+          <div className="bx-manual-scrim" onClick={() => setManualOpen(false)} />
+          <article className="bx-manual-sheet">
+            <header className="bx-manual-head">
+              <div>
+                <h2>홈페이지 빌더 사용법</h2>
+                <p>메뉴 옆의 「?」를 누르면 그 자리의 설명만 따로 보실 수 있습니다.</p>
+              </div>
+              <button type="button" onClick={() => window.print()}>
+                인쇄
+              </button>
+              <button type="button" onClick={() => setManualOpen(false)}>
+                닫기
+              </button>
+            </header>
+            <nav className="bx-manual-toc">
+              {MANUAL.map((chapter) => (
+                <a key={chapter.id} href={`#man-${chapter.id}`}>
+                  {chapter.title}
+                </a>
+              ))}
+            </nav>
+            <div className="bx-manual-body">
+              {MANUAL.map((chapter) => (
+                <section key={chapter.id} id={`man-${chapter.id}`}>
+                  <h3>{chapter.title}</h3>
+                  <ManualBlocks blocks={chapter.blocks} />
+                </section>
+              ))}
+            </div>
+          </article>
+        </div>
+      )}
     </div>
   );
 }

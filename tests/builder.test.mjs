@@ -11,6 +11,9 @@ const { exportHtml, parseDoc, serializeDoc } = await import(exportUrl);
 const { SECTION_CATALOG, newSection, DEFAULT_THEME } = await import(typesUrl);
 const { starterDoc, blankDoc } = await import(templateUrl);
 
+const helpUrl = new URL("../lib/builder/help.ts", import.meta.url).href;
+const { HELP_IDS, HELP_TOPICS, MANUAL } = await import(helpUrl);
+
 test("시작 템플릿은 이 사이트의 골격을 그대로 담는다", () => {
   const doc = starterDoc();
   const kinds = doc.sections.map((s) => s.kind);
@@ -118,4 +121,35 @@ test("저장한 문서는 되읽히고, 남의 JSON은 거부된다", () => {
   assert.equal(parseDoc("그냥 글자"), null);
   assert.equal(parseDoc(JSON.stringify({ version: 9, sections: [], theme: {} })), null);
   assert.equal(parseDoc(JSON.stringify({ version: 1 })), null);
+});
+
+test("화면에 「?」를 놓은 모든 자리에 사용법이 있다", () => {
+  // 메뉴는 늘었는데 안내가 빠지는 일을 여기서 잡는다
+  for (const id of HELP_IDS) {
+    const topic = HELP_TOPICS[id];
+    assert.ok(topic, `${id}에 사용법이 없다`);
+    assert.ok(topic.title.length > 0, `${id}에 제목이 없다`);
+    assert.ok(topic.lines.length > 0, `${id}에 설명이 없다`);
+    for (const line of topic.lines) assert.ok(line.trim().length > 0, `${id}에 빈 줄이 있다`);
+  }
+  // 쓰이지 않는 안내가 남아 옛말이 되는 것도 막는다
+  assert.deepEqual(Object.keys(HELP_TOPICS).sort(), [...HELP_IDS].sort());
+});
+
+test("매뉴얼은 구역 11종을 빠짐없이 설명한다", () => {
+  const tables = MANUAL.flatMap((c) => c.blocks.filter((b) => b.kind === "table"));
+  const listed = tables.flatMap((t) => t.rows.map((r) => r[0]));
+  for (const entry of SECTION_CATALOG) {
+    assert.ok(listed.includes(entry.name), `매뉴얼에 「${entry.name}」 설명이 없다`);
+  }
+});
+
+test("매뉴얼 차례는 서로 겹치지 않는다", () => {
+  // 차례 링크가 같은 id를 가리키면 엉뚱한 곳으로 넘어간다
+  const ids = MANUAL.map((c) => c.id);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const chapter of MANUAL) {
+    assert.ok(chapter.title.length > 0);
+    assert.ok(chapter.blocks.length > 0, `${chapter.id} 장이 비어 있다`);
+  }
 });
