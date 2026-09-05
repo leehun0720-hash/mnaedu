@@ -48,6 +48,10 @@ export type HeaderSection = SectionBase & {
   kind: "header";
   logo: string;
   sub: string;
+  /** 로고 그림. 비어 있으면 강조색 네모가 대신 선다. */
+  logoImage: string;
+  /** 화면에 세울 로고 높이(px). 가로는 비율대로 따라간다. */
+  logoHeight: number;
   menu: MenuItem[];
   cta: string;
 };
@@ -179,7 +183,7 @@ export type SiteDoc = {
 
 /** 구역 추가 화면에 뜨는 목록 — 이름과 한 줄 설명 */
 export const SECTION_CATALOG: { kind: SectionKind; name: string; desc: string }[] = [
-  { kind: "header", name: "상단 메뉴", desc: "로고와 메뉴, 오른쪽 버튼" },
+  { kind: "header", name: "상단 메뉴", desc: "로고 그림·메뉴·오른쪽 버튼" },
   { kind: "hero", name: "히어로", desc: "큰 제목·설명·버튼과 성과 숫자" },
   { kind: "cards", name: "카드 그리드", desc: "분야·서비스·상품을 카드로 나열" },
   { kind: "steps", name: "단계 흐름", desc: "STEP 01~04처럼 순서를 보여 준다" },
@@ -308,6 +312,8 @@ export function newSection(kind: SectionKind): Section {
         width: "wide",
         logo: "브랜드 이름",
         sub: "BRAND",
+        logoImage: "",
+        logoHeight: 34,
         menu: [{ label: "회사소개" }, { label: "서비스" }, { label: "공지사항" }, { label: "문의" }],
         cta: "상담 신청",
       };

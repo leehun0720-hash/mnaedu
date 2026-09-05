@@ -25,6 +25,8 @@ export function starterDoc(): SiteDoc {
         scheme: "light",
         logo: "프론티어 M&A",
         sub: "FRONTIER M&A",
+        logoImage: "",
+        logoHeight: 34,
         menu: [{ label: "회사소개" }, { label: "주요업무" }, { label: "아카데미" }, { label: "공지사항" }],
         cta: "상담 신청",
       },

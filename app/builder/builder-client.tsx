@@ -42,18 +42,36 @@ function setByPath<T>(root: T, path: string, value: unknown): T {
   return clone as T;
 }
 
-/** 올린 사진은 줄여서 담는다 — 원본 그대로면 저장 공간이 금세 찬다 */
-async function fileToDataUrl(file: File, maxWidth = 1600): Promise<string> {
+/**
+ * 올린 그림은 줄여서 담는다 — 원본 그대로면 저장 공간이 금세 찬다.
+ *
+ * 사진과 로고는 규칙이 다르다. 사진은 크게 깔리므로 가로를 넉넉히 두고 JPEG로
+ * 눌러도 되지만, 로고는 **투명 배경이 생명**이라 JPEG로 바꾸면 흰 상자가 되어
+ * 배경 위에 얹히지 않는다. 그래서 로고는 PNG로 남기고 높이를 기준으로 줄인다.
+ */
+type ResizeSpec = { maxWidth: number; maxHeight: number; mime: string; quality: number };
+
+const PHOTO_SPEC: ResizeSpec = { maxWidth: 1600, maxHeight: 1600, mime: "image/jpeg", quality: 0.82 };
+// 화면에는 16~120px로 세우므로, 240px면 고해상도 화면에서도 또렷하다
+const LOGO_SPEC: ResizeSpec = { maxWidth: 960, maxHeight: 240, mime: "image/png", quality: 1 };
+
+async function fileToDataUrl(file: File, spec: ResizeSpec = PHOTO_SPEC): Promise<string> {
+  // SVG는 벡터라 줄일 것이 없다 — 그대로 실으면 어느 크기에서도 또렷하다
+  if (file.type === "image/svg+xml") {
+    const text = await file.text();
+    const base64 = btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+    return `data:image/svg+xml;base64,${base64}`;
+  }
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxWidth / bitmap.width);
+  const scale = Math.min(1, spec.maxWidth / bitmap.width, spec.maxHeight / bitmap.height);
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas unavailable");
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  return canvas.toDataURL("image/jpeg", 0.82);
+  return canvas.toDataURL(spec.mime, spec.quality);
 }
 
 function download(name: string, content: string, type: string) {
@@ -128,13 +146,22 @@ function Choice<T extends string | number>({
   );
 }
 
-/** 사진 한 장 — 주소를 붙여 넣거나 파일을 올린다 */
-function ImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/** 그림 한 장 — 주소를 붙여 넣거나 파일을 올린다 (사진 / 로고) */
+function ImagePicker({
+  value,
+  onChange,
+  mode = "photo",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  mode?: "photo" | "logo";
+}) {
   const [busy, setBusy] = useState(false);
+  const spec = mode === "logo" ? LOGO_SPEC : PHOTO_SPEC;
   return (
     <span className="bx-image">
       <input
-        value={value.startsWith("data:") ? "(올린 사진)" : value}
+        value={value.startsWith("data:") ? (mode === "logo" ? "(올린 로고)" : "(올린 사진)") : value}
         placeholder="https://... 또는 파일 올리기"
         readOnly={value.startsWith("data:")}
         onChange={(e) => onChange(e.target.value)}
@@ -148,13 +175,18 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
             hidden
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (!file) return;
-              setBusy(true);
-              fileToDataUrl(file)
-                .then((url) => onChange(url))
-                .catch(() => alert("사진을 읽지 못했습니다."))
-                .finally(() => setBusy(false));
               e.target.value = "";
+              if (!file) return;
+              // 아주 큰 파일은 줄이는 동안 브라우저가 멎는다 — 문 앞에서 돌려보낸다
+              if (file.size > 12 * 1024 * 1024) {
+                alert("12MB 이하의 그림만 올릴 수 있습니다.");
+                return;
+              }
+              setBusy(true);
+              fileToDataUrl(file, spec)
+                .then((url) => onChange(url))
+                .catch(() => alert("그림을 읽지 못했습니다. 다른 파일로 시도해 보십시오."))
+                .finally(() => setBusy(false));
             }}
           />
         </label>
@@ -164,6 +196,10 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
           </button>
         )}
       </span>
+      {mode === "logo" && value && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img className="bx-logo-preview" src={value} alt="올린 로고 미리보기" />
+      )}
     </span>
   );
 }
@@ -1028,6 +1064,25 @@ function SectionFields({ section, onPatch }: { section: Section; onPatch: (patch
     case "header":
       return (
         <>
+          <Field label="로고 그림 (PNG·SVG 권장)">
+            <ImagePicker mode="logo" value={section.logoImage ?? ""} onChange={(v) => patch({ logoImage: v })} />
+          </Field>
+          {section.logoImage ? (
+            <Field label={`로고 높이 ${Math.round(Number(section.logoHeight) || 34)}px`}>
+              <input
+                type="range"
+                min={16}
+                max={120}
+                value={Math.round(Number(section.logoHeight) || 34)}
+                onChange={(e) => patch({ logoHeight: Number(e.target.value) })}
+              />
+            </Field>
+          ) : (
+            <p className="bx-hint">
+              그림을 올리면 강조색 네모 대신 로고가 섭니다. 올린 그림은 자동으로 줄여 담고, 가로세로 비율은
+              그대로 지킵니다. 글자 없이 로고만 두시려면 아래 두 칸을 비우십시오.
+            </p>
+          )}
           <Field label="로고 글자">
             <TextInput value={section.logo} onChange={(v) => patch({ logo: v })} />
           </Field>

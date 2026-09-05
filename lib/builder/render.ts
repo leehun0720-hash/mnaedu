@@ -106,10 +106,17 @@ function headBlock(
 
 function inner(s: Section, p: string, edit: boolean): string {
   switch (s.kind) {
-    case "header":
+    case "header": {
+      // 로고 그림이 있으면 그것이 상표다 — 없을 때만 강조색 네모가 대신 선다.
+      // 높이만 정하고 가로는 비율대로 두어야 어떤 모양의 로고든 찌그러지지 않는다.
+      const logoUrl = safeUrl(s.logoImage ?? "");
+      const logoH = Math.min(120, Math.max(16, Number(s.logoHeight) || 34));
+      const mark = logoUrl
+        ? `<img class="bf-brand-img" src="${logoUrl}" alt="${escapeHtml(s.logo)}" style="height:${logoH}px">`
+        : `<span class="bf-brand-mark" aria-hidden="true"></span>`;
       return `<div class="bf-nav">
   <div class="bf-brand">
-    <span class="bf-brand-mark" aria-hidden="true"></span>
+    ${mark}
     <span class="bf-brand-text">
       <strong${ed(`${p}.logo`, edit)}>${escapeHtml(s.logo)}</strong>
       <small${ed(`${p}.sub`, edit)}>${escapeHtml(s.sub)}</small>
@@ -120,6 +127,7 @@ function inner(s: Section, p: string, edit: boolean): string {
     .join("")}</nav>
   <span class="bf-btn bf-btn--sm"${ed(`${p}.cta`, edit)}>${escapeHtml(s.cta)}</span>
 </div>`;
+    }
 
     case "hero":
       return `<div class="bf-hero">
@@ -352,6 +360,8 @@ export const BUILDER_CSS = `
 .bf-nav{display:flex;align-items:center;gap:28px}
 .bf-brand{display:flex;align-items:center;gap:11px}
 .bf-brand-mark{width:26px;height:26px;background:var(--bf-accent);border-radius:calc(var(--bf-radius) + 2px);flex:none}
+/* 높이만 정하고 가로는 auto — 가로세로 어느 모양의 로고든 찌그러지지 않는다 */
+.bf-brand-img{display:block;width:auto;max-width:260px;object-fit:contain;flex:none}
 .bf-brand-text strong{display:block;font-family:var(--bf-heading);font-size:1.06em;font-weight:800;line-height:1.2}
 .bf-brand-text small{display:block;font-size:.62em;letter-spacing:.22em;color:var(--bf-muted);margin-top:1px}
 [data-scheme="dark"] .bf-brand-text small{color:#B3A7A1}

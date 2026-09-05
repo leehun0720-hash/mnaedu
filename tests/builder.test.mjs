@@ -153,3 +153,54 @@ test("매뉴얼 차례는 서로 겹치지 않는다", () => {
     assert.ok(chapter.blocks.length > 0, `${chapter.id} 장이 비어 있다`);
   }
 });
+
+test("상단 메뉴는 로고 그림이 있으면 그림을, 없으면 네모를 세운다", () => {
+  const doc = blankDoc();
+  const header = newSection("header");
+  doc.sections = [header];
+  // 그림이 없을 때는 강조색 네모가 상표 자리를 지킨다.
+  // (스타일시트에는 .bf-brand-img 규칙이 늘 있으므로 <img> 마크업으로 판별한다)
+  assert.match(exportHtml(doc), /<span class="bf-brand-mark"/);
+  assert.doesNotMatch(exportHtml(doc), /<img class="bf-brand-img"/);
+
+  doc.sections = [{ ...header, logoImage: "data:image/png;base64,AAAA", logoHeight: 48 }];
+  const html = exportHtml(doc);
+  assert.match(html, /<img class="bf-brand-img" src="data:image\/png;base64,AAAA"/);
+  assert.match(html, /style="height:48px"/);
+  assert.doesNotMatch(html, /<span class="bf-brand-mark"/);
+  // 로고 글자는 그림의 대체 텍스트로도 남는다
+  assert.match(html, /alt="브랜드 이름"/);
+});
+
+test("로고 높이는 읽을 수 있는 범위를 벗어나지 않는다", () => {
+  const doc = blankDoc();
+  const header = { ...newSection("header"), logoImage: "https://example.com/logo.svg" };
+  // 0이나 9999가 들어와도 화면이 무너지지 않아야 한다
+  doc.sections = [{ ...header, logoHeight: 0 }];
+  assert.match(exportHtml(doc), /height:34px/);
+  doc.sections = [{ ...header, logoHeight: 9999 }];
+  assert.match(exportHtml(doc), /height:120px/);
+  doc.sections = [{ ...header, logoHeight: 8 }];
+  assert.match(exportHtml(doc), /height:16px/);
+});
+
+test("로고 자리에도 이상한 주소는 실리지 않는다", () => {
+  const doc = blankDoc();
+  doc.sections = [{ ...newSection("header"), logoImage: "javascript:alert(1)" }];
+  const html = exportHtml(doc);
+  assert.doesNotMatch(html, /javascript:/);
+  // 주소가 거부되면 네모가 대신 선다 — 상표 자리가 비지 않는다
+  assert.match(html, /<span class="bf-brand-mark"/);
+});
+
+test("예전에 저장한 문서에도 로고 항목이 없어 탈이 나지 않는다", () => {
+  // 로고 기능 이전에 저장해 둔 문서를 그대로 열어도 그려져야 한다
+  const doc = blankDoc();
+  const legacy = newSection("header");
+  delete legacy.logoImage;
+  delete legacy.logoHeight;
+  doc.sections = [legacy];
+  const html = exportHtml(doc);
+  assert.match(html, /<span class="bf-brand-mark"/);
+  assert.match(html, /bf-nav/);
+});
