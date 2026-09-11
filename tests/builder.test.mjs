@@ -12,7 +12,7 @@ const { SECTION_CATALOG, newSection, DEFAULT_THEME } = await import(typesUrl);
 const { starterDoc, blankDoc } = await import(templateUrl);
 
 const helpUrl = new URL("../lib/builder/help.ts", import.meta.url).href;
-const { HELP_IDS, HELP_TOPICS, MANUAL } = await import(helpUrl);
+const { HELP_IDS, HELP_TOPICS, MANUAL, TOUR_STEPS } = await import(helpUrl);
 
 test("시작 템플릿은 이 사이트의 골격을 그대로 담는다", () => {
   const doc = starterDoc();
@@ -203,4 +203,43 @@ test("예전에 저장한 문서에도 로고 항목이 없어 탈이 나지 않
   const html = exportHtml(doc);
   assert.match(html, /<span class="bf-brand-mark"/);
   assert.match(html, /bf-nav/);
+});
+
+test("따라 하기는 처음부터 끝까지 이어진다", () => {
+  assert.ok(TOUR_STEPS.length >= 8, "걸음이 너무 적으면 따라 할 것이 없다");
+  const ids = TOUR_STEPS.map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length, "걸음 id가 겹친다");
+  for (const step of TOUR_STEPS) {
+    assert.ok(step.title.trim().length > 0, `${step.id}에 제목이 없다`);
+    assert.ok(step.body.trim().length > 0, `${step.id}에 설명이 없다`);
+  }
+  // 첫 걸음과 마지막 걸음은 화면을 짚지 않고 인사와 마무리를 한다
+  assert.equal(TOUR_STEPS[0].target, undefined);
+});
+
+test("따라 하기가 짚는 자리는 화면에 실제로 있는 이름이다", () => {
+  // 선택자가 어긋나면 조명만 사라지고 이유를 알 수 없다
+  const known = [
+    ".bf-sec--hero .bf-h1",
+    ".bx-secs",
+    ".bx-right",
+    '[data-tour="logo"]',
+    ".bx-catalog",
+    ".bx-presets",
+    '[data-tour="preview"]',
+    '[data-tour="export"]',
+    ".bx-manual-btn",
+  ];
+  for (const step of TOUR_STEPS) {
+    if (!step.target) continue;
+    assert.ok(known.includes(step.target), `${step.id}가 짚는 ${step.target}는 등록되지 않은 자리다`);
+  }
+});
+
+test("화면을 준비시키는 지시는 정해진 것만 쓴다", () => {
+  const allowed = ["tab:sections", "tab:add", "tab:theme", "select:header", "mode:edit"];
+  for (const step of TOUR_STEPS) {
+    if (!step.prepare) continue;
+    assert.ok(allowed.includes(step.prepare), `${step.id}의 ${step.prepare}는 화면이 모르는 지시다`);
+  }
 });

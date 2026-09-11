@@ -503,3 +503,91 @@
   background:
     repeating-conic-gradient(#3A3835 0% 25%, #2E2D2A 0% 50%) 0 0 / 12px 12px;
 }
+
+/* ── 따라 하기 ───────────────────────────────────────────── */
+.bx-tour-btn {
+  flex: none;
+  padding: 7px 12px;
+  background: var(--bx-accent);
+  border: 1px solid var(--bx-accent);
+  border-radius: 5px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bx-tour-btn:hover { filter: brightness(1.1); }
+
+.bx-tour { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
+.bx-tour-scrim { position: absolute; inset: 0; background: rgba(12, 10, 9, 0.66); pointer-events: auto; }
+
+/* 짚은 자리만 남기고 나머지를 덮는다 — 그림자 하나로 구멍을 낸다 */
+.bx-tour-spot {
+  position: fixed;
+  border: 2px solid var(--bx-accent);
+  border-radius: 7px;
+  box-shadow: 0 0 0 9999px rgba(12, 10, 9, 0.66);
+  transition: top 0.18s, left 0.18s, width 0.18s, height 0.18s;
+}
+
+.bx-tour-pop {
+  position: fixed;
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  padding: 15px 17px 13px;
+  background: #322F2B;
+  border: 1px solid #4A4741;
+  border-radius: 9px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  color: var(--bx-text);
+  pointer-events: auto;
+}
+.bx-tour-pop.is-center { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 420px; }
+
+.bx-tour-progress { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.bx-tour-progress > span:first-child {
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.1em;
+  color: var(--bx-dim);
+  flex: none;
+}
+.bx-tour-bar { flex: 1; height: 3px; background: #4A4741; border-radius: 2px; overflow: hidden; }
+.bx-tour-bar i { display: block; height: 100%; background: var(--bx-accent); transition: width 0.25s; }
+
+.bx-tour-pop strong { display: block; font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+.bx-tour-pop p { margin: 0 0 8px; font-size: 12.2px; line-height: 1.72; color: #CFC8C1; }
+.bx-tour-todo {
+  padding: 8px 11px;
+  background: rgba(216, 52, 26, 0.13);
+  border-left: 2px solid var(--bx-accent);
+  border-radius: 0 4px 4px 0;
+  color: #F0B5A6 !important;
+  font-weight: 600;
+}
+
+.bx-tour-acts { display: flex; gap: 6px; margin-top: 12px; }
+.bx-tour-acts button {
+  padding: 8px 14px;
+  background: var(--bx-panel-2);
+  border: 1px solid var(--bx-line);
+  border-radius: 5px;
+  color: var(--bx-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.bx-tour-acts button:hover { background: #46433F; }
+.bx-tour-acts .is-primary {
+  margin-left: auto;
+  background: var(--bx-accent);
+  border-color: var(--bx-accent);
+  color: #fff;
+  font-weight: 700;
+}
+.bx-tour-acts .is-primary:hover { filter: brightness(1.1); }
+.bx-tour-skip { color: var(--bx-dim) !important; border-color: transparent !important; background: transparent !important; }
+.bx-tour-skip:hover { color: var(--bx-text) !important; }
+
+@media (max-width: 900px) {
+  .bx-tour-pop { width: calc(100vw - 24px); left: 12px !important; }
+  .bx-tour-pop.is-center { left: 12px !important; transform: translateY(-50%); }
+}

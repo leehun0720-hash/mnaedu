@@ -15,10 +15,12 @@ import {
 import { renderSite, themeVars, BUILDER_CSS } from "@/lib/builder/render";
 import { exportHtml, parseDoc, serializeDoc } from "@/lib/builder/export";
 import { starterDoc, blankDoc } from "@/lib/builder/template";
-import { HELP_TOPICS, MANUAL, type HelpId, type ManualBlock } from "@/lib/builder/help";
+import { HELP_TOPICS, MANUAL, TOUR_STEPS, type HelpId, type ManualBlock } from "@/lib/builder/help";
 import "./builder.css";
 
 const STORAGE_KEY = "fma-builder-doc";
+/** 따라 하기를 이미 마쳤는지 — 처음 오신 분에게만 저절로 뜬다 */
+const TOUR_KEY = "fma-builder-tour";
 const HISTORY_LIMIT = 60;
 
 /* ── 경로로 값 넣기 ─────────────────────────────────────────
@@ -85,9 +87,18 @@ function download(name: string, content: string, type: string) {
 
 /* ── 속성판 부품 ───────────────────────────────────────── */
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  tour,
+}: {
+  label: string;
+  children: React.ReactNode;
+  /** 따라 하기가 짚을 자리 */
+  tour?: string;
+}) {
   return (
-    <label className="bx-field">
+    <label className="bx-field" data-tour={tour}>
       <span>{label}</span>
       {children}
     </label>
@@ -344,6 +355,9 @@ export default function BuilderClient() {
   // 사용법 — 메뉴 옆 「?」로 여는 쪽지와, 「사용법」으로 여는 전체 매뉴얼
   const [help, setHelp] = useState<{ id: HelpId; x: number; y: number } | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
+  // 따라 하기 — 몇 번째 걸음인지, 그리고 지금 짚고 있는 자리
+  const [tourStep, setTourStep] = useState<number | null>(null);
+  const [spot, setSpot] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   /** 캔버스 이벤트는 한 번만 붙으므로, 최신 문서를 이 그릇을 통해 본다 */
   const docRef = useRef(doc);
 
@@ -489,17 +503,101 @@ export default function BuilderClient() {
     setSelectedId(null);
   };
 
+  /** 따라 하기 한 걸음 — 짚을 자리가 보이도록 화면을 먼저 준비한다 */
+  const goToTourStep = useCallback((index: number) => {
+    const step = TOUR_STEPS[index];
+    if (!step) return;
+    if (step.prepare === "tab:sections") setTab("sections");
+    if (step.prepare === "tab:add") setTab("add");
+    if (step.prepare === "tab:theme") setTab("theme");
+    if (step.prepare === "mode:edit") setMode("edit");
+    if (step.prepare === "select:header") {
+      setMode("edit");
+      setTab("sections");
+      // 상단 메뉴 구역이 없을 수도 있다 — 그때는 첫 구역을 고른다
+      const header = docRef.current.sections.find((sec) => sec.kind === "header") ?? docRef.current.sections[0];
+      if (header) setSelectedId(header.id);
+    }
+    setHelp(null);
+    setManualOpen(false);
+    setTourStep(index);
+  }, []);
+
+  const endTour = useCallback(() => {
+    setTourStep(null);
+    setSpot(null);
+    try {
+      localStorage.setItem(TOUR_KEY, "done");
+    } catch {
+      // 저장이 막혀 있어도 이번 방문에는 다시 뜨지 않는다
+    }
+  }, []);
+
+  // 처음 오신 분에게는 저절로 뜬다. 한 번 마치면 다시 뜨지 않는다.
+  useEffect(() => {
+    let alive = true;
+    Promise.resolve()
+      .then(() => {
+        try {
+          return localStorage.getItem(TOUR_KEY);
+        } catch {
+          return "done";
+        }
+      })
+      .then((done) => {
+        if (alive && !done) goToTourStep(0);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [goToTourStep]);
+
+  /* 짚을 자리를 잰다. 화면이 바뀐 뒤에 재야 하므로 다음 그리기까지 기다렸다가
+     콜백 안에서 값을 넣는다 — 효과 본문에서 바로 넣으면 리렌더가 꼬리를 문다. */
+  useEffect(() => {
+    if (tourStep === null) return;
+    const step = TOUR_STEPS[tourStep];
+    let alive = true;
+    const measure = () => {
+      if (!alive) return;
+      if (!step.target) {
+        setSpot(null);
+        return;
+      }
+      const el = document.querySelector(step.target);
+      if (!el) {
+        setSpot(null);
+        return;
+      }
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const r = el.getBoundingClientRect();
+      setSpot({ x: r.left, y: r.top, w: r.width, h: r.height });
+    };
+    // 탭 전환·구역 선택이 화면에 반영된 뒤에 재야 자리가 맞는다
+    const first = requestAnimationFrame(() => requestAnimationFrame(measure));
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      alive = false;
+      cancelAnimationFrame(first);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [tourStep, tab, mode, selectedId]);
+
   // 열려 있는 안내는 Esc로 닫는다
   useEffect(() => {
-    if (!help && !manualOpen) return;
+    if (!help && !manualOpen && tourStep === null) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setHelp(null);
       setManualOpen(false);
+      if (tourStep !== null) endTour();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [help, manualOpen]);
+  }, [help, manualOpen, tourStep, endTour]);
 
   /** 「?」를 누른 자리 아래에 쪽지를 띄운다 — 패널이 잘라내지 않도록 화면 기준으로 놓는다 */
   const openHelp = useCallback((id: HelpId, anchor: HTMLElement) => {
@@ -567,6 +665,7 @@ export default function BuilderClient() {
         <div className="bx-top-group">
           <button
             type="button"
+            data-tour="preview"
             className={mode === "preview" ? "is-on" : ""}
             onClick={() => setMode(mode === "edit" ? "preview" : "edit")}
           >
@@ -576,7 +675,11 @@ export default function BuilderClient() {
         </div>
         <span className="bx-saved">{saved ? `${saved} 저장됨` : ""}</span>
         <div className="bx-top-group">
-          <button type="button" onClick={() => download(`${doc.title || "site"}.html`, exportHtml(doc), "text/html")}>
+          <button
+            type="button"
+            data-tour="export"
+            onClick={() => download(`${doc.title || "site"}.html`, exportHtml(doc), "text/html")}
+          >
             HTML 내보내기
           </button>
           <button
@@ -622,6 +725,9 @@ export default function BuilderClient() {
           </button>
           <HelpDot id="save" onOpen={openHelp} />
         </div>
+        <button type="button" className="bx-tour-btn" onClick={() => goToTourStep(0)}>
+          ▸ 따라 하기
+        </button>
         <button type="button" className="bx-manual-btn" onClick={() => setManualOpen(true)}>
           ? 사용법
         </button>
@@ -943,6 +1049,66 @@ export default function BuilderClient() {
         </>
       )}
 
+      {/* 따라 하기 — 그 자리를 밝히고 무엇을 하면 되는지 알려 준다 */}
+      {tourStep !== null &&
+        (() => {
+          const step = TOUR_STEPS[tourStep];
+          const last = tourStep === TOUR_STEPS.length - 1;
+          // 말풍선은 짚은 자리 아래에 두되, 아래가 좁으면 위로 올린다
+          const POP = 210;
+          const below = spot ? spot.y + spot.h + 14 : 0;
+          const above = spot ? spot.y - POP - 14 : 0;
+          const fitsBelow = spot ? below + POP < window.innerHeight : true;
+          const popStyle: React.CSSProperties = spot
+            ? {
+                top: fitsBelow ? below : Math.max(12, above),
+                left: Math.min(Math.max(12, spot.x), window.innerWidth - 372),
+              }
+            : {};
+          return (
+            <div className="bx-tour" role="dialog" aria-modal="true" aria-label="따라 하기">
+              {spot ? (
+                <div
+                  className="bx-tour-spot"
+                  style={{ top: spot.y - 6, left: spot.x - 6, width: spot.w + 12, height: spot.h + 12 }}
+                />
+              ) : (
+                <div className="bx-tour-scrim" />
+              )}
+              <div className={`bx-tour-pop ${spot ? "" : "is-center"}`} style={popStyle}>
+                <div className="bx-tour-progress">
+                  <span>
+                    {tourStep + 1} / {TOUR_STEPS.length}
+                  </span>
+                  <span className="bx-tour-bar">
+                    <i style={{ width: `${((tourStep + 1) / TOUR_STEPS.length) * 100}%` }} />
+                  </span>
+                </div>
+                <strong>{step.title}</strong>
+                <p>{step.body}</p>
+                {step.todo && <p className="bx-tour-todo">{step.todo}</p>}
+                <div className="bx-tour-acts">
+                  <button type="button" className="bx-tour-skip" onClick={endTour}>
+                    그만두기
+                  </button>
+                  {tourStep > 0 && (
+                    <button type="button" onClick={() => goToTourStep(tourStep - 1)}>
+                      이전
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="is-primary"
+                    onClick={() => (last ? endTour() : goToTourStep(tourStep + 1))}
+                  >
+                    {last ? "마치기" : "다음 →"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
       {/* 전체 매뉴얼 */}
       {manualOpen && (
         <div className="bx-manual" role="dialog" aria-modal="true" aria-label="홈페이지 빌더 사용법">
@@ -953,6 +1119,15 @@ export default function BuilderClient() {
                 <h2>홈페이지 빌더 사용법</h2>
                 <p>메뉴 옆의 「?」를 누르면 그 자리의 설명만 따로 보실 수 있습니다.</p>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setManualOpen(false);
+                  goToTourStep(0);
+                }}
+              >
+                따라 하며 배우기
+              </button>
               <button type="button" onClick={() => window.print()}>
                 인쇄
               </button>
@@ -1064,7 +1239,7 @@ function SectionFields({ section, onPatch }: { section: Section; onPatch: (patch
     case "header":
       return (
         <>
-          <Field label="로고 그림 (PNG·SVG 권장)">
+          <Field label="로고 그림 (PNG·SVG 권장)" tour="logo">
             <ImagePicker mode="logo" value={section.logoImage ?? ""} onChange={(v) => patch({ logoImage: v })} />
           </Field>
           {section.logoImage ? (
