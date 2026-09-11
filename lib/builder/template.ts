@@ -6,6 +6,7 @@
  * 배너 → 푸터)을 그대로 얹어 두고, 글자만 바꿔도 사이트 하나가 되게 한다.
  */
 
+import { CONTACT } from "@/lib/company";
 import { DEFAULT_THEME, THEME_PRESETS, newId, type SiteDoc } from "./types";
 
 export function starterDoc(): SiteDoc {
@@ -123,11 +124,11 @@ export function starterDoc(): SiteDoc {
         eyebrow: "SCOPE",
         title: "제공 범위",
         lead: "단계별로 열리는 범위입니다.",
-        columns: ["비회원", "무료회원", "유료회원"],
+        columns: ["비회원", "회원", "오프라인 과정"],
         rows: [
-          { label: "업무 소개 열람", cells: ["O", "O", "O"] },
-          { label: "입문 과정", cells: ["X", "O", "O"] },
-          { label: "전문가 과정", cells: ["X", "X", "O"] },
+          { label: "업무자료 열람·내려받기", cells: ["O", "O", "O"] },
+          { label: "평가문제 열람", cells: ["O", "O", "O"] },
+          { label: "정답·해설 열람", cells: ["X", "O", "O"] },
           { label: "1:1 상담", cells: ["X", "X", "O"] },
         ],
       },
@@ -198,8 +199,8 @@ export function starterDoc(): SiteDoc {
         scheme: "dark",
         brand: "㈜프론티어 M&A",
         lines: [
-          "서울특별시 ○○구 ○○로 00, 0층",
-          "대표전화 02-000-0000 · 사업자등록번호 000-00-00000",
+          `${CONTACT.addressLines[0]}, ${CONTACT.addressLines[1]}`,
+          `대표전화 ${CONTACT.tel} · ${CONTACT.email}`,
         ],
         links: [{ label: "개인정보처리방침" }, { label: "이용약관" }, { label: "오시는 길" }],
       },
