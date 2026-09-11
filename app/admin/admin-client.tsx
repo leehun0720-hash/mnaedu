@@ -82,7 +82,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-type Tab = "questions" | "articles" | "documents" | "members";
+type Tab = "questions" | "articles" | "documents" | "members" | "settings";
 
 type ArticleRow = {
   id: number;
@@ -161,6 +161,12 @@ export default function AdminClient({
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [memberTotal, setMemberTotal] = useState(0);
 
+  // 비밀번호 변경
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNext, setPwNext] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwInfo, setPwInfo] = useState<{ changedAt: string | null; usingEnv: boolean } | null>(null);
+
   const readJson = useCallback(async <T,>(url: string): Promise<T | FetchFailure> => {
     try {
       const res = await fetch(url);
@@ -212,6 +218,47 @@ export default function AdminClient({
     setMemberTotal(data.total);
   }, [readJson]);
 
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    if (pwNext !== pwConfirm) {
+      setError("새 비밀번호와 확인이 서로 다릅니다.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current: pwCurrent, next: pwNext }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "비밀번호를 바꾸지 못했습니다.");
+        return;
+      }
+      setPwCurrent("");
+      setPwNext("");
+      setPwConfirm("");
+      setNotice("비밀번호를 바꿨습니다. 다른 곳에 남아 있던 로그인은 모두 끊겼습니다.");
+      await loadPasswordInfo();
+    } catch {
+      setError("연결에 실패했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const loadPasswordInfo = useCallback(async () => {
+    const data = await readJson<{ changedAt: string | null; usingEnv: boolean }>("/api/admin/password");
+    if (isFailure(data)) {
+      setError(data.message);
+      return;
+    }
+    setPwInfo(data);
+  }, [readJson]);
+
   const loadArticles = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/articles");
@@ -242,14 +289,16 @@ export default function AdminClient({
           ? loadArticles
           : tab === "documents"
             ? loadDocuments
-            : loadMembers;
+            : tab === "settings"
+              ? loadPasswordInfo
+              : loadMembers;
     Promise.resolve()
       .then(() => (alive ? load() : undefined))
       .catch(() => undefined);
     return () => {
       alive = false;
     };
-  }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers]);
+  }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers, loadPasswordInfo]);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -624,6 +673,9 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           </button>
           <button data-on={tab === "members"} onClick={() => setTab("members")}>
             회원
+          </button>
+          <button data-on={tab === "settings"} onClick={() => setTab("settings")}>
+            비밀번호
           </button>
         </nav>
 
@@ -1171,6 +1223,66 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 ))}
               </ul>
             )}
+          </section>
+        )}
+
+        {tab === "settings" && (
+          <section className="admin-card">
+            <h2>비밀번호 변경</h2>
+            <p className="admin-note">
+              {pwInfo?.usingEnv
+                ? "지금은 배포 설정에 넣어 둔 비밀번호로 들어오고 계십니다. 한 번 바꾸시면 그다음부터는 여기서 정하신 값만 통합니다."
+                : pwInfo?.changedAt
+                  ? `마지막으로 바꾸신 날: ${pwInfo.changedAt.slice(0, 10)}`
+                  : "지금 쓰시는 비밀번호를 확인한 뒤 새 값으로 바꿉니다."}
+            </p>
+
+            <form className="admin-form" onSubmit={changePassword}>
+              <label className="admin-field">
+                <span>지금 비밀번호</span>
+                <input
+                  type="password"
+                  value={pwCurrent}
+                  onChange={(e) => setPwCurrent(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+
+              <label className="admin-field">
+                <span>새 비밀번호</span>
+                <input
+                  type="password"
+                  value={pwNext}
+                  onChange={(e) => setPwNext(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={10}
+                  required
+                />
+                <i className="admin-hint">10자 이상. 길수록 안전합니다 — 브라우저가 만들어 주는 값을 쓰셔도 됩니다.</i>
+              </label>
+
+              <label className="admin-field">
+                <span>새 비밀번호 확인</span>
+                <input
+                  type="password"
+                  value={pwConfirm}
+                  onChange={(e) => setPwConfirm(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={10}
+                  required
+                />
+              </label>
+
+              <button className="admin-btn" type="submit" disabled={busy || !dbConfigured}>
+                {busy ? "바꾸는 중…" : "비밀번호 바꾸기"}
+              </button>
+            </form>
+
+            <p className="admin-note">
+              바꾸시면 다른 기기·브라우저에 남아 있던 로그인이 모두 끊깁니다. 이 화면만 그대로 이어집니다.
+              비밀번호를 잊으셨을 때는 TEN AI에 연락 주시면 배포 설정에서 되살려 드립니다.
+            </p>
           </section>
         )}
       </div>

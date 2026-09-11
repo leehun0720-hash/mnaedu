@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { and, count, desc, eq, ilike, sql, type SQL } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
-import { SESSION_COOKIE, verifySession } from "@/lib/auth";
+import { SESSION_COOKIE } from "@/lib/auth";
+import { verifySession } from "@/lib/admin-auth";
 import { COURSES, FORMATS, normalizeTrack } from "@/lib/questions";
 
 /** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */

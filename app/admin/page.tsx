@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { isDbConfigured } from "@/db";
-import { SESSION_COOKIE, isAuthConfigured, verifySession } from "@/lib/auth";
+import { SESSION_COOKIE, isAuthConfigured } from "@/lib/auth";
+import { verifySession } from "@/lib/admin-auth";
 import AdminClient from "./admin-client";
 
 // Never index the admin surface, and never serve it from a cache

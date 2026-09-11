@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  createSession,
-  isAuthConfigured,
-  sessionCookie,
-  verifyPassword,
-  SESSION_MAX_AGE,
-} from "@/lib/auth";
+import { sessionCookie, SESSION_MAX_AGE } from "@/lib/auth";
+import { createSession, verifyPassword } from "@/lib/admin-auth";
 import { blockedFor, clearFailures, clientIp, recordFailure } from "@/lib/login-throttle";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +26,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isAuthConfigured()) {
+  // 서명 열쇠가 없으면 세션을 만들 수 없다. 비밀번호 쪽은 환경변수가 비어도
+  // 저장된 해시로 들어오실 수 있으므로 여기서 막지 않는다.
+  if (!process.env.ADMIN_SESSION_SECRET) {
     // 미설정 상태를 알려 주지 않는다 — 화면 쪽에서 별도로 안내한다
     await recordFailure(ip);
     return NextResponse.json(WRONG, { status: 401 });
@@ -45,7 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "요청을 읽을 수 없습니다." }, { status: 400 });
   }
 
-  if (!verifyPassword(password)) {
+  if (!(await verifyPassword(password))) {
     await recordFailure(ip);
     return NextResponse.json(WRONG, { status: 401 });
   }

@@ -99,6 +99,12 @@ CREATE TABLE IF NOT EXISTS "admin_login_attempts" (
 	"blocked_until" timestamp with time zone
 );
 
+CREATE TABLE IF NOT EXISTS "admin_credentials" (
+	"id" integer PRIMARY KEY DEFAULT 1 NOT NULL,
+	"password_hash" text NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
 -- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다
 -- ─────────────────────────────────────────────────────────────
@@ -117,12 +123,15 @@ ALTER TABLE "documents" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "articles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "admin_login_attempts" ENABLE ROW LEVEL SECURITY;
+-- 비밀번호 해시가 담기는 표입니다. 여기가 새면 관리자 화면이 통째로 열립니다.
+ALTER TABLE "admin_credentials" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
 REVOKE ALL ON TABLE "documents" FROM anon, authenticated;
 REVOKE ALL ON TABLE "members" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_login_attempts" FROM anon, authenticated;
+REVOKE ALL ON TABLE "admin_credentials" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;

@@ -174,3 +174,19 @@ export const adminLoginAttempts = pgTable("admin_login_attempts", {
   firstFailAt: timestamp("first_fail_at", { withTimezone: true }).notNull().defaultNow(),
   blockedUntil: timestamp("blocked_until", { withTimezone: true }),
 });
+
+/**
+ * 관리자 비밀번호.
+ *
+ * 환경변수(ADMIN_PASSWORD)는 처음 문을 여는 열쇠일 뿐이다. 회장이 화면에서
+ * 직접 바꾸신 뒤에는 이 표의 값이 기준이 된다 — 환경변수를 고치려면
+ * 배포 설정에 들어가야 하는데, 그것을 매번 하실 수는 없기 때문이다.
+ *
+ * 원문은 담지 않는다. 되돌릴 수 없는 해시만 둔다(lib/password-hash.ts).
+ * 행은 하나뿐이므로 id를 1로 고정한다.
+ */
+export const adminCredentials = pgTable("admin_credentials", {
+  id: integer("id").primaryKey().default(1),
+  passwordHash: text("password_hash").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -8,7 +8,12 @@ process.env.ADMIN_SESSION_SECRET = "test-secret-" + "x".repeat(32);
 const authUrl = new URL("../lib/auth.ts", import.meta.url).href;
 const parseUrl = new URL("../lib/parse-question.ts", import.meta.url).href;
 
-const { createSession, verifySession, verifyPassword } = await import(authUrl);
+const { createSessionToken, verifySessionToken, verifyEnvPassword } = await import(authUrl);
+
+// 비밀번호를 바꾸신 적이 없을 때의 기준(배포 설정)과, 세대 "0"을 단 세션
+const createSession = () => createSessionToken("0");
+const verifySession = (token) => verifySessionToken(token, "0");
+const verifyPassword = verifyEnvPassword;
 const { parseQuestion } = await import(parseUrl);
 
 test("password check accepts only the configured value", () => {
@@ -122,4 +127,23 @@ test("cause 가 자기 자신을 가리켜도 멈춘다", () => {
   const loop = new Error("bad");
   loop.cause = loop;
   assert.match(describeDbError(loop), /bad/);
+});
+
+test("비밀번호를 바꾸면 그 전에 내준 세션은 끊긴다", async () => {
+  // 세션에는 "비밀번호 세대"가 새겨진다. 바꾸는 순간 세대가 달라지므로,
+  // 다른 기기에 남아 있던 로그인이 한꺼번에 무효가 된다.
+  const before = await createSessionToken("1757000000000");
+  assert.equal(await verifySessionToken(before, "1757000000000"), true);
+  assert.equal(await verifySessionToken(before, "1757999999999"), false);
+
+  // 저장소를 읽지 못했을 때(null)는 세대 확인만 건너뛰고 서명은 그대로 본다
+  assert.equal(await verifySessionToken(before, null), true);
+  assert.equal(await verifySessionToken("1757000000000.1757000000000.forged", null), false);
+});
+
+test("세대를 손대면 서명이 어긋난다", async () => {
+  const token = await createSessionToken("100");
+  const [expiry, , signature] = token.split(".");
+  // 세대만 바꿔치기해도 서명 안에 함께 들어 있으므로 통과하지 못한다
+  assert.equal(await verifySessionToken(`${expiry}.999.${signature}`, "999"), false);
 });

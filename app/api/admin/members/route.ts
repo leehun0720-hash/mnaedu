@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { and, count, desc, sql, type SQL } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { members } from "@/db/schema";
-import { SESSION_COOKIE, verifySession } from "@/lib/auth";
+import { SESSION_COOKIE } from "@/lib/auth";
+import { verifySession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
