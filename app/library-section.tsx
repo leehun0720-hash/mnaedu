@@ -13,15 +13,25 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function LibrarySection({ documents }: { documents: PublicDocument[] }) {
+export default function LibrarySection({
+  documents,
+  index = "06 · LIBRARY",
+  title = "업무자료",
+  note = "업무 자료와 회장 칼럼을 올려 둡니다. 내려받아 그대로 보실 수 있습니다.",
+  pager,
+}: {
+  documents: PublicDocument[];
+  index?: string;
+  title?: string;
+  note?: string;
+  pager?: React.ReactNode;
+}) {
   return (
     <section className="co-section co-section--tint" id="library">
       <div className="co-section-head co-reveal">
-        <p className="co-section-index">06 · LIBRARY</p>
-        <h2>자료실</h2>
-        <p className="co-section-note">
-          업무 자료와 회장 칼럼을 올려 둡니다. 내려받아 그대로 보실 수 있습니다.
-        </p>
+        <p className="co-section-index">{index}</p>
+        <h2>{title}</h2>
+        <p className="co-section-note">{note}</p>
       </div>
 
       {documents.length === 0 ? (
@@ -50,6 +60,8 @@ export default function LibrarySection({ documents }: { documents: PublicDocumen
           ))}
         </ul>
       )}
+
+      {pager}
     </section>
   );
 }

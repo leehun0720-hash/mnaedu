@@ -5061,3 +5061,106 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 
 /* 우측 고정 바의 로그아웃은 form 안에 있어 버튼이 된다 */
 .rail-form { display: contents; }
+
+/* ── 회장 지시 반영 (2026-09) ────────────────────────────────── */
+
+/* 첫 화면 게시판 — 새로 올라온 업무자료·평가문제 다섯 건씩 */
+.co-updates {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 48px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(20px, 3vw, 36px);
+}
+.co-updates-col {
+  border-top: 2px solid var(--co-ink-strong);
+  padding-top: 14px;
+}
+.co-updates-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.co-updates-head h3 { margin: 0; font: 700 16px var(--font-serif); color: var(--co-ink-strong); }
+.co-updates-count { font: 600 11px var(--font-label); color: var(--co-muted); margin-left: auto; }
+.co-updates-list { list-style: none; margin: 0; padding: 0; }
+.co-updates-list li { border-bottom: 1px solid var(--co-line); }
+.co-updates-list a {
+  display: grid;
+  gap: 3px;
+  padding: 12px 4px;
+  text-decoration: none;
+  color: inherit;
+}
+.co-updates-list a:hover { background: var(--co-tint); }
+.co-updates-title {
+  font: 600 13.5px var(--font-sans);
+  color: var(--co-ink-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.co-updates-meta { font-size: 11.5px; color: var(--co-muted); }
+.co-updates-empty {
+  margin: 0;
+  padding: 26px 4px;
+  font-size: 13px;
+  color: var(--co-muted);
+}
+
+/* 주요업무 화면의 강의 프로그램 안내 */
+.co-program {
+  width: min(1160px, 100%);
+  margin: clamp(28px, 4vw, 44px) auto 0;
+  padding: clamp(20px, 3vw, 30px) clamp(22px, 4vw, 38px);
+  background: var(--co-ink-strong);
+  color: #EDE8DF;
+  border-radius: 3px;
+}
+.co-program-eyebrow {
+  margin: 0 0 10px;
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.22em;
+  color: var(--co-gold);
+}
+.co-program p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.9; }
+.co-program p:last-child { margin-bottom: 0; }
+
+/* 게시판 쪽 넘김 */
+.co-pager {
+  width: min(1160px, 100%);
+  margin: 22px auto 0;
+  padding: 0 clamp(20px, 4vw, 48px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.co-pager-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--co-line);
+  border-radius: 3px;
+  font: 600 12.5px var(--font-sans);
+  color: var(--co-ink-strong);
+  text-decoration: none;
+}
+.co-pager-btn:hover { border-color: var(--co-ink-strong); }
+.co-pager-btn.is-off { opacity: 0.35; }
+.co-pager-state { font-size: 12px; color: var(--co-muted); margin: 0 auto; }
+
+/* 오프라인 전용 분야의 가입 안내 — 웹 안내 범위 바로 아래 */
+.co-offline-join {
+  margin-top: 10px !important;
+  border-left: 3px solid var(--co-gold);
+}
+
+/* 기사·칼럼에서 첫 화면으로 */
+.co-backlink--top {
+  display: inline-flex;
+  width: min(1160px, 100%);
+  margin: 20px auto 0;
+  padding: 0 clamp(20px, 4vw, 48px);
+}
+.ins-back { margin: 0 0 16px; }
+
+@media (max-width: 760px) {
+  .co-updates { grid-template-columns: 1fr; }
+  .co-pager { flex-wrap: wrap; }
+  .co-pager-state { order: -1; width: 100%; margin: 0 0 4px; }
+}

@@ -6,7 +6,8 @@ import { articles } from "@/db/schema";
 import { courseLabel, normalizeTrack } from "@/lib/questions";
 
 /** 목록에 한 번에 세우는 최대 건수 — 연재 100여 회를 페이지로 나눈다 */
-export const ARTICLES_PER_PAGE = 20;
+/** 한 면에 10개씩 노출 (회장 지시 2026-09) */
+export const ARTICLES_PER_PAGE = 10;
 
 /** 화면이 쓰는 칼럼 한 편 (목록용 — 본문 없음) */
 export type ArticleSummary = {

@@ -1,9 +1,17 @@
 import "server-only";
 
-import { and, desc, eq, notInArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
-import { OFFLINE_TRACKS, SEED_QUESTIONS, courseLabel, isOfflineTrack, type PublicQuestion } from "@/lib/questions";
+import {
+  OFFLINE_TRACKS,
+  SEED_QUESTIONS,
+  courseLabel,
+  isOfflineTrack,
+  normalizeTrack,
+  trackAliases,
+  type PublicQuestion,
+} from "@/lib/questions";
 
 /**
  * 서버 전용 — postgres 드라이버는 Node 소켓을 쓰므로 클라이언트 번들에
@@ -31,6 +39,7 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
     return rows.map((r, i) => ({
       id: r.id,
       no: i + 1,
+      track: normalizeTrack(r.track),
       trackLabel: courseLabel(r.track),
       type: r.format,
       prompt: r.prompt,
@@ -76,5 +85,54 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
   } catch (err) {
     console.error("[questions] quiz lookup failed:", err);
     return null;
+  }
+}
+
+/**
+ * 한 분야의 평가문제 — 업무 상세 화면이 쓴다.
+ *
+ * 시크릿 오피스(오프라인 전용) 분야는 여기서도 빈 목록이다. 분야 자체가
+ * 블라인드이므로 상세 화면에 문제가 서는 순간 블라인드가 무너진다.
+ */
+export async function getQuestionsByTrack(
+  slug: string,
+  limit = 10,
+  offset = 0
+): Promise<PublicQuestion[]> {
+  if (!isDbConfigured() || isOfflineTrack(slug)) return [];
+  try {
+    const rows = await getDb()
+      .select()
+      .from(questions)
+      .where(and(eq(questions.published, true), inArray(questions.track, trackAliases(slug))))
+      .orderBy(desc(questions.createdAt))
+      .limit(limit)
+      .offset(offset);
+    return rows.map((r, i) => ({
+      id: r.id,
+      no: offset + i + 1,
+      track: normalizeTrack(r.track),
+      trackLabel: courseLabel(r.track),
+      type: r.format,
+      prompt: r.prompt,
+      choices: r.choices ?? undefined,
+    }));
+  } catch (err) {
+    console.error("[questions] track list failed:", err);
+    return [];
+  }
+}
+
+export async function countQuestionsByTrack(slug: string): Promise<number> {
+  if (!isDbConfigured() || isOfflineTrack(slug)) return 0;
+  try {
+    const [row] = await getDb()
+      .select({ value: count() })
+      .from(questions)
+      .where(and(eq(questions.published, true), inArray(questions.track, trackAliases(slug))));
+    return row?.value ?? 0;
+  } catch (err) {
+    console.error("[questions] track count failed:", err);
+    return 0;
   }
 }

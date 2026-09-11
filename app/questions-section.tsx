@@ -16,9 +16,18 @@ type Revealed = { answer: string; explanation: string };
 export default function QuestionsSection({
   questions,
   signedIn,
+  index = "05 · PRACTICE",
+  title = "평가문제",
+  note = "실제 거래에서 판단이 갈렸던 지점을 문제로 옮겼습니다. 문제는 누구나 보실 수 있고, 정답과 해설은 회원으로 등록하시면 열립니다.",
+  pager,
 }: {
   questions: PublicQuestion[];
   signedIn: boolean;
+  index?: string;
+  title?: string;
+  note?: string;
+  /** 쪽 넘김 — 서버 화면에서 만들어 넣는다 */
+  pager?: React.ReactNode;
 }) {
   const [open, setOpen] = useState<Record<number, Revealed>>({});
   const [pending, setPending] = useState<number | null>(null);
@@ -59,12 +68,9 @@ export default function QuestionsSection({
   return (
     <section className="co-section" id="questions">
       <div className="co-section-head co-reveal">
-        <p className="co-section-index">05 · PRACTICE</p>
-        <h2>실무 문제</h2>
-        <p className="co-section-note">
-          실제 거래에서 판단이 갈렸던 지점을 문제로 옮겼습니다. 문제는 누구나 보실 수 있고,
-          정답과 해설은 회원으로 등록하시면 열립니다.
-        </p>
+        <p className="co-section-index">{index}</p>
+        <h2>{title}</h2>
+        <p className="co-section-note">{note}</p>
       </div>
 
       {questions.length === 0 ? (
@@ -148,6 +154,8 @@ export default function QuestionsSection({
           })}
         </ol>
       )}
+
+      {pager}
 
       {error && (
         <p className="qa-error" role="alert">

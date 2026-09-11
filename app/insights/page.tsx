@@ -53,13 +53,18 @@ export default async function InsightsPage({
       </header>
 
       <main>
+        {/* 회장 지시 6 — 기사를 보다가 첫 화면으로 곧장 돌아간다 */}
+        <Link className="co-backlink co-backlink--top" href="/">
+          <i aria-hidden="true">←</i> 홈페이지 첫 화면
+        </Link>
+
         <section className="co-section">
           <div className="co-section-head">
             <p className="co-section-index">INSIGHTS</p>
             <h2>기사 · 칼럼</h2>
             <p className="co-section-note">
-              성보경 회장이 아주경제 등에 연재한 글을 옮겨 싣습니다. 현장에서 판단이 갈렸던
-              지점을 그대로 다룹니다.
+              회사와 업무에 관한 기사와 칼럼입니다. 현장에서 판단이 갈렸던 지점을 그대로
+              다룹니다.
               {total > 0 && <> 현재 {total}편.</>}
             </p>
           </div>

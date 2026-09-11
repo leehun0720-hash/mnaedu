@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { documents } from "@/db/schema";
-import { courseLabel } from "@/lib/questions";
+import { courseLabel, isOfflineTrack, normalizeTrack, trackAliases } from "@/lib/questions";
 
 /**
  * 자료실.
@@ -40,6 +40,8 @@ export type PublicDocument = {
   title: string;
   summary: string | null;
   kind: string;
+  /** 분야 슬러그 — 첫 화면 목록에서 그 업무 화면으로 보낼 때 쓴다 */
+  track: string | null;
   trackLabel: string | null;
   fileName: string;
   fileSize: number;
@@ -91,6 +93,7 @@ function toPublic(row: {
     title: row.title,
     summary: row.summary,
     kind: row.kind,
+    track: row.track ? normalizeTrack(row.track) : null,
     trackLabel: row.track ? courseLabel(row.track) : null,
     fileName: row.fileName,
     fileSize: row.fileSize,
@@ -150,5 +153,46 @@ export async function getDocumentForDownload(id: number): Promise<DownloadableDo
   } catch (err) {
     console.error("[documents] download failed:", err);
     return null;
+  }
+}
+
+/**
+ * 한 분야의 업무자료 — 업무 상세 화면이 쓴다.
+ *
+ * 시크릿 오피스(오프라인 전용) 분야는 빈 목록이다 — 그 분야는 온라인에
+ * 내용을 두지 않는 것이 원칙이기 때문이다.
+ */
+export async function getDocumentsByTrack(
+  slug: string,
+  limit = 10,
+  offset = 0
+): Promise<PublicDocument[]> {
+  if (!isDbConfigured() || isOfflineTrack(slug)) return [];
+  try {
+    const rows = await getDb()
+      .select(LIST_COLUMNS)
+      .from(documents)
+      .where(and(eq(documents.published, true), inArray(documents.track, trackAliases(slug))))
+      .orderBy(desc(documents.createdAt))
+      .limit(limit)
+      .offset(offset);
+    return rows.map(toPublic);
+  } catch (err) {
+    console.error("[documents] track list failed:", err);
+    return [];
+  }
+}
+
+export async function countDocumentsByTrack(slug: string): Promise<number> {
+  if (!isDbConfigured() || isOfflineTrack(slug)) return 0;
+  try {
+    const [row] = await getDb()
+      .select({ value: count() })
+      .from(documents)
+      .where(and(eq(documents.published, true), inArray(documents.track, trackAliases(slug))));
+    return row?.value ?? 0;
+  } catch (err) {
+    console.error("[documents] track count failed:", err);
+    return 0;
   }
 }

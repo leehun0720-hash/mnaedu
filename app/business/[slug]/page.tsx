@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import {
   BUSINESS_AREAS,
   CONTACT,
+  OFFLINE_MEMBERSHIP_NOTICE,
   OFFLINE_ONLY_NOTICE,
+  OPEN_POLICY_NOTICE,
   TENURE_NOTE,
   businessArea,
   officeOf,
@@ -12,8 +14,16 @@ import {
 import CopyGuard from "../../copy-guard";
 import ThemeToggle from "../../theme-toggle";
 import SiteRail from "../../site-rail";
+import QuestionsSection from "../../questions-section";
+import LibrarySection from "../../library-section";
+import BoardPager, { BOARD_PAGE_SIZE } from "../../board-pager";
+import { getCurrentMember } from "@/lib/members";
+import { countQuestionsByTrack, getQuestionsByTrack } from "@/lib/questions-db";
+import { countDocumentsByTrack, getDocumentsByTrack } from "@/lib/documents";
 
 type Params = { slug: string };
+/** 자료·문제 게시판이 붙으므로 요청 시점에 그린다 */
+export const dynamic = "force-dynamic";
 
 // 5분야 모두 페이지를 갖는다. 패밀리오피스·투자가 클럽은 기초 소개와 목차,
 // 상담 접점까지만 두고 세부는 오프라인으로 넘긴다 (보고서 3.5절).
@@ -31,10 +41,28 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   };
 }
 
-export default async function BusinessDetailPage({ params }: { params: Promise<Params> }) {
+export default async function BusinessDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<{ dp?: string; qp?: string }>;
+}) {
   const { slug } = await params;
   const area = businessArea(slug);
   if (!area) notFound();
+
+  // 게시판 두 개가 한 화면에 있으므로 쪽 번호도 따로 받는다
+  const { dp, qp } = await searchParams;
+  const docPage = Math.max(1, Number(dp) || 1);
+  const quizPage = Math.max(1, Number(qp) || 1);
+  const [documents, documentCount, questions, questionCount, member] = await Promise.all([
+    getDocumentsByTrack(area.slug, BOARD_PAGE_SIZE, (docPage - 1) * BOARD_PAGE_SIZE),
+    countDocumentsByTrack(area.slug),
+    getQuestionsByTrack(area.slug, BOARD_PAGE_SIZE, (quizPage - 1) * BOARD_PAGE_SIZE),
+    countQuestionsByTrack(area.slug),
+    getCurrentMember(),
+  ]);
 
   // 원고에 "40년"이 나오는 분야에는 각주를 붙인다 — 소개문에만 나오는 분야도
   // 있으므로 둘 다 본다 (보고서 9장-8 기본안: 회사 연혁과 개인 경력 구분 표기)
@@ -44,7 +72,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
     <div className="co-page">
       <CopyGuard />
       <ThemeToggle />
-      <SiteRail />
+      <SiteRail signedIn={member !== null} />
 
       <header className="co-header">
         <Link className="co-brand" href="/" aria-label="㈜프론티어 M&A 처음으로">
@@ -91,6 +119,9 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
           <aside className="co-offline-note" role="note">
             <strong>웹 안내 범위</strong>
             <p>{OFFLINE_ONLY_NOTICE}</p>
+            {OFFLINE_MEMBERSHIP_NOTICE[area.slug] && (
+              <p className="co-offline-join">{OFFLINE_MEMBERSHIP_NOTICE[area.slug]}</p>
+            )}
           </aside>
         )}
 
@@ -112,8 +143,8 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
               <span className="co-mastertip-title">{area.masterTip}</span>
               <span className="co-topic-tags">
                 <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                <Link className="co-tag co-tag--quiz" href="/#questions">
-                  평가시험 ↗
+                <Link className="co-tag co-tag--quiz" href="#questions">
+                  평가문제 ↓
                 </Link>
               </span>
             </div>
@@ -128,8 +159,8 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
                 <span className="co-topic-title">{topic.label}</span>
                 <span className="co-topic-tags">
                   <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                  <Link className="co-tag co-tag--quiz" href="/#questions">
-                    평가시험 ↗
+                  <Link className="co-tag co-tag--quiz" href="#questions">
+                    평가문제 ↓
                   </Link>
                 </span>
               </li>
@@ -138,11 +169,46 @@ export default async function BusinessDetailPage({ params }: { params: Promise<P
 
           {/* 정답·해설은 공개 데이터에서 원천 배제하고, 열람은 실무 문제 회원의
               포인트 차감 화면에 한정한다 (보고서 4.3 · 8장). */}
-          <p className="co-topic-note">
-            업무자료는 공개를 원칙으로 합니다. 평가시험은 M&amp;A 실무 문제에서 진행되며, 정답과
-            회장 해설은 공개 영역에 노출되지 않고 회원 화면에서만 열람하실 수 있습니다.
-          </p>
+          <p className="co-topic-note">{OPEN_POLICY_NOTICE}</p>
         </section>
+
+        {/* 회장 지시 1 — 업무자료와 평가문제는 각 주요업무 화면에 둔다.
+            시크릿 오피스 두 분야는 온라인에 내용을 두지 않으므로 게시판이 없다. */}
+        {!area.offlineOnly && (
+          <>
+            <LibrarySection
+              documents={documents}
+              index="LIBRARY"
+              title={`${area.name} 업무자료`}
+              note={OPEN_POLICY_NOTICE}
+              pager={
+                <BoardPager
+                  page={docPage}
+                  total={documentCount}
+                  param="dp"
+                  basePath={`/business/${area.slug}`}
+                  hash="library"
+                />
+              }
+            />
+            <QuestionsSection
+              questions={questions}
+              signedIn={member !== null}
+              index="PRACTICE"
+              title={`${area.name} 평가문제`}
+              note="문제 본문은 누구나 보실 수 있습니다. 정답과 해설은 회원등록 후에 열람하실 수 있습니다."
+              pager={
+                <BoardPager
+                  page={quizPage}
+                  total={questionCount}
+                  param="qp"
+                  basePath={`/business/${area.slug}`}
+                  hash="questions"
+                />
+              }
+            />
+          </>
+        )}
 
         <section className="co-section co-section--contact" id="contact">
           <div className="co-contact co-contact--slim">

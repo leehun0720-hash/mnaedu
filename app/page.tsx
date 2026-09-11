@@ -17,8 +17,7 @@ import ThemeToggle from "./theme-toggle";
 import SiteRail from "./site-rail";
 import ContactForm from "./contact-form";
 import Reveal from "./reveal";
-import QuestionsSection from "./questions-section";
-import LibrarySection from "./library-section";
+import UpdatesSection from "./updates-section";
 import { getPublicQuestions } from "@/lib/questions-db";
 import { getPublicDocuments } from "@/lib/documents";
 import { getCurrentMember } from "@/lib/members";
@@ -34,8 +33,7 @@ export const metadata: Metadata = {
 const NAV = [
   { href: "#about", label: "회사소개" },
   { href: "#business", label: "주요업무" },
-  { href: "#questions", label: "실무문제" },
-  { href: "#library", label: "자료실" },
+  { href: "#updates", label: "새 소식" },
   { href: "#careers", label: "직원채용" },
   { href: "#faq", label: "Q&A" },
   { href: "#contact", label: "문의사항" },
@@ -45,8 +43,8 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [questions, documents, member, latestArticles, articleCount] = await Promise.all([
-    getPublicQuestions(),
-    getPublicDocuments(),
+    getPublicQuestions(5),
+    getPublicDocuments(5),
     getCurrentMember(),
     getPublishedArticles(3),
     countPublishedArticles(),
@@ -136,10 +134,6 @@ export default async function HomePage() {
                 <dt>업무 영역</dt>
                 <dd>중개 · 경영권 분쟁 · 자금조달 · 패밀리오피스 · 투자가 클럽</dd>
               </div>
-              <div>
-                <dt>업무 원칙</dt>
-                <dd>검토 단계부터 NDA 체결</dd>
-              </div>
             </dl>
           </div>
 
@@ -149,8 +143,8 @@ export default async function HomePage() {
               <strong>기사 · 칼럼</strong>
               <p>
                 {articleCount > 0
-                  ? `성보경 회장이 아주경제 등에 연재한 글을 옮겨 싣고 있습니다. 현재 ${articleCount}편.`
-                  : "아주경제 연재 100회 이상을 비롯한 회장 칼럼과 언론 기사를 이곳으로 옮기고 있습니다."}
+                  ? `회사와 업무에 관한 기사와 칼럼입니다. 현재 ${articleCount}편.`
+                  : "회사와 업무에 관한 기사와 칼럼을 이곳에 모으고 있습니다."}
               </p>
               <Link className="co-insight-more" href="/insights">
                 전체 보기 <i aria-hidden="true">→</i>
@@ -179,7 +173,8 @@ export default async function HomePage() {
 
           <div className="co-principles co-reveal">
             <h3>
-              운영원칙 <span>5대 원칙을 바탕으로 업무를 진행합니다</span>
+              ㈜프론티어 M&amp;A의 5대 운영원칙{" "}
+              <span>다섯 가지 원칙을 바탕으로 모든 업무를 진행합니다</span>
             </h3>
             <ol className="co-principle-grid">
               {PRINCIPLES.map((p) => (
@@ -209,8 +204,7 @@ export default async function HomePage() {
             <h2>주요 업무</h2>
             <p className="co-section-note">
               M&amp;A 오피스 3개 분야와 시크릿 오피스 2개 분야, 합계 {TOTAL_TOPICS}개 주제를
-              다룹니다. 각 주제의 업무자료는 자료실에, 실제 판단이 갈렸던 지점은 실무 문제에
-              올려 둡니다.
+              다룹니다. 각 분야의 업무자료와 평가문제는 해당 업무 화면에 올려 둡니다.
             </p>
           </div>
           {OFFICES.map((office) => (
@@ -239,12 +233,30 @@ export default async function HomePage() {
               </div>
             </div>
           ))}
+
+          {/* 회장 지시 16 — 주요업무 화면에 세우는 강의 프로그램 안내 */}
+          <aside className="co-program co-reveal">
+            <p className="co-program-eyebrow">TOP TIER PROGRAM</p>
+            <p>
+              ㈜프론티어 M&amp;A에서는 패밀리오피스 운영전문가와 투자가클럽 운영전문가에 대한 Top
+              Tier급 전문가를 양성하는 강의 프로그램을 운영하고 있습니다. 단, ㈜프론티어 M&amp;A의
+              홈페이지에서 제공하는 주요업무자료와 평가문제를 통하여, 일정 수준 이상의 기초실력을
+              갖춘 분에 한하여 수강이 가능합니다.
+            </p>
+            <p>
+              또한 수강인원은 5명~10명 정도로 실무에서 부딪치게 되는 난해한 문제 또는 딜레마를
+              해결할 수 있는 내용을 위주로 진행됩니다. 때문에 일정 수준 이상의 실력과 경험이 없는
+              분은 본 강의를 수강할 수 없습니다.
+            </p>
+          </aside>
         </section>
+
+        <UpdatesSection documents={documents} questions={questions} />
 
         {/* ── 직원채용 ─────────────────────────────────────────────── */}
         <section className="co-section" id="careers">
           <div className="co-section-head co-reveal">
-            <p className="co-section-index">03 · CAREERS</p>
+            <p className="co-section-index">04 · CAREERS</p>
             <h2>직원채용</h2>
           </div>
           <div className="co-careers co-reveal">
@@ -276,14 +288,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <QuestionsSection questions={questions} signedIn={signedIn} />
-
-        <LibrarySection documents={documents} />
-
         {/* ── Q&A ──────────────────────────────────────────────────── */}
         <section className="co-section co-section--tint" id="faq">
           <div className="co-section-head co-reveal">
-            <p className="co-section-index">04 · Q&amp;A</p>
+            <p className="co-section-index">05 · Q&amp;A</p>
             <h2>자주 묻는 질문</h2>
             <p className="co-section-note">
               업무와 채용에 관한 질문을 계속 업데이트합니다. 게시는 관리자만 할 수 있습니다.
@@ -305,7 +313,7 @@ export default async function HomePage() {
         {/* ── 문의사항: 양식 + 대화창 ────────────────────────────────── */}
         <section className="co-section co-section--contact" id="contact">
           <div className="co-section-head co-reveal">
-            <p className="co-section-index">05 · CONTACT</p>
+            <p className="co-section-index">06 · CONTACT</p>
             <h2>문의사항</h2>
             <p className="co-section-note">
               M&amp;A 중개, 경영권 분쟁, 경영권 투자, M&amp;A 자금조달, 패밀리오피스, 투자가
@@ -339,6 +347,10 @@ export default async function HomePage() {
                     <dd>
                       <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
                     </dd>
+                  </div>
+                  <div>
+                    <dt>홈페이지</dt>
+                    <dd>{CONTACT.site}</dd>
                   </div>
                 </dl>
               </address>

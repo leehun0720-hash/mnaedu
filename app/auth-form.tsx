@@ -118,7 +118,10 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
           minLength={8}
           required
         />
-        {isJoin && <i className="auth-hint">8자 이상</i>}
+        {isJoin && (
+          // 회장 지시 13 — 휴대폰 번호를 '-' 없이 숫자만 넣어도 되게 안내한다
+          <i className="auth-hint">8자 이상 · 휴대폰 번호를 “-” 없이 숫자만 쓰셔도 됩니다</i>
+        )}
       </label>
 
       {error && (

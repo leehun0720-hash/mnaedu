@@ -81,6 +81,9 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
       <main>
         <article className="co-section ins-article">
           <nav className="ins-crumb" aria-label="위치">
+            {/* 회장 지시 6 — 기사에서 첫 화면으로 곧장 돌아간다 */}
+            <Link href="/">홈페이지 첫 화면</Link>
+            <span aria-hidden="true"> · </span>
             <Link href="/insights">기사 · 칼럼</Link>
           </nav>
 
@@ -103,6 +106,11 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
           </div>
 
           <footer className="ins-foot">
+            <p className="ins-back">
+              <Link className="co-btn co-btn--ghost co-btn--sm" href="/">
+                <i aria-hidden="true">←</i> 홈페이지 첫 화면으로
+              </Link>
+            </p>
             <p className="ins-byline">
               글 · 성보경 ㈜프론티어 M&amp;A 회장
               {article.source && <> · {article.source} 게재</>}

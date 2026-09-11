@@ -36,6 +36,8 @@ export type PublicQuestion = {
   /** DB 문제의 id — 예시(시드) 문제에는 없어서 풀이 화면이 열리지 않는다 */
   id?: number;
   no: number;
+  /** 분야 슬러그 — 첫 화면 목록에서 그 업무 화면으로 보낼 때 쓴다 */
+  track?: string;
   trackLabel: string;
   type: string;
   prompt: string;
@@ -60,6 +62,20 @@ export const OFFLINE_TRACKS: string[] = [
     .filter(([, target]) => BUSINESS_AREAS.some((b) => b.slug === target && b.offlineOnly))
     .map(([legacy]) => legacy),
 ];
+
+/**
+ * 한 분야를 가리키는 모든 슬러그 — 현행 값과, 그 분야로 이어지는 옛 값들.
+ *
+ * 저장된 문제·자료는 올릴 당시의 슬러그를 그대로 들고 있다. 분야별로 모아
+ * 보여 줄 때 현행 값만으로 거르면 개편 전에 올린 자료가 통째로 사라진다.
+ */
+export function trackAliases(slug: string): string[] {
+  const current = normalizeTrack(slug);
+  const legacy = Object.entries(LEGACY_TRACKS)
+    .filter(([, target]) => target === current)
+    .map(([old]) => old);
+  return [current, ...legacy];
+}
 
 export function isOfflineTrack(slug: string): boolean {
   return BUSINESS_AREAS.some((b) => b.slug === normalizeTrack(slug) && b.offlineOnly);

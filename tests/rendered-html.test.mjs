@@ -65,22 +65,45 @@ test("the offline-only areas publish their intro but flag the web boundary", asy
   assert.doesNotMatch(html, /택스 헤이븐/);
 });
 
-test("questions are public but their answers are not", async () => {
+test("첫 화면은 새 소식만 세우고, 자료·문제 본문은 업무 화면으로 넘긴다", async () => {
+  // 회장 지시 1·1-1 — 첫 화면에서 실무문제·자료실 섹션을 걷어내고
+  // 업무영역 바로 아래에 새로 올라온 것만 알리는 게시판을 둔다
   const html = await renderHtml("/");
-  assert.match(html, /실무 문제/);
-  // 정답·해설은 회원에게만 — 잠금 문구가 자리를 지킨다
-  assert.match(html, /정답과 해설은 회원에게 공개됩니다/);
+  assert.match(html, /새로 올라온 자료와 문제/);
+  assert.match(html, /id="updates"/);
+  assert.doesNotMatch(html, /id="questions"/);
+  assert.doesNotMatch(html, /id="library"/);
   // 폐지된 것들이 문구로도 남아 있지 않다
   for (const gone of [/레벨/, /포인트/, /유료회원/, /무료회원/, /승급/, /채점/]) {
     assert.doesNotMatch(html, gone, `${gone} should be gone from the page`);
   }
 });
 
-test("the library section renders whether or not it has files", async () => {
-  const html = await renderHtml("/");
-  assert.match(html, /자료실/);
-  // DB가 없어도 빈 상태로 서 있어야 한다 — 자료실 때문에 홈이 멎으면 안 된다
-  assert.match(html, /자료를 준비하고 있습니다|lib-item/);
+test("업무 화면이 그 분야의 업무자료와 평가문제를 싣는다", async () => {
+  // 회장 지시 1·9 — 자료와 문제는 각 주요업무 화면에 붙는다
+  const html = await renderHtml("/business/brokerage");
+  assert.match(html, /M&(amp;)?A 중개 업무자료/);
+  assert.match(html, /M&(amp;)?A 중개 평가문제/);
+  // 지시 9 — '평가시험'이라는 옛 이름은 남지 않는다
+  assert.doesNotMatch(html, /평가시험/);
+  // 지시 10 — 공개 원칙 문구가 그대로 선다
+  assert.match(html, /무료로 공개하는 것을 원칙으로 하며/);
+  // 정답·해설은 어떤 경우에도 공개 화면에 실리지 않는다
+  for (const leak of [/"answer":/, /"intent":/, /"explanation":/]) {
+    assert.doesNotMatch(html, leak, `${leak} must never reach the public page`);
+  }
+});
+
+test("시크릿 오피스 두 분야는 게시판 대신 오프라인 가입 안내를 세운다", async () => {
+  // 회장 지시 14·15 — 온라인에 내용을 두지 않는 분야다
+  for (const [slug, needle] of [
+    ["family-office", /패밀리오피스 운영전문가 모임은 온-라인 상에 공개하지 않는 것을 원칙으로/],
+    ["investor-club", /투자가 클럽 운영전문가의 오프-라인 모임은 온-라인 상에 공개하지 않는 것을 원칙으로/],
+  ]) {
+    const html = await renderHtml(`/business/${slug}`);
+    assert.match(html, needle);
+    assert.doesNotMatch(html, new RegExp(`${slug === "family-office" ? "패밀리오피스" : "투자가 클럽"} 평가문제`));
+  }
 });
 
 test("the privacy policy page renders and is linked where data is collected", async () => {
