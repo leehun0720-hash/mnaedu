@@ -28,6 +28,27 @@ const LEGACY_TRACKS: Record<string, string> = {
 export const FORMATS = ["주관식", "객관식"] as const;
 export type Format = (typeof FORMATS)[number];
 
+/**
+ * 단계 — 한 분야 안에서 자료와 문제를 기초와 심화로 나눈다 (2026-09 회장 지시).
+ *
+ * 폐지한 '레벨'과 혼동하지 말 것. 레벨은 점수로 오르내리고 상급 문제를 잠그던
+ * 등급 체계였고, 이것은 "어디부터 보시면 되는지"를 알리는 표시일 뿐이다.
+ * 잠그지 않고, 세지 않고, 오르내리지 않는다.
+ */
+export const STAGES = ["기초", "심화"] as const;
+export type Stage = (typeof STAGES)[number];
+
+/**
+ * 저장된 값을 단계로 읽는다. 단계가 아니면 null — '미분류'다.
+ * "1단계"·"2단계"도 받아 준다. 회장이 그렇게 부르시는 일이 잦다.
+ */
+export function normalizeStage(value: string | null | undefined): Stage | null {
+  const v = (value ?? "").trim();
+  if (v === "1단계") return "기초";
+  if (v === "2단계") return "심화";
+  return (STAGES as readonly string[]).includes(v) ? (v as Stage) : null;
+}
+
 /** 퀴즈 1건의 문항 수 — 설계서 지시("퀴즈 1개당 3문제") */
 export const QUESTIONS_PER_QUIZ = 3;
 
@@ -39,6 +60,8 @@ export type PublicQuestion = {
   /** 분야 슬러그 — 첫 화면 목록에서 그 업무 화면으로 보낼 때 쓴다 */
   track?: string;
   trackLabel: string;
+  /** 기초 | 심화 — 나누지 않은 문제에는 없다 */
+  stage?: Stage;
   type: string;
   prompt: string;
   choices?: string[];

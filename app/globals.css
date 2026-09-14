@@ -5172,6 +5172,43 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   .co-pager-state { order: -1; width: 100%; margin: 0 0 4px; }
 }
 
+/* ==========================================================================
+   단계 — 기초·심화 (회장 지시 2026-09)
+   같은 분야 안에서 어디부터 보시면 되는지만 알린다. 잠그지 않으므로
+   자물쇠도 등급색도 쓰지 않고, 고른 것만 진하게 둔다.
+   ========================================================================== */
+.co-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.co-stage {
+  font: 600 12.5px var(--font-sans);
+  padding: 6px 14px;
+  border: 1px solid var(--co-line);
+  color: var(--co-muted);
+  background: var(--co-bg);
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.co-stage:hover { color: var(--co-ink-strong); border-color: var(--co-ink-strong); }
+.co-stage[data-on="true"] {
+  color: var(--co-bg);
+  background: var(--co-navy);
+  border-color: var(--co-navy);
+}
+/* 목록 한 줄에 붙는 단계 표시 */
+.qa-stage,
+.lib-stage {
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.1em;
+  padding: 4px 9px;
+  border: 1px solid var(--co-navy);
+  color: var(--co-navy);
+  background: transparent;
+}
+
 /* 관리자 로그인 — 입력칸과 「표시」 단추를 한 줄에 */
 .admin-pwrow { display: flex; gap: 8px; align-items: stretch; }
 .admin-pwrow input { flex: 1; min-width: 0; }

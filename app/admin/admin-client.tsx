@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { COURSES, FORMATS, normalizeTrack } from "@/lib/questions";
+import { COURSES, FORMATS, STAGES, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { parseQuestion } from "@/lib/parse-question";
 
 /**
@@ -15,6 +15,7 @@ import { parseQuestion } from "@/lib/parse-question";
 type Row = {
   id: number;
   track: string;
+  stage: string | null;
   format: string;
   prompt: string;
   choices: string[] | null;
@@ -28,6 +29,7 @@ type Row = {
 type Draft = {
   id?: number;
   track: string;
+  stage: string;
   format: string;
   prompt: string;
   choices: string[];
@@ -41,6 +43,7 @@ type DocRow = {
   title: string;
   summary: string | null;
   track: string | null;
+  stage: string | null;
   kind: string;
   fileName: string;
   fileSize: number;
@@ -65,6 +68,7 @@ function isFailure(d: unknown): d is FetchFailure {
 
 const EMPTY: Draft = {
   track: "",
+  stage: "",
   format: "주관식",
   prompt: "",
   choices: ["", "", "", ""],
@@ -144,6 +148,7 @@ export default function AdminClient({
   const [paste, setPaste] = useState("");
   const [query, setQuery] = useState("");
   const [filterTrack, setFilterTrack] = useState("");
+  const [filterStage, setFilterStage] = useState("");
   const [filterState, setFilterState] = useState("");
 
   // 자료실
@@ -154,6 +159,7 @@ export default function AdminClient({
   const [docTitle, setDocTitle] = useState("");
   const [docSummary, setDocSummary] = useState("");
   const [docTrack, setDocTrack] = useState("");
+  const [docStage, setDocStage] = useState("");
   const [docKind, setDocKind] = useState("자료");
   const [docPublished, setDocPublished] = useState(true);
 
@@ -203,6 +209,7 @@ export default function AdminClient({
     const params = new URLSearchParams({ page: String(page) });
     if (query.trim()) params.set("q", query.trim());
     if (filterTrack) params.set("track", filterTrack);
+    if (filterStage) params.set("stage", filterStage);
     if (filterState) params.set("state", filterState);
     const data = await readJson<QuestionsResponse>(`/api/admin/questions?${params}`);
     if (isFailure(data)) {
@@ -212,7 +219,7 @@ export default function AdminClient({
     setRows(data.questions);
     setTotal(data.total);
     setCoverage(data.coverage ?? {});
-  }, [page, query, filterTrack, filterState, readJson]);
+  }, [page, query, filterTrack, filterStage, filterState, readJson]);
 
   const loadDocuments = useCallback(async () => {
     const data = await readJson<DocumentsResponse>("/api/admin/documents");
@@ -442,6 +449,7 @@ export default function AdminClient({
     setDraft({
       id: r.id,
       track: normalizeTrack(r.track),
+      stage: normalizeStage(r.stage) ?? "",
       format: r.format,
       prompt: r.prompt,
       choices: r.choices?.length ? [...r.choices] : ["", "", "", ""],
@@ -472,6 +480,7 @@ export default function AdminClient({
         id: r.id,
         // 개편 전 슬러그로 저장된 행도 있다. 그대로 되보내면 서버가 물린다.
         track: normalizeTrack(r.track),
+        stage: r.stage ?? "",
         format: r.format,
         prompt: r.prompt,
         choices: r.choices ?? [],
@@ -589,6 +598,7 @@ export default function AdminClient({
     setDocTitle("");
     setDocSummary("");
     setDocTrack("");
+    setDocStage("");
     setDocKind("자료");
     setDocPublished(true);
   }
@@ -605,6 +615,7 @@ export default function AdminClient({
     setDocTitle(d.title);
     setDocSummary(d.summary ?? "");
     setDocTrack(d.track ? normalizeTrack(d.track) : "");
+    setDocStage(normalizeStage(d.stage) ?? "");
     setDocKind(d.kind);
     setDocPublished(d.published);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -632,6 +643,7 @@ export default function AdminClient({
                 title: docTitle,
                 summary: docSummary,
                 track: docTrack,
+                stage: docStage,
                 kind: docKind,
                 published: docPublished,
               }),
@@ -654,6 +666,7 @@ export default function AdminClient({
     form.set("title", docTitle);
     form.set("summary", docSummary);
     form.set("track", docTrack);
+    form.set("stage", docStage);
     form.set("kind", docKind);
     form.set("published", String(docPublished));
     return form;
@@ -670,6 +683,7 @@ export default function AdminClient({
         summary: d.summary ?? "",
         // 옛 슬러그를 그대로 보내면 서버가 분야 없음으로 지워 버린다
         track: d.track ? normalizeTrack(d.track) : "",
+        stage: d.stage ?? "",
         kind: d.kind,
         published: !d.published,
       }),
@@ -849,6 +863,20 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   </select>
                 </label>
                 <label>
+                  단계 <small>같은 분야 안에서 기초·심화로 나눕니다</small>
+                  <select
+                    value={draft.stage}
+                    onChange={(e) => setDraft({ ...draft, stage: e.target.value })}
+                  >
+                    <option value="">나누지 않음</option>
+                    {STAGES.map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
                   유형
                   <select
                     value={draft.format}
@@ -977,6 +1005,21 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   }}
                 />
                 <select
+                  value={filterStage}
+                  onChange={(e) => {
+                    setFilterStage(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">전체 단계</option>
+                  {STAGES.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                  <option value="none">나누지 않은 것</option>
+                </select>
+                <select
                   value={filterState}
                   onChange={(e) => {
                     setFilterState(e.target.value);
@@ -1001,6 +1044,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                           {r.published ? "발행" : "임시"}
                         </span>
                         <span>{COURSES.find((c) => c.slug === normalizeTrack(r.track))?.label ?? r.track}</span>
+                        {r.stage && <span>{r.stage}</span>}
                         <span>{r.format}</span>
                         {!r.answer && <span className="admin-tag admin-tag--warn">정답 없음</span>}
                         {!r.explanation && <span className="admin-tag admin-tag--warn">해설 없음</span>}
@@ -1261,6 +1305,17 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   </select>
                 </label>
                 <label>
+                  단계 <small>선택</small>
+                  <select value={docStage} onChange={(e) => setDocStage(e.target.value)}>
+                    <option value="">나누지 않음</option>
+                    {STAGES.map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
                   구분
                   <select value={docKind} onChange={(e) => setDocKind(e.target.value)}>
                     <option value="자료">자료</option>
@@ -1308,6 +1363,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                           {d.published ? "발행" : "임시"}
                         </span>
                         <span>{d.kind}</span>
+                        {d.stage && <span>{d.stage}</span>}
                         {d.track && (
                           <span>{COURSES.find((c) => c.slug === normalizeTrack(d.track!))?.label ?? d.track}</span>
                         )}

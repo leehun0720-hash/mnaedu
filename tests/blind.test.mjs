@@ -35,3 +35,23 @@ test("DB 필터 목록은 현행·옛 슬러그를 모두 담는다", () => {
     assert.ok(!OFFLINE_TRACKS.includes(slug), `${slug}이(가) 필터 목록에 들어 있다`);
   }
 });
+
+// ── 단계(기초·심화) ────────────────────────────────────────────────
+// 폐지한 '레벨'과 혼동하면 안 된다. 단계는 잠그지도 세지도 않는 표시일 뿐이다.
+const { STAGES, normalizeStage } = await import(url);
+
+test("단계는 기초와 심화 둘뿐이다", () => {
+  assert.deepEqual([...STAGES], ["기초", "심화"]);
+});
+
+test("단계가 아닌 값은 '나누지 않음'으로 본다", () => {
+  assert.equal(normalizeStage("기초"), "기초");
+  assert.equal(normalizeStage("심화"), "심화");
+  // 회장이 "1단계·2단계"로 부르시는 일이 잦다 — 그 말도 받는다
+  assert.equal(normalizeStage("1단계"), "기초");
+  assert.equal(normalizeStage("2단계"), "심화");
+  assert.equal(normalizeStage(" 기초 "), "기초");
+  for (const junk of ["", null, undefined, "상급", "입문", "3단계", "기초반"]) {
+    assert.equal(normalizeStage(junk), null, `${junk} 는 단계가 아니다`);
+  }
+});

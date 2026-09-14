@@ -18,7 +18,9 @@ import SiteRail from "../../site-rail";
 import QuestionsSection from "../../questions-section";
 import LibrarySection from "../../library-section";
 import BoardPager, { BOARD_PAGE_SIZE } from "../../board-pager";
+import StageTabs from "../../stage-tabs";
 import { getCurrentMember } from "@/lib/members";
+import { normalizeStage } from "@/lib/questions";
 import { countQuestionsByTrack, getQuestionsByTrack } from "@/lib/questions-db";
 import { countDocumentsByTrack, getDocumentsByTrack } from "@/lib/documents";
 
@@ -47,21 +49,23 @@ export default async function BusinessDetailPage({
   searchParams,
 }: {
   params: Promise<Params>;
-  searchParams: Promise<{ dp?: string; qp?: string }>;
+  searchParams: Promise<{ dp?: string; qp?: string; ds?: string; qs?: string }>;
 }) {
   const { slug } = await params;
   const area = businessArea(slug);
   if (!area) notFound();
 
-  // 게시판 두 개가 한 화면에 있으므로 쪽 번호도 따로 받는다
-  const { dp, qp } = await searchParams;
+  // 게시판 두 개가 한 화면에 있으므로 쪽 번호도, 고르신 단계도 따로 받는다
+  const { dp, qp, ds, qs } = await searchParams;
   const docPage = Math.max(1, Number(dp) || 1);
   const quizPage = Math.max(1, Number(qp) || 1);
+  const docStage = normalizeStage(ds);
+  const quizStage = normalizeStage(qs);
   const [documents, documentCount, questions, questionCount, member] = await Promise.all([
-    getDocumentsByTrack(area.slug, BOARD_PAGE_SIZE, (docPage - 1) * BOARD_PAGE_SIZE),
-    countDocumentsByTrack(area.slug),
-    getQuestionsByTrack(area.slug, BOARD_PAGE_SIZE, (quizPage - 1) * BOARD_PAGE_SIZE),
-    countQuestionsByTrack(area.slug),
+    getDocumentsByTrack(area.slug, BOARD_PAGE_SIZE, (docPage - 1) * BOARD_PAGE_SIZE, docStage),
+    countDocumentsByTrack(area.slug, docStage),
+    getQuestionsByTrack(area.slug, BOARD_PAGE_SIZE, (quizPage - 1) * BOARD_PAGE_SIZE, quizStage),
+    countQuestionsByTrack(area.slug, quizStage),
     getCurrentMember(),
   ]);
 
@@ -187,6 +191,15 @@ export default async function BusinessDetailPage({
           index="LIBRARY"
           title={`${area.name} 업무자료`}
           note={area.offlineOnly ? OFFLINE_LIBRARY_NOTICE : OPEN_POLICY_NOTICE}
+          stages={
+            <StageTabs
+              current={docStage}
+              param="ds"
+              basePath={`/business/${area.slug}`}
+              hash="library"
+              keep={{ qs: quizStage ?? undefined }}
+            />
+          }
           pager={
             <BoardPager
               page={docPage}
@@ -194,6 +207,7 @@ export default async function BusinessDetailPage({
               param="dp"
               basePath={`/business/${area.slug}`}
               hash="library"
+              keep={{ ds: docStage ?? undefined, qs: quizStage ?? undefined }}
             />
           }
         />
@@ -205,6 +219,15 @@ export default async function BusinessDetailPage({
             index="PRACTICE"
             title={`${area.name} 평가문제`}
             note="문제 본문은 누구나 보실 수 있습니다. 정답과 해설은 회원등록 후에 열람하실 수 있습니다."
+            stages={
+              <StageTabs
+                current={quizStage}
+                param="qs"
+                basePath={`/business/${area.slug}`}
+                hash="questions"
+                keep={{ ds: docStage ?? undefined }}
+              />
+            }
             pager={
               <BoardPager
                 page={quizPage}
@@ -212,6 +235,7 @@ export default async function BusinessDetailPage({
                 param="qp"
                 basePath={`/business/${area.slug}`}
                 hash="questions"
+                keep={{ ds: docStage ?? undefined, qs: quizStage ?? undefined }}
               />
             }
           />

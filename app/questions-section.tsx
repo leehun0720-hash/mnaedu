@@ -19,6 +19,7 @@ export default function QuestionsSection({
   index = "05 · PRACTICE",
   title = "평가문제",
   note = "실제 거래에서 판단이 갈렸던 지점을 문제로 옮겼습니다. 문제는 누구나 보실 수 있고, 정답과 해설은 회원으로 등록하시면 열립니다.",
+  stages,
   pager,
 }: {
   questions: PublicQuestion[];
@@ -26,6 +27,8 @@ export default function QuestionsSection({
   index?: string;
   title?: string;
   note?: string;
+  /** 기초·심화 고르기 — 업무 화면에서만 넣는다 */
+  stages?: React.ReactNode;
   /** 쪽 넘김 — 서버 화면에서 만들어 넣는다 */
   pager?: React.ReactNode;
 }) {
@@ -71,6 +74,7 @@ export default function QuestionsSection({
         <p className="co-section-index">{index}</p>
         <h2>{title}</h2>
         <p className="co-section-note">{note}</p>
+        {stages}
       </div>
 
       {questions.length === 0 ? (
@@ -88,6 +92,7 @@ export default function QuestionsSection({
                 <div className="qa-meta">
                   <span className="qa-no">{String(q.no).padStart(2, "0")}</span>
                   <span className="qa-track">{q.trackLabel}</span>
+                  {q.stage && <span className="qa-stage">{q.stage}</span>}
                   <span className="qa-type">{q.type}</span>
                 </div>
 

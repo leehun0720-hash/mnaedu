@@ -14,6 +14,7 @@ export default function BoardPager({
   param,
   basePath,
   hash,
+  keep,
 }: {
   page: number;
   total: number;
@@ -21,12 +22,21 @@ export default function BoardPager({
   param: string;
   basePath: string;
   hash: string;
+  /** 고르신 단계 같은 다른 조건 — 쪽을 넘겨도 그대로 지고 간다 */
+  keep?: Record<string, string | undefined>;
 }) {
   const last = Math.max(1, Math.ceil(total / BOARD_PAGE_SIZE));
   if (last <= 1) return null;
   const from = (page - 1) * BOARD_PAGE_SIZE + 1;
   const to = Math.min(page * BOARD_PAGE_SIZE, total);
-  const href = (p: number) => `${basePath}?${param}=${p}#${hash}`;
+  // 쪽만 갈아 끼우고 나머지 조건은 그대로 싣는다 — 2쪽으로 넘겼더니 고른
+  // 단계가 풀리면, 보고 계시던 목록이 통째로 바뀐다
+  const href = (p: number) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(keep ?? {})) if (v) q.set(k, v);
+    q.set(param, String(p));
+    return `${basePath}?${q}#${hash}`;
+  };
 
   return (
     <nav className="co-pager" aria-label="쪽 넘김">

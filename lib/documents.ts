@@ -3,7 +3,13 @@ import "server-only";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { documents } from "@/db/schema";
-import { courseLabel, normalizeTrack, trackAliases } from "@/lib/questions";
+import {
+  courseLabel,
+  normalizeStage,
+  normalizeTrack,
+  trackAliases,
+  type Stage,
+} from "@/lib/questions";
 
 /**
  * 자료실.
@@ -43,6 +49,8 @@ export type PublicDocument = {
   /** 분야 슬러그 — 첫 화면 목록에서 그 업무 화면으로 보낼 때 쓴다 */
   track: string | null;
   trackLabel: string | null;
+  /** 기초 | 심화 — 나누지 않은 자료에는 없다 */
+  stage: Stage | null;
   fileName: string;
   fileSize: number;
   createdAt: string;
@@ -84,6 +92,7 @@ function toPublic(row: {
   summary: string | null;
   kind: string;
   track: string | null;
+  stage: string | null;
   fileName: string;
   fileSize: number;
   createdAt: Date;
@@ -95,6 +104,7 @@ function toPublic(row: {
     kind: row.kind,
     track: row.track ? normalizeTrack(row.track) : null,
     trackLabel: row.track ? courseLabel(row.track) : null,
+    stage: normalizeStage(row.stage),
     fileName: row.fileName,
     fileSize: row.fileSize,
     createdAt: row.createdAt.toISOString().slice(0, 10),
@@ -108,6 +118,7 @@ const LIST_COLUMNS = {
   summary: documents.summary,
   kind: documents.kind,
   track: documents.track,
+  stage: documents.stage,
   fileName: documents.fileName,
   fileSize: documents.fileSize,
   createdAt: documents.createdAt,
@@ -165,17 +176,24 @@ export async function getDocumentForDownload(id: number): Promise<DownloadableDo
  * 소개 자료이고, 실제로 그 분야에 올리려다 막히셨다. 그래서 자료는 열고
  * 평가문제만 닫는다 (questions-db.ts의 isOfflineTrack 차단이 그쪽을 맡는다).
  */
+function trackFilter(slug: string, stage: Stage | null) {
+  const where = [eq(documents.published, true), inArray(documents.track, trackAliases(slug))];
+  if (stage) where.push(eq(documents.stage, stage));
+  return where;
+}
+
 export async function getDocumentsByTrack(
   slug: string,
   limit = 10,
-  offset = 0
+  offset = 0,
+  stage: Stage | null = null
 ): Promise<PublicDocument[]> {
   if (!isDbConfigured()) return [];
   try {
     const rows = await getDb()
       .select(LIST_COLUMNS)
       .from(documents)
-      .where(and(eq(documents.published, true), inArray(documents.track, trackAliases(slug))))
+      .where(and(...trackFilter(slug, stage)))
       .orderBy(desc(documents.createdAt))
       .limit(limit)
       .offset(offset);
@@ -186,13 +204,16 @@ export async function getDocumentsByTrack(
   }
 }
 
-export async function countDocumentsByTrack(slug: string): Promise<number> {
+export async function countDocumentsByTrack(
+  slug: string,
+  stage: Stage | null = null
+): Promise<number> {
   if (!isDbConfigured()) return 0;
   try {
     const [row] = await getDb()
       .select({ value: count() })
       .from(documents)
-      .where(and(eq(documents.published, true), inArray(documents.track, trackAliases(slug))));
+      .where(and(...trackFilter(slug, stage)));
     return row?.value ?? 0;
   } catch (err) {
     console.error("[documents] track count failed:", err);

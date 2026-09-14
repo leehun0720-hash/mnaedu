@@ -26,6 +26,13 @@ export const questions = pgTable(
     id: serial("id").primaryKey(),
     /** 5분야 중 하나 — lib/company.ts의 slug */
     track: text("track").notNull(),
+    /**
+     * 기초 | 심화 — 한 분야 안에서의 단계. 비워 두면 미분류다.
+     *
+     * 폐지한 '레벨'과 혼동하지 말 것. 레벨은 점수로 오르내리는 등급 체계였고,
+     * 이것은 "어디부터 보시면 되는지"를 알리는 표시일 뿐이다. 승급도 잠금도 없다.
+     */
+    stage: text("stage"),
     /** 주관식 | 객관식 */
     format: text("format").notNull(),
     prompt: text("prompt").notNull(),
@@ -67,6 +74,8 @@ export const documents = pgTable(
     summary: text("summary"),
     /** 5분야 중 하나 — 비워 두면 분류 없음 */
     track: text("track"),
+    /** 기초 | 심화 — 분야 안에서의 단계. 비워 두면 미분류 */
+    stage: text("stage"),
     /** 자료 | 칼럼 */
     kind: text("kind").notNull().default("자료"),
     /** 내려받을 때 보여 줄 원래 파일 이름 */

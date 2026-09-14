@@ -15,9 +15,11 @@
 --   answer·explanation 은 로그인한 회원에게만, /api/answer 로만 나간다.
 --   intent 는 옛 앱에서 "비공개"를 전제로 쓴 메모라 어디로도 나가지 않는다.
 -- 난이도(레벨) 열은 없다 — 레벨 체계를 폐지했다.
+-- stage 는 기초·심화 표시다. 등급이 아니라 "어디부터 보시면 되는지"일 뿐이다.
 CREATE TABLE IF NOT EXISTS "questions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"track" text NOT NULL,
+	"stage" text,
 	"format" text NOT NULL,
 	"prompt" text NOT NULL,
 	"choices" jsonb,
@@ -39,6 +41,7 @@ CREATE TABLE IF NOT EXISTS "documents" (
 	"title" text NOT NULL,
 	"summary" text,
 	"track" text,
+	"stage" text,
 	"kind" text DEFAULT '자료' NOT NULL,
 	"file_name" text NOT NULL,
 	"mime_type" text DEFAULT 'application/octet-stream' NOT NULL,
@@ -106,6 +109,35 @@ CREATE TABLE IF NOT EXISTS "admin_credentials" (
 );
 
 -- ─────────────────────────────────────────────────────────────
+-- 1-2부. 예전에 만든 데이터베이스 손보기 — 반드시 함께 실행하십시오
+-- ─────────────────────────────────────────────────────────────
+--
+-- 위의 CREATE TABLE 은 IF NOT EXISTS 입니다. 표가 이미 있으면 아무 일도
+-- 하지 않으므로, 예전 앱(레벨·포인트가 있던 시절)에서 만들어진 표는 그대로
+-- 남습니다. 그래서 열이 어긋난 채로 굳습니다.
+--
+-- 실제로 겪은 일입니다. 옛 questions 표에는 level 열이 NOT NULL 로 있었고,
+-- 지금 앱은 그 열을 보내지 않습니다. 그래서 문제를 저장할 때마다 데이터베이스가
+-- 거절했습니다 — 화면에는 "저장 중…"만 뜨고 아무 일도 일어나지 않았습니다.
+-- 칼럼과 자료는 새로 만든 표라 멀쩡했기에 더 찾기 어려웠습니다.
+--
+-- 아래는 몇 번을 실행해도 안전합니다.
+
+-- 폐지한 레벨 체계의 흔적. 남아 있으면 문제 저장이 통째로 막힙니다.
+ALTER TABLE "questions" DROP COLUMN IF EXISTS "level";
+ALTER TABLE "members" DROP COLUMN IF EXISTS "tier";
+ALTER TABLE "members" DROP COLUMN IF EXISTS "points";
+ALTER TABLE "members" DROP COLUMN IF EXISTS "cleared_level";
+ALTER TABLE "members" DROP COLUMN IF EXISTS "paid_until";
+
+-- 나중에 더한 열들. 옛 표에는 없을 수 있습니다.
+ALTER TABLE "questions" ADD COLUMN IF NOT EXISTS "explanation" text;
+ALTER TABLE "questions" ADD COLUMN IF NOT EXISTS "intent" text;
+-- 단계(기초·심화). 한 분야 안에서 자료와 문제를 나눠 세우기 위한 표시입니다.
+ALTER TABLE "questions" ADD COLUMN IF NOT EXISTS "stage" text;
+ALTER TABLE "documents" ADD COLUMN IF NOT EXISTS "stage" text;
+
+-- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다
 -- ─────────────────────────────────────────────────────────────
 --
@@ -129,6 +161,7 @@ ALTER TABLE "admin_credentials" ENABLE ROW LEVEL SECURITY;
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
 REVOKE ALL ON TABLE "documents" FROM anon, authenticated;
+REVOKE ALL ON TABLE "articles" FROM anon, authenticated;
 REVOKE ALL ON TABLE "members" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_login_attempts" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_credentials" FROM anon, authenticated;

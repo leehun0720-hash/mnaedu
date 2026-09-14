@@ -5,7 +5,7 @@ import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
-import { COURSES, FORMATS, normalizeTrack } from "@/lib/questions";
+import { COURSES, FORMATS, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { readJsonBody, storageFailure } from "@/lib/admin-api";
 
 /** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */
@@ -27,6 +27,7 @@ function guardStorage() {
 type Payload = {
   id?: number;
   track?: string;
+  stage?: string;
   format?: string;
   prompt?: string;
   choices?: unknown;
@@ -55,6 +56,8 @@ function validate(body: Payload) {
   return {
     value: {
       track: body.track as string,
+      // 단계는 선택이다 — 알 수 없는 값이 오면 '나누지 않음'으로 둔다
+      stage: normalizeStage(body.stage),
       format: body.format as string,
       prompt,
       choices,
@@ -82,12 +85,19 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const q = (params.get("q") ?? "").trim();
   const track = params.get("track") ?? "";
+  const stage = params.get("stage") ?? ""; // 기초 | 심화 | none
   const state = params.get("state") ?? ""; // published | draft | incomplete
   const page = Math.max(1, Number(params.get("page")) || 1);
 
   const filters: SQL[] = [];
   if (q) filters.push(ilike(questions.prompt, `%${q}%`));
   if (track) filters.push(eq(questions.track, track));
+  // 'none' 은 아직 나누지 않은 것 — 빈 문자열로 저장된 옛 값도 함께 본다
+  if (stage === "none") {
+    filters.push(sql`(${questions.stage} IS NULL OR ${questions.stage} = '')`);
+  } else if (normalizeStage(stage)) {
+    filters.push(eq(questions.stage, normalizeStage(stage) as string));
+  }
   if (state === "published") filters.push(eq(questions.published, true));
   if (state === "draft") filters.push(eq(questions.published, false));
   // 아직 손이 더 가야 하는 문제 — 정답이나 해설이 비어 있다

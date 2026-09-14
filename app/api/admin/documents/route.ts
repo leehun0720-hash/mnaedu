@@ -5,7 +5,7 @@ import { getDb, isDbConfigured } from "@/db";
 import { documents } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
-import { COURSES } from "@/lib/questions";
+import { COURSES, normalizeStage } from "@/lib/questions";
 import {
   DOCUMENT_KINDS,
   MAX_FILE_BYTES,
@@ -46,6 +46,7 @@ export async function GET() {
         title: documents.title,
         summary: documents.summary,
         track: documents.track,
+        stage: documents.stage,
         kind: documents.kind,
         fileName: documents.fileName,
         fileSize: documents.fileSize,
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
   const kind = (DOCUMENT_KINDS as readonly string[]).includes(kindInput) ? kindInput : "자료";
   const trackInput = String(form.get("track") ?? "");
   const track = COURSES.some((c) => c.slug === trackInput) ? trackInput : null;
+  const stage = normalizeStage(String(form.get("stage") ?? ""));
   const published = String(form.get("published") ?? "") === "true";
 
   const content = Buffer.from(await file.arrayBuffer()).toString("base64");
@@ -110,6 +112,7 @@ export async function POST(request: Request) {
         title: title.slice(0, 200),
         summary: summary?.slice(0, 500) ?? null,
         track,
+        stage,
         kind,
         fileName,
         mimeType: mimeFor(fileName),
@@ -157,6 +160,7 @@ export async function PUT(request: Request) {
         summary: String(body.summary ?? "").trim().slice(0, 500) || null,
         kind: (DOCUMENT_KINDS as readonly string[]).includes(kindInput) ? kindInput : "자료",
         track: COURSES.some((c) => c.slug === trackInput) ? trackInput : null,
+        stage: normalizeStage(String(body.stage ?? "")),
         published: Boolean(body.published),
         updatedAt: new Date(),
       })

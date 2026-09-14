@@ -8,9 +8,11 @@ import {
   SEED_QUESTIONS,
   courseLabel,
   isOfflineTrack,
+  normalizeStage,
   normalizeTrack,
   trackAliases,
   type PublicQuestion,
+  type Stage,
 } from "@/lib/questions";
 
 /**
@@ -89,6 +91,16 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
 }
 
 /**
+ * 한 분야를 거르는 조건. 단계를 주면 그 단계만 남긴다.
+ * 목록과 개수가 같은 조건을 봐야 쪽 번호가 어긋나지 않으므로 한 곳에 둔다.
+ */
+function trackFilter(slug: string, stage: Stage | null) {
+  const where = [eq(questions.published, true), inArray(questions.track, trackAliases(slug))];
+  if (stage) where.push(eq(questions.stage, stage));
+  return where;
+}
+
+/**
  * 한 분야의 평가문제 — 업무 상세 화면이 쓴다.
  *
  * 시크릿 오피스(오프라인 전용) 분야는 여기서도 빈 목록이다. 분야 자체가
@@ -97,14 +109,15 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
 export async function getQuestionsByTrack(
   slug: string,
   limit = 10,
-  offset = 0
+  offset = 0,
+  stage: Stage | null = null
 ): Promise<PublicQuestion[]> {
   if (!isDbConfigured() || isOfflineTrack(slug)) return [];
   try {
     const rows = await getDb()
       .select()
       .from(questions)
-      .where(and(eq(questions.published, true), inArray(questions.track, trackAliases(slug))))
+      .where(and(...trackFilter(slug, stage)))
       .orderBy(desc(questions.createdAt))
       .limit(limit)
       .offset(offset);
@@ -113,6 +126,7 @@ export async function getQuestionsByTrack(
       no: offset + i + 1,
       track: normalizeTrack(r.track),
       trackLabel: courseLabel(r.track),
+      stage: normalizeStage(r.stage) ?? undefined,
       type: r.format,
       prompt: r.prompt,
       choices: r.choices ?? undefined,
@@ -123,13 +137,16 @@ export async function getQuestionsByTrack(
   }
 }
 
-export async function countQuestionsByTrack(slug: string): Promise<number> {
+export async function countQuestionsByTrack(
+  slug: string,
+  stage: Stage | null = null
+): Promise<number> {
   if (!isDbConfigured() || isOfflineTrack(slug)) return 0;
   try {
     const [row] = await getDb()
       .select({ value: count() })
       .from(questions)
-      .where(and(eq(questions.published, true), inArray(questions.track, trackAliases(slug))));
+      .where(and(...trackFilter(slug, stage)));
     return row?.value ?? 0;
   } catch (err) {
     console.error("[questions] track count failed:", err);

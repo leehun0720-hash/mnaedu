@@ -18,12 +18,15 @@ export default function LibrarySection({
   index = "06 · LIBRARY",
   title = "업무자료",
   note = "업무 자료와 회장 칼럼을 올려 둡니다. 내려받아 그대로 보실 수 있습니다.",
+  stages,
   pager,
 }: {
   documents: PublicDocument[];
   index?: string;
   title?: string;
   note?: string;
+  /** 기초·심화 고르기 — 업무 화면에서만 넣는다 */
+  stages?: React.ReactNode;
   pager?: React.ReactNode;
 }) {
   return (
@@ -32,6 +35,7 @@ export default function LibrarySection({
         <p className="co-section-index">{index}</p>
         <h2>{title}</h2>
         <p className="co-section-note">{note}</p>
+        {stages}
       </div>
 
       {documents.length === 0 ? (
@@ -45,6 +49,7 @@ export default function LibrarySection({
             <li key={d.id} className="lib-item">
               <div className="lib-meta">
                 <span className="lib-kind">{d.kind}</span>
+                {d.stage && <span className="lib-stage">{d.stage}</span>}
                 {d.trackLabel && <span className="lib-track">{d.trackLabel}</span>}
                 <time className="lib-date">{d.createdAt}</time>
               </div>
