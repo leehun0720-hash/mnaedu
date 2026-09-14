@@ -3,7 +3,7 @@ import "server-only";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { documents } from "@/db/schema";
-import { courseLabel, isOfflineTrack, normalizeTrack, trackAliases } from "@/lib/questions";
+import { courseLabel, normalizeTrack, trackAliases } from "@/lib/questions";
 
 /**
  * 자료실.
@@ -159,15 +159,18 @@ export async function getDocumentForDownload(id: number): Promise<DownloadableDo
 /**
  * 한 분야의 업무자료 — 업무 상세 화면이 쓴다.
  *
- * 시크릿 오피스(오프라인 전용) 분야는 빈 목록이다 — 그 분야는 온라인에
- * 내용을 두지 않는 것이 원칙이기 때문이다.
+ * 시크릿 오피스(패밀리오피스·투자가 클럽)도 자료는 올라간다. 회장의 블라인드
+ * 지시는 '문제은행'을 가리킨 것이었다 — 그 두 분야는 오프라인으로만 교육하므로
+ * 평가문제를 온라인에 두지 않는다. 업무자료는 성격이 다르다. 회원을 모으는
+ * 소개 자료이고, 실제로 그 분야에 올리려다 막히셨다. 그래서 자료는 열고
+ * 평가문제만 닫는다 (questions-db.ts의 isOfflineTrack 차단이 그쪽을 맡는다).
  */
 export async function getDocumentsByTrack(
   slug: string,
   limit = 10,
   offset = 0
 ): Promise<PublicDocument[]> {
-  if (!isDbConfigured() || isOfflineTrack(slug)) return [];
+  if (!isDbConfigured()) return [];
   try {
     const rows = await getDb()
       .select(LIST_COLUMNS)
@@ -184,7 +187,7 @@ export async function getDocumentsByTrack(
 }
 
 export async function countDocumentsByTrack(slug: string): Promise<number> {
-  if (!isDbConfigured() || isOfflineTrack(slug)) return 0;
+  if (!isDbConfigured()) return 0;
   try {
     const [row] = await getDb()
       .select({ value: count() })

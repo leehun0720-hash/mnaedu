@@ -6,6 +6,7 @@ import { questions } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
 import { COURSES, FORMATS, normalizeTrack } from "@/lib/questions";
+import { readJsonBody, storageFailure } from "@/lib/admin-api";
 
 /** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */
 export const PAGE_SIZE = 20;
@@ -98,25 +99,31 @@ export async function GET(request: Request) {
   const where = filters.length ? and(...filters) : undefined;
 
   const db = getDb();
-  const [rows, [totals], coverageRows] = await Promise.all([
-    db
-      .select()
-      .from(questions)
-      .where(where)
-      .orderBy(desc(questions.createdAt))
-      .limit(PAGE_SIZE)
-      .offset((page - 1) * PAGE_SIZE),
-    db.select({ value: count() }).from(questions).where(where),
-    // 커버리지는 필터와 무관하게 전체 기준이어야 한다 — 빈칸을 찾는 지도이므로
-    db
-      .select({
-        track: questions.track,
-        total: count(),
-        published: sql<number>`count(*) filter (where ${questions.published})`,
-      })
-      .from(questions)
-      .groupBy(questions.track),
-  ]);
+  let result;
+  try {
+    result = await Promise.all([
+      db
+        .select()
+        .from(questions)
+        .where(where)
+        .orderBy(desc(questions.createdAt))
+        .limit(PAGE_SIZE)
+        .offset((page - 1) * PAGE_SIZE),
+      db.select({ value: count() }).from(questions).where(where),
+      // 커버리지는 필터와 무관하게 전체 기준이어야 한다 — 빈칸을 찾는 지도이므로
+      db
+        .select({
+          track: questions.track,
+          total: count(),
+          published: sql<number>`count(*) filter (where ${questions.published})`,
+        })
+        .from(questions)
+        .groupBy(questions.track),
+    ]);
+  } catch (err) {
+    return storageFailure(err, "questions list");
+  }
+  const [rows, [totals], coverageRows] = result;
 
   // 개편 전 슬러그로 저장된 행도 현행 분야의 칸에 얹는다
   const coverage: Record<string, { total: number; published: number }> = {};
@@ -141,11 +148,18 @@ export async function POST(request: Request) {
   const blocked = guardStorage();
   if (blocked) return blocked;
 
-  const parsed = validate(await request.json());
+  const body = await readJsonBody<Payload>(request);
+  if (!body) return NextResponse.json({ error: "요청을 읽을 수 없습니다." }, { status: 400 });
+
+  const parsed = validate(body);
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const [row] = await getDb().insert(questions).values(parsed.value).returning();
-  return NextResponse.json({ question: row }, { status: 201 });
+  try {
+    const [row] = await getDb().insert(questions).values(parsed.value).returning();
+    return NextResponse.json({ question: row }, { status: 201 });
+  } catch (err) {
+    return storageFailure(err, "question insert");
+  }
 }
 
 export async function PUT(request: Request) {
@@ -153,20 +167,25 @@ export async function PUT(request: Request) {
   const blocked = guardStorage();
   if (blocked) return blocked;
 
-  const body = (await request.json()) as Payload;
+  const body = await readJsonBody<Payload>(request);
+  if (!body) return NextResponse.json({ error: "요청을 읽을 수 없습니다." }, { status: 400 });
   if (!body.id) return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
 
   const parsed = validate(body);
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const [row] = await getDb()
-    .update(questions)
-    .set({ ...parsed.value, updatedAt: new Date() })
-    .where(eq(questions.id, body.id))
-    .returning();
+  try {
+    const [row] = await getDb()
+      .update(questions)
+      .set({ ...parsed.value, updatedAt: new Date() })
+      .where(eq(questions.id, body.id))
+      .returning();
 
-  if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
-  return NextResponse.json({ question: row });
+    if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+    return NextResponse.json({ question: row });
+  } catch (err) {
+    return storageFailure(err, "question update");
+  }
 }
 
 export async function DELETE(request: Request) {
@@ -177,6 +196,10 @@ export async function DELETE(request: Request) {
   const id = Number(new URL(request.url).searchParams.get("id"));
   if (!id) return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
 
-  await getDb().delete(questions).where(eq(questions.id, id));
-  return NextResponse.json({ ok: true });
+  try {
+    await getDb().delete(questions).where(eq(questions.id, id));
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return storageFailure(err, "question delete");
+  }
 }

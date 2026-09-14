@@ -3527,6 +3527,13 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   background: var(--co-tint);
 }
 .ins-cta p { margin: 0; font-size: 14.5px; color: var(--co-ink); }
+/* 전화번호는 단추 아래 한 줄로 — 단추와 나란히 서면 어느 쪽을 누를지 흐려진다 */
+.ins-cta p.ins-cta-line {
+  flex-basis: 100%;
+  font-size: 13.5px;
+  color: var(--co-muted);
+}
+.ins-cta-line a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ==========================================================================
    REVIEW FIXES — focus/motion/landmark adjustments
@@ -5164,3 +5171,8 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   .co-pager { flex-wrap: wrap; }
   .co-pager-state { order: -1; width: 100%; margin: 0 0 4px; }
 }
+
+/* 관리자 로그인 — 입력칸과 「표시」 단추를 한 줄에 */
+.admin-pwrow { display: flex; gap: 8px; align-items: stretch; }
+.admin-pwrow input { flex: 1; min-width: 0; }
+.admin-pwrow button { flex: none; white-space: nowrap; }

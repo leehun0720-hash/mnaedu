@@ -20,9 +20,17 @@ export function isAuthConfigured(): boolean {
   return Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_SESSION_SECRET);
 }
 
-/** 배포 설정에 넣어 둔 비밀번호와 견준다 — 아직 바꾸신 적이 없을 때의 기준 */
+/**
+ * 배포 설정에 넣어 둔 비밀번호와 견준다 — 아직 바꾸신 적이 없을 때의 기준.
+ *
+ * 설정 쪽 값만 앞뒤 공백을 턴다. 붙여넣을 때 줄바꿈 한 칸이 딸려 들어가면
+ * 맞는 비밀번호를 넣어도 계속 틀렸다고 나오는데, 눈에 보이지 않아 찾기가
+ * 아주 어렵다(실제로 겪었다). 앞뒤가 공백인 비밀번호를 쓰실 일은 없다.
+ *
+ * 입력한 값은 털지 않는다 — "입력은 있는 그대로 본다"는 규칙은 그대로 둔다.
+ */
 export function verifyEnvPassword(input: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
+  const expected = process.env.ADMIN_PASSWORD?.trim();
   if (!expected) return false;
   return timingSafeEqual(input, expected);
 }

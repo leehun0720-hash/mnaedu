@@ -115,11 +115,17 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
               글 · 성보경 ㈜프론티어 M&amp;A 회장
               {article.source && <> · {article.source} 게재</>}
             </p>
+            {/* 회장 지시 — 메일 창이 아니라 홈페이지의 문의 양식으로 보낸다.
+                메일 프로그램이 잡혀 있지 않은 기기에서는 mailto가 아무 일도
+                하지 않아, 상담이 그 자리에서 끊긴다. */}
             <div className="ins-cta">
               <p>다루신 사안이 있으시면 먼저 상황부터 들려주십시오.</p>
-              <a className="co-btn co-btn--primary" href={`mailto:${CONTACT.email}`}>
-                상담 신청하기 <i aria-hidden="true">→</i>
-              </a>
+              <Link className="co-btn co-btn--primary" href="/#contact">
+                전문가 상담하기 <i aria-hidden="true">→</i>
+              </Link>
+              <p className="ins-cta-line">
+                전화도 좋습니다 — <a href={CONTACT.telHref}>{CONTACT.tel}</a>
+              </p>
             </div>
           </footer>
         </article>

@@ -111,7 +111,7 @@ const EMPTY_ARTICLE: ArticleDraft = {
   title: "",
   lede: "",
   body: "",
-  source: "아주경제",
+  source: "",
   publishedOn: "",
   track: "",
   published: true,
@@ -132,6 +132,8 @@ export default function AdminClient({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("questions");
+  /** 휴대전화에서 무엇을 쳤는지 눈으로 확인하시게 한다 — 틀린 이유의 대부분이 오타다 */
+  const [showPassword, setShowPassword] = useState(false);
 
   // 문제
   const [rows, setRows] = useState<Row[]>([]);
@@ -146,6 +148,8 @@ export default function AdminClient({
 
   // 자료실
   const [docs, setDocs] = useState<DocRow[]>([]);
+  /** 값이 있으면 새로 올리는 것이 아니라 이미 올린 자료를 고치는 중이다 */
+  const [docId, setDocId] = useState<number | null>(null);
   const [docFile, setDocFile] = useState<File | null>(null);
   const [docTitle, setDocTitle] = useState("");
   const [docSummary, setDocSummary] = useState("");
@@ -168,8 +172,10 @@ export default function AdminClient({
   const [pwInfo, setPwInfo] = useState<{ changedAt: string | null; usingEnv: boolean } | null>(null);
 
   const readJson = useCallback(async <T,>(url: string): Promise<T | FetchFailure> => {
+    const abort = new AbortController();
+    const timer = window.setTimeout(() => abort.abort(), 30000);
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: abort.signal });
       if (res.status === 401) {
         setLoggedIn(false);
         return { failed: true, expired: true, message: "로그인이 만료되었습니다. 다시 로그인해 주십시오." };
@@ -179,8 +185,17 @@ export default function AdminClient({
         return { failed: true, expired: false, message: body.error ?? "목록을 불러오지 못했습니다." };
       }
       return (await res.json()) as T;
-    } catch {
-      return { failed: true, expired: false, message: "연결에 실패했습니다." };
+    } catch (err) {
+      return {
+        failed: true,
+        expired: false,
+        message:
+          err instanceof DOMException && err.name === "AbortError"
+            ? "서버가 응답하지 않아 목록을 불러오지 못했습니다."
+            : "연결에 실패했습니다.",
+      };
+    } finally {
+      window.clearTimeout(timer);
     }
   }, []);
 
@@ -342,6 +357,59 @@ export default function AdminClient({
     setNotice("초안을 채웠습니다. 저장 전에 확인해 주십시오.");
   }
 
+  /**
+   * 응답을 JSON 으로 읽되, 본문이 JSON 이 아니면 던지지 않는다.
+   * 서버가 오류 쪽(HTML)을 돌려줄 때 화면이 조용히 멎는 것을 막는다.
+   */
+  async function readResponse(res: Response): Promise<Record<string, unknown>> {
+    const text = await res.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      return { error: `서버가 예상 밖의 응답을 보냈습니다 (${res.status}).` };
+    }
+  }
+
+  /**
+   * 관리자 화면에서 무언가를 저장·삭제하는 요청은 모두 이 문을 지난다.
+   *
+   * 응답이 영영 오지 않으면 단추는 "저장 중…"에 갇히고, 서버가 JSON 대신
+   * 오류 쪽을 돌려주면 화면은 말없이 멎는다. 회장님 쪽에서는 둘 다 "눌러도
+   * 아무 일이 없다"로 보인다. 그래서 기다림에 끝을 두고, 어떤 실패든 반드시
+   * 한 문장으로 돌려준다 — 실패를 보여 주는 편이 침묵보다 낫다.
+   */
+  async function send(
+    url: string,
+    init: RequestInit,
+    /** 기다려 드릴 시간. 성한 저장은 1초면 끝나므로 20초면 넉넉하다. */
+    limitMs = 20000
+  ): Promise<{ ok: boolean; data: Record<string, unknown>; error: string | null }> {
+    const abort = new AbortController();
+    const timer = window.setTimeout(() => abort.abort(), limitMs);
+    try {
+      const res = await fetch(url, { ...init, signal: abort.signal });
+      const data = await readResponse(res);
+      if (res.status === 401) {
+        setLoggedIn(false);
+        return { ok: false, data, error: "로그인이 만료되었습니다. 다시 로그인해 주십시오." };
+      }
+      if (!res.ok) return { ok: false, data, error: (data.error as string) ?? "처리하지 못했습니다." };
+      return { ok: true, data, error: null };
+    } catch (err) {
+      return {
+        ok: false,
+        data: {},
+        error:
+          err instanceof DOMException && err.name === "AbortError"
+            ? "서버가 응답하지 않아 중단했습니다. 잠시 후 다시 시도해 주십시오. 반복되면 알려 주십시오."
+            : "연결에 실패했습니다. 인터넷 상태를 확인하고 다시 시도해 주십시오.",
+      };
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
   async function saveQuestion(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -352,14 +420,13 @@ export default function AdminClient({
         ...draft,
         choices: draft.format === "객관식" ? draft.choices.filter((c) => c.trim()) : [],
       };
-      const res = await fetch("/api/admin/questions", {
+      const out = await send("/api/admin/questions", {
         method: draft.id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(data.error ?? "저장하지 못했습니다.");
+      if (!out.ok) {
+        setError(out.error ?? "저장하지 못했습니다.");
         return;
       }
       setDraft(EMPTY);
@@ -387,17 +454,24 @@ export default function AdminClient({
 
   async function removeQuestion(id: number) {
     if (!confirm("이 문제를 지울까요? 되돌릴 수 없습니다.")) return;
-    await fetch(`/api/admin/questions?id=${id}`, { method: "DELETE" });
+    setError(null);
+    const out = await send(`/api/admin/questions?id=${id}`, { method: "DELETE" });
+    if (!out.ok) {
+      setError(out.error ?? "삭제하지 못했습니다.");
+      return;
+    }
     await loadQuestions();
   }
 
   async function togglePublish(r: Row) {
-    await fetch("/api/admin/questions", {
+    setError(null);
+    const out = await send("/api/admin/questions", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: r.id,
-        track: r.track,
+        // 개편 전 슬러그로 저장된 행도 있다. 그대로 되보내면 서버가 물린다.
+        track: normalizeTrack(r.track),
         format: r.format,
         prompt: r.prompt,
         choices: r.choices ?? [],
@@ -406,22 +480,11 @@ export default function AdminClient({
         published: !r.published,
       }),
     });
-    await loadQuestions();
-  }
-
-
-  /**
-   * 응답을 JSON 으로 읽되, 본문이 JSON 이 아니면 던지지 않는다.
-   * 서버가 오류 페이지(HTML)를 돌려줄 때 화면이 조용히 멎는 것을 막는다.
-   */
-  async function readResponse(res: Response): Promise<Record<string, unknown>> {
-    const text = await res.text();
-    if (!text) return {};
-    try {
-      return JSON.parse(text) as Record<string, unknown>;
-    } catch {
-      return { error: `서버가 예상 밖의 응답을 보냈습니다 (${res.status}).` };
+    if (!out.ok) {
+      setError(out.error ?? "발행 상태를 바꾸지 못했습니다.");
+      return;
     }
+    await loadQuestions();
   }
 
   async function saveArticle(e: React.FormEvent) {
@@ -430,26 +493,16 @@ export default function AdminClient({
     setError(null);
     setNotice(null);
     try {
-      // 응답이 영영 오지 않으면 "저장 중…"에 갇힌다. 기다림에 끝을 둔다.
-      const abort = new AbortController();
-      const timer = window.setTimeout(() => abort.abort(), 45000);
-      let res: Response;
-      try {
-        res = await fetch("/api/admin/articles", {
-          method: articleDraft.id ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(articleDraft),
-          signal: abort.signal,
-        });
-      } finally {
-        window.clearTimeout(timer);
-      }
-      const data = await readResponse(res);
-      if (!res.ok) {
-        setError((data.error as string) ?? "저장하지 못했습니다.");
+      const out = await send("/api/admin/articles", {
+        method: articleDraft.id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(articleDraft),
+      });
+      if (!out.ok) {
+        setError(out.error ?? "저장하지 못했습니다.");
         return;
       }
-      const saved = data.article as { slug?: string } | undefined;
+      const saved = out.data.article as { slug?: string } | undefined;
       setNotice(
         articleDraft.id
           ? "칼럼을 수정했습니다."
@@ -457,13 +510,6 @@ export default function AdminClient({
       );
       setArticleDraft(EMPTY_ARTICLE);
       await loadArticles();
-    } catch (err) {
-      // 아무 말 없이 끝나면 눌러도 반응이 없어 보인다. 어느 쪽인지 구분해 알린다.
-      setError(
-        err instanceof DOMException && err.name === "AbortError"
-          ? "서버가 응답하지 않아 중단했습니다. 잠시 후 다시 시도해 주십시오. 반복되면 알려 주십시오."
-          : "연결에 실패했습니다. 잠시 후 다시 시도해 주십시오."
-      );
     } finally {
       setBusy(false);
     }
@@ -487,7 +533,7 @@ export default function AdminClient({
       body: data.article.body,
       source: row.source ?? "",
       publishedOn: data.article.publishedOn ? data.article.publishedOn.slice(0, 10) : "",
-      track: row.track ?? "",
+      track: row.track ? normalizeTrack(row.track) : "",
       published: row.published,
     });
     window.scrollTo({ top: 0 });
@@ -506,21 +552,20 @@ export default function AdminClient({
       body: data.article.body,
       source: data.article.source ?? "",
       publishedOn: data.article.publishedOn ?? "",
-      track: data.article.track ?? "",
+      track: data.article.track ? normalizeTrack(data.article.track) : "",
     };
   }
 
   async function toggleArticlePublish(row: ArticleRow) {
     setError(null);
-    const res = await fetch("/api/admin/articles", {
+    const out = await send("/api/admin/articles", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       // PUT은 제목·본문을 검증하므로 토글만 보내면 400이 된다. 본문을 함께 싣는다.
       body: JSON.stringify({ ...(await articlePayload(row)), published: !row.published }),
     });
-    if (!res.ok) {
-      const data = await readResponse(res);
-      setError((data.error as string) ?? "발행 상태를 바꾸지 못했습니다.");
+    if (!out.ok) {
+      setError(out.error ?? "발행 상태를 바꾸지 못했습니다.");
       return;
     }
     await loadArticles();
@@ -528,19 +573,46 @@ export default function AdminClient({
 
   async function removeArticle(id: number) {
     if (!window.confirm("이 칼럼을 삭제할까요? 검색에 걸린 주소도 함께 사라집니다.")) return;
-    const res = await fetch(`/api/admin/articles?id=${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      const data = await readResponse(res);
-      setError((data.error as string) ?? "삭제하지 못했습니다.");
+    setError(null);
+    const out = await send(`/api/admin/articles?id=${id}`, { method: "DELETE" });
+    if (!out.ok) {
+      setError(out.error ?? "삭제하지 못했습니다.");
       return;
     }
     await loadArticles();
   }
 
   // ── 자료실 ──────────────────────────────────────────────────────────
-  async function uploadDocument(e: React.FormEvent) {
+  function resetDocForm() {
+    setDocId(null);
+    setDocFile(null);
+    setDocTitle("");
+    setDocSummary("");
+    setDocTrack("");
+    setDocKind("자료");
+    setDocPublished(true);
+  }
+
+  /**
+   * 이미 올린 자료를 고친다 — 제목·설명·분야·구분·발행 여부까지.
+   * 파일 자체는 바꾸지 않는다. 파일이 바뀌면 그것은 다른 자료이므로 새로 올린다.
+   */
+  function editDocument(d: DocRow) {
+    setError(null);
+    setNotice(null);
+    setDocId(d.id);
+    setDocFile(null);
+    setDocTitle(d.title);
+    setDocSummary(d.summary ?? "");
+    setDocTrack(d.track ? normalizeTrack(d.track) : "");
+    setDocKind(d.kind);
+    setDocPublished(d.published);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function saveDocument(e: React.FormEvent) {
     e.preventDefault();
-    if (!docFile) {
+    if (docId === null && !docFile) {
       setError("파일을 선택해 주십시오.");
       return;
     }
@@ -548,49 +620,76 @@ export default function AdminClient({
     setError(null);
     setNotice(null);
     try {
-      const form = new FormData();
-      form.set("file", docFile);
-      form.set("title", docTitle);
-      form.set("summary", docSummary);
-      form.set("track", docTrack);
-      form.set("kind", docKind);
-      form.set("published", String(docPublished));
-      const res = await fetch("/api/admin/documents", { method: "POST", body: form });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(data.error ?? "올리지 못했습니다.");
+      const out =
+        docId === null
+          ? // 8 MB짜리가 휴대전화 회선으로 올라갈 수 있다 — 이쪽만 길게 기다린다
+            await send("/api/admin/documents", { method: "POST", body: docFormData(docFile!) }, 120000)
+          : await send("/api/admin/documents", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: docId,
+                title: docTitle,
+                summary: docSummary,
+                track: docTrack,
+                kind: docKind,
+                published: docPublished,
+              }),
+            });
+      if (!out.ok) {
+        setError(out.error ?? (docId === null ? "올리지 못했습니다." : "수정하지 못했습니다."));
         return;
       }
-      setDocFile(null);
-      setDocTitle("");
-      setDocSummary("");
-      setDocTrack("");
-      setNotice("자료를 올렸습니다.");
+      setNotice(docId === null ? "자료를 올렸습니다." : "자료를 수정했습니다.");
+      resetDocForm();
       await loadDocuments();
     } finally {
       setBusy(false);
     }
   }
 
+  function docFormData(file: File) {
+    const form = new FormData();
+    form.set("file", file);
+    form.set("title", docTitle);
+    form.set("summary", docSummary);
+    form.set("track", docTrack);
+    form.set("kind", docKind);
+    form.set("published", String(docPublished));
+    return form;
+  }
+
   async function toggleDocPublish(d: DocRow) {
-    await fetch("/api/admin/documents", {
+    setError(null);
+    const out = await send("/api/admin/documents", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: d.id,
         title: d.title,
         summary: d.summary ?? "",
-        track: d.track ?? "",
+        // 옛 슬러그를 그대로 보내면 서버가 분야 없음으로 지워 버린다
+        track: d.track ? normalizeTrack(d.track) : "",
         kind: d.kind,
         published: !d.published,
       }),
     });
+    if (!out.ok) {
+      setError(out.error ?? "발행 상태를 바꾸지 못했습니다.");
+      return;
+    }
     await loadDocuments();
   }
 
   async function removeDocument(id: number) {
     if (!confirm("이 자료를 지울까요? 파일도 함께 사라지며 되돌릴 수 없습니다.")) return;
-    await fetch(`/api/admin/documents?id=${id}`, { method: "DELETE" });
+    setError(null);
+    const out = await send(`/api/admin/documents?id=${id}`, { method: "DELETE" });
+    if (!out.ok) {
+      setError(out.error ?? "삭제하지 못했습니다.");
+      return;
+    }
+    if (docId === id) resetDocForm();
     await loadDocuments();
   }
 
@@ -620,19 +719,42 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           <h1>관리자</h1>
           <p className="admin-note">비밀번호를 입력하십시오.</p>
           <form onSubmit={login} className="admin-form">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호"
-              autoComplete="current-password"
-              required
-            />
+            <div className="admin-pwrow">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호"
+                autoComplete="current-password"
+                // 휴대전화 자판이 첫 글자를 대문자로 바꾸거나 자동수정하면
+                // 맞는 비밀번호도 틀리게 들어간다
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+              />
+              <button
+                type="button"
+                className="admin-btn admin-btn--quiet"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? "가리기" : "표시"}
+              </button>
+            </div>
             <button className="admin-btn" disabled={busy}>
               {busy ? "확인 중…" : "로그인"}
             </button>
           </form>
-          {error && <p className="admin-error">{error}</p>}
+          {error && (
+            <>
+              <p className="admin-error">{error}</p>
+              <p className="admin-note">
+                「표시」를 눌러 대·소문자와 특수문자가 그대로 들어갔는지 확인해 보십시오. 비밀번호를 방금
+                바꾸셨다면 재배포가 끝난 뒤에 적용됩니다.
+              </p>
+            </>
+          )}
         </div>
       </main>
     );
@@ -974,10 +1096,11 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
               <div className="admin-row">
                 <label>
-                  게재처
+                  게재처 <small>다른 매체에 실렸던 글일 때만</small>
                   <input
                     value={articleDraft.source}
                     onChange={(e) => setArticleDraft({ ...articleDraft, source: e.target.value })}
+                    placeholder="비워 두면 매체 이름이 붙지 않습니다"
                     maxLength={60}
                   />
                 </label>
@@ -1091,25 +1214,29 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         {/* ── 자료실 ── */}
         {tab === "documents" && (
           <>
-            <form className="admin-card" onSubmit={uploadDocument}>
-              <h2>자료 올리기</h2>
+            <form className="admin-card" onSubmit={saveDocument}>
+              <h2>{docId === null ? "자료 올리기" : "자료 수정"}</h2>
               <p className="admin-note">
-                워드(.doc·.docx) · PDF · 한글(.hwp·.hwpx) 파일을 올릴 수 있습니다. 한 건에 8 MB까지입니다.
+                {docId === null
+                  ? "워드(.doc·.docx) · PDF · 한글(.hwp·.hwpx) 파일을 올릴 수 있습니다. 한 건에 8 MB까지입니다."
+                  : "제목 · 설명 · 분야 · 구분 · 발행 여부를 고칩니다. 파일을 바꾸시려면 새 파일로 다시 올리신 뒤 옛 자료를 지워 주십시오."}
               </p>
 
-              <label className="admin-field">
-                파일
-                <input
-                  type="file"
-                  accept=".doc,.docx,.pdf,.hwp,.hwpx"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setDocFile(f);
-                    if (f && !docTitle) setDocTitle(f.name.replace(/\.[^.]+$/, ""));
-                  }}
-                  required
-                />
-              </label>
+              {docId === null && (
+                <label className="admin-field">
+                  파일
+                  <input
+                    type="file"
+                    accept=".doc,.docx,.pdf,.hwp,.hwpx"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setDocFile(f);
+                      if (f && !docTitle) setDocTitle(f.name.replace(/\.[^.]+$/, ""));
+                    }}
+                    required
+                  />
+                </label>
+              )}
 
               <label className="admin-field">
                 제목
@@ -1153,8 +1280,18 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
               <div className="admin-actions">
                 <button className="admin-btn" disabled={busy || !dbConfigured}>
-                  {busy ? "올리는 중…" : "올리기"}
+                  {busy ? "저장 중…" : docId === null ? "올리기" : "수정 저장"}
                 </button>
+                {docId !== null && (
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--quiet"
+                    onClick={resetDocForm}
+                    disabled={busy}
+                  >
+                    취소
+                  </button>
+                )}
               </div>
             </form>
 
@@ -1186,6 +1323,9 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                         <a className="admin-btn admin-btn--quiet" href={`/api/documents/${d.id}`}>
                           받아보기
                         </a>
+                        <button className="admin-btn admin-btn--quiet" onClick={() => editDocument(d)}>
+                          수정
+                        </button>
                         <button className="admin-btn admin-btn--quiet" onClick={() => toggleDocPublish(d)}>
                           {d.published ? "발행 취소" : "발행"}
                         </button>

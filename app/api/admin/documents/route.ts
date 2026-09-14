@@ -14,6 +14,7 @@ import {
   mimeFor,
   safeFileName,
 } from "@/lib/documents";
+import { storageFailure } from "@/lib/admin-api";
 
 export const dynamic = "force-dynamic";
 // 파일이 붙는 요청이라 기본 시간으로는 모자랄 수 있다
@@ -38,22 +39,26 @@ export async function GET() {
   const blocked = guardStorage();
   if (blocked) return blocked;
 
-  const rows = await getDb()
-    .select({
-      id: documents.id,
-      title: documents.title,
-      summary: documents.summary,
-      track: documents.track,
-      kind: documents.kind,
-      fileName: documents.fileName,
-      fileSize: documents.fileSize,
-      published: documents.published,
-      createdAt: documents.createdAt,
-    })
-    .from(documents)
-    .orderBy(desc(documents.createdAt));
+  try {
+    const rows = await getDb()
+      .select({
+        id: documents.id,
+        title: documents.title,
+        summary: documents.summary,
+        track: documents.track,
+        kind: documents.kind,
+        fileName: documents.fileName,
+        fileSize: documents.fileSize,
+        published: documents.published,
+        createdAt: documents.createdAt,
+      })
+      .from(documents)
+      .orderBy(desc(documents.createdAt));
 
-  return NextResponse.json({ documents: rows });
+    return NextResponse.json({ documents: rows });
+  } catch (err) {
+    return storageFailure(err, "documents list");
+  }
 }
 
 /** 새 자료 올리기 — multipart/form-data */
@@ -98,22 +103,26 @@ export async function POST(request: Request) {
 
   const content = Buffer.from(await file.arrayBuffer()).toString("base64");
 
-  const [row] = await getDb()
-    .insert(documents)
-    .values({
-      title: title.slice(0, 200),
-      summary: summary?.slice(0, 500) ?? null,
-      track,
-      kind,
-      fileName,
-      mimeType: mimeFor(fileName),
-      fileSize: file.size,
-      content,
-      published,
-    })
-    .returning({ id: documents.id, title: documents.title });
+  try {
+    const [row] = await getDb()
+      .insert(documents)
+      .values({
+        title: title.slice(0, 200),
+        summary: summary?.slice(0, 500) ?? null,
+        track,
+        kind,
+        fileName,
+        mimeType: mimeFor(fileName),
+        fileSize: file.size,
+        content,
+        published,
+      })
+      .returning({ id: documents.id, title: documents.title });
 
-  return NextResponse.json({ document: row }, { status: 201 });
+    return NextResponse.json({ document: row }, { status: 201 });
+  } catch (err) {
+    return storageFailure(err, "document insert");
+  }
 }
 
 /** 제목·설명·분류·발행 여부 수정 (파일 교체는 새로 올린다) */
@@ -140,21 +149,25 @@ export async function PUT(request: Request) {
   const kindInput = String(body.kind ?? "");
   const trackInput = String(body.track ?? "");
 
-  const [row] = await getDb()
-    .update(documents)
-    .set({
-      title: title.slice(0, 200),
-      summary: String(body.summary ?? "").trim().slice(0, 500) || null,
-      kind: (DOCUMENT_KINDS as readonly string[]).includes(kindInput) ? kindInput : "자료",
-      track: COURSES.some((c) => c.slug === trackInput) ? trackInput : null,
-      published: Boolean(body.published),
-      updatedAt: new Date(),
-    })
-    .where(eq(documents.id, id))
-    .returning({ id: documents.id });
+  try {
+    const [row] = await getDb()
+      .update(documents)
+      .set({
+        title: title.slice(0, 200),
+        summary: String(body.summary ?? "").trim().slice(0, 500) || null,
+        kind: (DOCUMENT_KINDS as readonly string[]).includes(kindInput) ? kindInput : "자료",
+        track: COURSES.some((c) => c.slug === trackInput) ? trackInput : null,
+        published: Boolean(body.published),
+        updatedAt: new Date(),
+      })
+      .where(eq(documents.id, id))
+      .returning({ id: documents.id });
 
-  if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+    if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return storageFailure(err, "document update");
+  }
 }
 
 export async function DELETE(request: Request) {
@@ -167,6 +180,10 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
   }
 
-  await getDb().delete(documents).where(eq(documents.id, id));
-  return NextResponse.json({ ok: true });
+  try {
+    await getDb().delete(documents).where(eq(documents.id, id));
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return storageFailure(err, "document delete");
+  }
 }

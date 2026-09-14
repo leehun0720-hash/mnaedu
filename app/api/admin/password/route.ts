@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { isDbConfigured } from "@/db";
 import { SESSION_COOKIE, SESSION_MAX_AGE, sessionCookie } from "@/lib/auth";
 import { createSession, verifyPassword, verifySession } from "@/lib/admin-auth";
-import { passwordChangedAt, setPassword } from "@/lib/admin-password";
+import { lookupStored, setPassword } from "@/lib/admin-password";
 import { checkNewPassword, passwordProblemMessage } from "@/lib/password-hash";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +23,13 @@ async function requireAdmin(): Promise<boolean> {
 
 export async function GET() {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const changedAt = await passwordChangedAt();
+  const { read, stored } = await lookupStored();
   return NextResponse.json({
-    changedAt: changedAt ? changedAt.toISOString() : null,
-    // 아직 바꾼 적이 없으면 배포 설정의 값으로 들어오고 계신 것이다
-    usingEnv: changedAt === null,
+    changedAt: stored ? stored.updatedAt.toISOString() : null,
+    // 아직 바꾼 적이 없어야 배포 설정의 값으로 들어오고 계신 것이다.
+    // 읽지 못한 것(read=false)까지 여기 넣으면, 데이터베이스가 흔들린 김에
+    // "아직 안 바꾸셨습니다"라고 잘못 안내하게 된다.
+    usingEnv: read && stored === null,
   });
 }
 

@@ -3,6 +3,7 @@ import "server-only";
 import { inArray, sql } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { adminLoginAttempts } from "@/db/schema";
+import { withDeadline } from "@/lib/deadline";
 
 /**
  * 관리자 로그인 무차별 대입 차단.
@@ -34,6 +35,15 @@ const GLOBAL_BLOCK_MIN = 5;
 /** 실패 누적을 세는 창 (분) — 이 시간이 지나면 처음부터 다시 센다 */
 const WINDOW_MIN = 15;
 
+/**
+ * 세는 일 하나에 허락하는 시간.
+ *
+ * 로그인 한 번에 이 표를 읽고, 쓰고, 지운다. 데이터베이스가 느려지면 그 합이
+ * 그대로 "확인 중…"이 되어 회장을 문 앞에 세운다. 세는 것은 곁가지이므로,
+ * 시한을 넘기면 세지 못한 채로 넘어간다 — 지금도 오류가 나면 그렇게 한다.
+ */
+const DEADLINE_MS = 2_000;
+
 /** 프록시 뒤에서 요청 출처를 읽는다. 못 읽으면 하나로 묶어 센다. */
 export function clientIp(request: Request): string {
   const fwd = request.headers.get("x-forwarded-for");
@@ -46,6 +56,10 @@ export function clientIp(request: Request): string {
 /** 지금 잠겨 있으면 남은 초를 준다 (IP별·전역 중 더 오래 남은 쪽) */
 export async function blockedFor(ip: string): Promise<number> {
   if (!isDbConfigured()) return 0;
+  return withDeadline(readBlock(ip), DEADLINE_MS, 0, "login throttle read");
+}
+
+async function readBlock(ip: string): Promise<number> {
   try {
     const rows = await getDb()
       .select()
@@ -100,9 +114,16 @@ async function bump(key: string, maxFails: number, blockMin: number): Promise<vo
 
 export async function recordFailure(ip: string): Promise<void> {
   if (!isDbConfigured()) return;
+  await withDeadline(writeFailure(ip), DEADLINE_MS, undefined, "login throttle write");
+}
+
+async function writeFailure(ip: string): Promise<void> {
   try {
-    await bump(ip, MAX_FAILS, BLOCK_MIN);
-    await bump(GLOBAL_KEY, GLOBAL_MAX_FAILS, GLOBAL_BLOCK_MIN);
+    // 두 카운터는 서로를 기다릴 이유가 없다 — 한 번에 보내 시간을 아낀다
+    await Promise.all([
+      bump(ip, MAX_FAILS, BLOCK_MIN),
+      bump(GLOBAL_KEY, GLOBAL_MAX_FAILS, GLOBAL_BLOCK_MIN),
+    ]);
   } catch (err) {
     // DB가 흔들려도 로그인 화면 자체는 살아 있어야 한다
     console.error("[login] throttle write failed:", err);
@@ -117,6 +138,10 @@ export async function recordFailure(ip: string): Promise<void> {
  */
 export async function clearFailures(ip: string): Promise<void> {
   if (!isDbConfigured()) return;
+  await withDeadline(wipe(ip), DEADLINE_MS, undefined, "login throttle clear");
+}
+
+async function wipe(ip: string): Promise<void> {
   try {
     await getDb()
       .delete(adminLoginAttempts)

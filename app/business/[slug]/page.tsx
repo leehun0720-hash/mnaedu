@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import {
   BUSINESS_AREAS,
   CONTACT,
+  OFFLINE_LIBRARY_NOTICE,
   OFFLINE_MEMBERSHIP_NOTICE,
   OFFLINE_ONLY_NOTICE,
   OPEN_POLICY_NOTICE,
@@ -143,9 +144,12 @@ export default async function BusinessDetailPage({
               <span className="co-mastertip-title">{area.masterTip}</span>
               <span className="co-topic-tags">
                 <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                <Link className="co-tag co-tag--quiz" href="#questions">
-                  평가문제 ↓
-                </Link>
+                {/* 시크릿 오피스에는 평가문제 칸이 없다 — 없는 곳으로 가는 표를 걸지 않는다 */}
+                {!area.offlineOnly && (
+                  <Link className="co-tag co-tag--quiz" href="#questions">
+                    평가문제 ↓
+                  </Link>
+                )}
               </span>
             </div>
           )}
@@ -159,9 +163,11 @@ export default async function BusinessDetailPage({
                 <span className="co-topic-title">{topic.label}</span>
                 <span className="co-topic-tags">
                   <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                  <Link className="co-tag co-tag--quiz" href="#questions">
-                    평가문제 ↓
-                  </Link>
+                  {!area.offlineOnly && (
+                    <Link className="co-tag co-tag--quiz" href="#questions">
+                      평가문제 ↓
+                    </Link>
+                  )}
                 </span>
               </li>
             ))}
@@ -173,41 +179,42 @@ export default async function BusinessDetailPage({
         </section>
 
         {/* 회장 지시 1 — 업무자료와 평가문제는 각 주요업무 화면에 둔다.
-            시크릿 오피스 두 분야는 온라인에 내용을 두지 않으므로 게시판이 없다. */}
+            시크릿 오피스(패밀리오피스·투자가 클럽)에서 닫는 것은 평가문제뿐이다.
+            그 두 분야는 오프라인으로만 교육하므로 문제은행에 오르지 않는다.
+            반면 업무자료는 회원을 모으는 소개 자료이므로 그대로 세운다. */}
+        <LibrarySection
+          documents={documents}
+          index="LIBRARY"
+          title={`${area.name} 업무자료`}
+          note={area.offlineOnly ? OFFLINE_LIBRARY_NOTICE : OPEN_POLICY_NOTICE}
+          pager={
+            <BoardPager
+              page={docPage}
+              total={documentCount}
+              param="dp"
+              basePath={`/business/${area.slug}`}
+              hash="library"
+            />
+          }
+        />
+
         {!area.offlineOnly && (
-          <>
-            <LibrarySection
-              documents={documents}
-              index="LIBRARY"
-              title={`${area.name} 업무자료`}
-              note={OPEN_POLICY_NOTICE}
-              pager={
-                <BoardPager
-                  page={docPage}
-                  total={documentCount}
-                  param="dp"
-                  basePath={`/business/${area.slug}`}
-                  hash="library"
-                />
-              }
-            />
-            <QuestionsSection
-              questions={questions}
-              signedIn={member !== null}
-              index="PRACTICE"
-              title={`${area.name} 평가문제`}
-              note="문제 본문은 누구나 보실 수 있습니다. 정답과 해설은 회원등록 후에 열람하실 수 있습니다."
-              pager={
-                <BoardPager
-                  page={quizPage}
-                  total={questionCount}
-                  param="qp"
-                  basePath={`/business/${area.slug}`}
-                  hash="questions"
-                />
-              }
-            />
-          </>
+          <QuestionsSection
+            questions={questions}
+            signedIn={member !== null}
+            index="PRACTICE"
+            title={`${area.name} 평가문제`}
+            note="문제 본문은 누구나 보실 수 있습니다. 정답과 해설은 회원등록 후에 열람하실 수 있습니다."
+            pager={
+              <BoardPager
+                page={quizPage}
+                total={questionCount}
+                param="qp"
+                basePath={`/business/${area.slug}`}
+                hash="questions"
+              />
+            }
+          />
         )}
 
         <section className="co-section co-section--contact" id="contact">
