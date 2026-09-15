@@ -162,6 +162,14 @@ export const members = pgTable(
     authId: text("auth_id").notNull(),
     email: text("email").notNull(),
     name: text("name"),
+    /**
+     * 회장 메모 — 회원에게는 보이지 않는다.
+     *
+     * 오프라인 심사를 거쳐 모임에 들이는 분야가 있으므로, 누가 어느 자리까지
+     * 왔는지 적어 둘 곳이 필요하다. 등급이 아니라 메모다 — 코드가 이 값을
+     * 읽어 무엇을 판정하지 않는다.
+     */
+    note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

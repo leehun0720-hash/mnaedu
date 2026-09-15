@@ -7,15 +7,27 @@ import { NextResponse } from "next/server";
  * JSON으로 읽으려다 조용히 멎는다 — 회장님 화면에서는 "저장 중…"만 남는다.
  * 그래서 어떤 실패든 JSON 한 줄로 바꾸어, 무엇이 잘못됐는지 화면에 뜨게 한다.
  */
+/**
+ * 드라이버는 진짜 이유를 겉이 아니라 cause 안에 넣어 둔다.
+ * 겉만 보면 "Failed query: select …" 뿐이라, 무엇이 없어서 실패했는지 놓친다.
+ */
+function detailOf(err: unknown, depth = 0): string {
+  if (depth > 4 || !err) return "";
+  if (err instanceof Error) {
+    return `${err.message} ${detailOf((err as { cause?: unknown }).cause, depth + 1)}`;
+  }
+  return String(err);
+}
+
 export function storageFailure(err: unknown, what: string): NextResponse {
   console.error(`[admin] ${what} failed:`, err);
-  const detail = err instanceof Error ? err.message : String(err);
-  // 42P01 = undefined_table. setup.sql을 아직 돌리지 않으신 경우다.
-  const missingTable = /42P01|does not exist/i.test(detail);
+  const detail = detailOf(err);
+  // 42P01 = 표가 없음, 42703 = 열이 없음. 둘 다 setup.sql을 아직 안 돌리신 경우다.
+  const needsSetup = /42P01|42703|does not exist/i.test(detail);
   return NextResponse.json(
     {
-      error: missingTable
-        ? "데이터베이스에 표가 아직 없습니다. SUPABASE.md의 setup.sql을 한 번 실행해 주십시오."
+      error: needsSetup
+        ? "데이터베이스가 아직 최신 모양이 아닙니다. SUPABASE.md의 setup.sql을 한 번 더 실행해 주십시오."
         : "데이터베이스가 응답하지 않아 처리하지 못했습니다. 잠시 후 다시 시도해 주십시오.",
     },
     { status: 500 }

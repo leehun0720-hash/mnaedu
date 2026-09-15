@@ -17,14 +17,28 @@ test("데이터베이스가 넘어져도 답은 JSON이다", async () => {
   assert.ok(body.error.length > 0);
 });
 
-test("표가 없을 때는 무엇을 하셔야 하는지 일러 준다", async () => {
+test("표나 열이 없을 때는 무엇을 하셔야 하는지 일러 준다", async () => {
   for (const err of [
     new Error('relation "questions" does not exist'),
     Object.assign(new Error("db error"), { message: "42P01" }),
+    // 드라이버는 진짜 이유를 cause 안에 넣는다. 겉만 보면 놓친다.
+    Object.assign(new Error("Failed query: select ..."), {
+      cause: Object.assign(new Error('column "note" does not exist'), { code: "42703" }),
+    }),
   ]) {
     const body = await storageFailure(err, "question insert").json();
     assert.match(body.error, /setup\.sql/);
   }
+});
+
+test("원인 사슬이 순환해도 멈춘다", async () => {
+  // 시한 없는 재귀는 서버리스 함수를 통째로 넘어뜨린다
+  const a = new Error("바깥");
+  const inner = new Error("안쪽");
+  Object.assign(a, { cause: inner });
+  Object.assign(inner, { cause: a });
+  const body = await storageFailure(a, "loop").json();
+  assert.equal(typeof body.error, "string");
 });
 
 test("본문이 JSON이 아니면 던지지 않고 null을 돌려준다", async () => {

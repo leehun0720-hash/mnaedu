@@ -396,7 +396,7 @@ export default async function HomePage() {
               target="_blank"
               rel="nofollow noopener noreferrer"
             >
-              출제자 입장 <i aria-hidden="true">↗</i>
+              관리자 <i aria-hidden="true">↗</i>
             </a>
           </div>
         </div>

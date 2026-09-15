@@ -51,14 +51,21 @@ type DocRow = {
   createdAt: string;
 };
 
-type MemberRow = { id: number; email: string; name: string | null; createdAt: string };
+type MemberRow = {
+  id: number;
+  email: string;
+  name: string | null;
+  /** 회장만 보는 메모 — 심사·모임 진행 상황을 적어 두는 자리 */
+  note: string | null;
+  createdAt: string;
+};
 
 /** 분야 → 그 칸의 문제 수. 어디가 비어 있는지 보는 지도다. */
 type Coverage = Record<string, { total: number; published: number }>;
 
 type QuestionsResponse = { questions: Row[]; total: number; page: number; coverage: Coverage };
 type DocumentsResponse = { documents: DocRow[] };
-type MembersResponse = { members: MemberRow[]; total: number; page: number };
+type MembersResponse = { members: MemberRow[]; total: number; page: number; pageSize: number };
 
 /** 목록 불러오기 실패 — 응답 대신 이 값이 돌아오면 화면에 이유를 띄운다 */
 type FetchFailure = { failed: true; expired: boolean; message: string };
@@ -173,6 +180,11 @@ export default function AdminClient({
   // 회원
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [memberTotal, setMemberTotal] = useState(0);
+  const [memberQuery, setMemberQuery] = useState("");
+  const [memberPage, setMemberPage] = useState(1);
+  const [memberPageSize, setMemberPageSize] = useState(20);
+  /** 지금 손보고 있는 회원 한 명 — 이름과 메모만 고친다 */
+  const [memberEdit, setMemberEdit] = useState<{ id: number; name: string; note: string } | null>(null);
 
   // 비밀번호 변경
   const [pwCurrent, setPwCurrent] = useState("");
@@ -234,14 +246,63 @@ export default function AdminClient({
   }, [readJson]);
 
   const loadMembers = useCallback(async () => {
-    const data = await readJson<MembersResponse>("/api/admin/members");
+    const params = new URLSearchParams({ page: String(memberPage) });
+    if (memberQuery.trim()) params.set("q", memberQuery.trim());
+    const data = await readJson<MembersResponse>(`/api/admin/members?${params}`);
     if (isFailure(data)) {
       setError(data.message);
       return;
     }
     setMembers(data.members);
     setMemberTotal(data.total);
-  }, [readJson]);
+    setMemberPageSize(data.pageSize || 20);
+  }, [readJson, memberPage, memberQuery]);
+
+  async function saveMember(e: React.FormEvent) {
+    e.preventDefault();
+    if (!memberEdit) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const out = await send("/api/admin/members", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(memberEdit),
+      });
+      if (!out.ok) {
+        setError(out.error ?? "회원 정보를 고치지 못했습니다.");
+        return;
+      }
+      setMemberEdit(null);
+      setNotice("회원 정보를 고쳤습니다.");
+      await loadMembers();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeMember(m: MemberRow) {
+    const who = m.name ? `${m.name}(${m.email})` : m.email;
+    if (
+      !confirm(
+        `${who} 님을 명단에서 내릴까요?\n\n` +
+          "계정 자체는 남아 있어, 그분이 다시 들어오시면 명단에 새로 오릅니다. " +
+          "정말로 탈퇴시키시려면 Supabase의 Authentication 에서 계정을 지우셔야 합니다."
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    const out = await send(`/api/admin/members?id=${m.id}`, { method: "DELETE" });
+    if (!out.ok) {
+      setError(out.error ?? "명단에서 내리지 못했습니다.");
+      return;
+    }
+    if (memberEdit?.id === m.id) setMemberEdit(null);
+    setNotice("명단에서 내렸습니다.");
+    await loadMembers();
+  }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -324,6 +385,12 @@ export default function AdminClient({
       alive = false;
     };
   }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers, loadPasswordInfo]);
+
+  /** 검색어를 지우거나 새로 치면 첫 쪽부터 다시 본다 */
+  function searchMembers(next: string) {
+    setMemberQuery(next);
+    setMemberPage(1);
+  }
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -1422,38 +1489,150 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
         {/* ── 회원 ── */}
         {tab === "members" && (
-          <section className="admin-card">
-            <h2>회원 ({memberTotal}명)</h2>
-            <p className="admin-note">
-              정답과 해설을 열람하려고 등록한 분들입니다. 등급도 결제도 없으므로 여기서 조정할 것은 없습니다.
-            </p>
-            {members.length === 0 ? (
-              <div className="admin-note">
-                <p>아직 명단에 오른 회원이 없습니다.</p>
-                <p>
-                  이 명단에는 <strong>메일로 보낸 인증 링크를 눌러 가입을 마치신 분</strong>만 오릅니다.
-                  가입 신청만 하고 인증을 마치지 않으신 분은 여기에 나타나지 않습니다.
+          <>
+            {memberEdit && (
+              <form className="admin-card" onSubmit={saveMember}>
+                <h2>회원 손보기</h2>
+                <p className="admin-note">
+                  이메일은 신원이라 여기서 바꾸지 않습니다. 바꿔야 한다면 그분이 직접 새로
+                  가입하셔야 합니다.
                 </p>
-                <p>
-                  누가 신청했는지까지 보시려면 Supabase 대시보드의{" "}
-                  <strong>Authentication → Users</strong> 를 보십시오. 그곳의{" "}
-                  <code>Last sign in</code> 이 비어 있으면 아직 인증을 마치지 않으신 것입니다.
-                </p>
-              </div>
-            ) : (
-              <ul className="admin-list">
-                {members.map((m) => (
-                  <li key={m.id}>
-                    <div className="admin-list-meta">
-                      <span>{m.name ?? "이름 미기재"}</span>
-                      <span>{m.email}</span>
-                      <span>{m.createdAt.slice(0, 10)} 등록</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                <label className="admin-field">
+                  성함
+                  <input
+                    value={memberEdit.name}
+                    onChange={(e) => setMemberEdit({ ...memberEdit, name: e.target.value })}
+                    placeholder="이름을 안 적고 가입하신 분은 여기서 채워 넣으십시오"
+                    maxLength={100}
+                  />
+                </label>
+                <label className="admin-field">
+                  메모 <small>회장님만 보십니다 — 회원 화면에는 나오지 않습니다</small>
+                  <textarea
+                    rows={3}
+                    value={memberEdit.note}
+                    onChange={(e) => setMemberEdit({ ...memberEdit, note: e.target.value })}
+                    placeholder="예) 패밀리오피스 오프라인 심사 대기 · 3월 모임 참석"
+                    maxLength={500}
+                  />
+                </label>
+                <div className="admin-actions">
+                  <button className="admin-btn" disabled={busy || !dbConfigured}>
+                    {busy ? "저장 중…" : "저장"}
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--quiet"
+                    onClick={() => setMemberEdit(null)}
+                    disabled={busy}
+                  >
+                    취소
+                  </button>
+                </div>
+              </form>
             )}
-          </section>
+
+            <section className="admin-card">
+              <h2>회원 ({memberTotal}명)</h2>
+              <p className="admin-note">
+                정답과 해설을 열람하려고 등록한 분들입니다. 등급도 결제도 없으므로, 여기서
+                하시는 일은 찾고 · 이름을 바로잡고 · 메모를 남기고 · 명단에서 내리는 것입니다.
+              </p>
+
+              <div className="admin-filters">
+                <input
+                  placeholder="성함 · 이메일 · 메모로 찾기"
+                  value={memberQuery}
+                  onChange={(e) => searchMembers(e.target.value)}
+                />
+                {memberQuery && (
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--quiet"
+                    onClick={() => searchMembers("")}
+                  >
+                    검색 지우기
+                  </button>
+                )}
+              </div>
+
+              {members.length === 0 ? (
+                <div className="admin-note">
+                  {memberQuery ? (
+                    <p>「{memberQuery}」로 찾은 회원이 없습니다.</p>
+                  ) : (
+                    <>
+                      <p>아직 명단에 오른 회원이 없습니다.</p>
+                      <p>
+                        이 명단에는 <strong>메일로 보낸 인증 링크를 눌러 가입을 마치신 분</strong>만
+                        오릅니다. 가입 신청만 하고 인증을 마치지 않으신 분은 여기에 나타나지 않습니다.
+                      </p>
+                      <p>
+                        누가 신청했는지까지 보시려면 Supabase 대시보드의{" "}
+                        <strong>Authentication → Users</strong> 를 보십시오. 그곳의{" "}
+                        <code>Last sign in</code> 이 비어 있으면 아직 인증을 마치지 않으신 것입니다.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <ul className="admin-list">
+                  {members.map((m) => (
+                    <li key={m.id}>
+                      <div className="admin-list-meta">
+                        <span>{m.name ?? "이름 미기재"}</span>
+                        <span>{m.email}</span>
+                        <span>{m.createdAt.slice(0, 10)} 등록</span>
+                      </div>
+                      {m.note && (
+                        <p className="admin-list-prompt">
+                          <strong>메모</strong> — {m.note}
+                        </p>
+                      )}
+                      <div className="admin-actions">
+                        <button
+                          className="admin-btn admin-btn--quiet"
+                          onClick={() =>
+                            setMemberEdit({ id: m.id, name: m.name ?? "", note: m.note ?? "" })
+                          }
+                        >
+                          수정 · 메모
+                        </button>
+                        <button
+                          className="admin-btn admin-btn--danger"
+                          onClick={() => removeMember(m)}
+                        >
+                          명단에서 내리기
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {memberTotal > memberPageSize && (
+                <div className="admin-pager">
+                  <button
+                    className="admin-btn admin-btn--quiet"
+                    disabled={memberPage <= 1}
+                    onClick={() => setMemberPage(memberPage - 1)}
+                  >
+                    이전
+                  </button>
+                  <span>
+                    {memberPage} / {Math.ceil(memberTotal / memberPageSize)}
+                  </span>
+                  <button
+                    className="admin-btn admin-btn--quiet"
+                    disabled={memberPage >= Math.ceil(memberTotal / memberPageSize)}
+                    onClick={() => setMemberPage(memberPage + 1)}
+                  >
+                    다음
+                  </button>
+                </div>
+              )}
+            </section>
+          </>
         )}
 
         {tab === "settings" && (

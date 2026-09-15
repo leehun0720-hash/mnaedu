@@ -38,7 +38,10 @@ export async function recordMember(user: {
   if (!isDbConfigured()) return null;
   try {
     const db = getDb();
-    const [existing] = await db.select().from(members).where(eq(members.authId, user.id)).limit(1);
+    // 필요한 열만 고른다. select() 로 전부 긁으면, 나중에 더한 열이 아직
+    // 데이터베이스에 없을 때 공개 화면의 로그인 상태까지 함께 무너진다.
+    const db_ = db.select(PROFILE_COLUMNS).from(members);
+    const [existing] = await db_.where(eq(members.authId, user.id)).limit(1);
     if (existing) return toProfile(existing);
 
     const email = user.email ?? "";
@@ -47,12 +50,16 @@ export async function recordMember(user: {
       .insert(members)
       .values({ authId: user.id, email, name })
       .onConflictDoNothing({ target: members.authId })
-      .returning();
+      .returning(PROFILE_COLUMNS);
 
     if (created) return toProfile(created);
 
     // 동시 요청이 먼저 만들었다면 그것을 읽어 온다
-    const [raced] = await db.select().from(members).where(eq(members.authId, user.id)).limit(1);
+    const [raced] = await db
+      .select(PROFILE_COLUMNS)
+      .from(members)
+      .where(eq(members.authId, user.id))
+      .limit(1);
     return raced ? toProfile(raced) : null;
   } catch (err) {
     // 명단에 못 올리더라도 들어오신 분을 문밖에 세우지는 않는다
@@ -71,7 +78,15 @@ export async function getCurrentMember(): Promise<MemberProfile | null> {
   return recordMember(user);
 }
 
-export function toProfile(row: typeof members.$inferSelect): MemberProfile {
+/** 화면이 쓰는 열만 — 메모처럼 나중에 더한 열에 공개 경로가 기대지 않게 한다 */
+const PROFILE_COLUMNS = {
+  id: members.id,
+  authId: members.authId,
+  email: members.email,
+  name: members.name,
+} as const;
+
+export function toProfile(row: MemberProfile): MemberProfile {
   return { id: row.id, authId: row.authId, email: row.email, name: row.name };
 }
 
