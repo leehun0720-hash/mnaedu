@@ -57,9 +57,18 @@ export function getDb() {
     // 화면은 "저장 중"에 갇힌다 — 기다림을 끝내고 오류로 만든다.
     const sql = postgres(url, {
       prepare: false,
-      max: 1,
+      // 하나만 두면 갇힌 조회 하나가 그 인스턴스의 모든 요청을 막는다 —
+      // 회원 표가 잠겼을 때 진단 경로까지 함께 죽었던 이유다. 몇 개는 둔다.
+      max: 3,
       idle_timeout: 20,
       connect_timeout: 15,
+      // 서버가 스스로 오래된 문장을 끊게 한다. 화면이 12초에 포기해도 문장은
+      // 서버에 남아 연결을 붙들고 있었다 — 끊어야 연결이 돌아온다.
+      // 열어 둔 채 노는 트랜잭션도 30초면 정리해, 우리 쪽이 표를 잠그는 일이 없게 한다.
+      connection: {
+        statement_timeout: 15_000,
+        idle_in_transaction_session_timeout: 30_000,
+      },
     });
     cached = drizzle(sql, { schema });
   }

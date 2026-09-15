@@ -67,6 +67,14 @@ type QuestionsResponse = { questions: Row[]; total: number; page: number; covera
 type DocumentsResponse = { documents: DocRow[] };
 type MembersResponse = { members: MemberRow[]; total: number; page: number; pageSize: number };
 
+/** /api/admin/diagnose 가 돌려주는 것 */
+type Diagnosis = {
+  healthy: boolean;
+  findings: string[];
+  hasNote?: boolean;
+  sessions: { pid: number; state: string | null; age: number | null; query: string | null; blocked: boolean }[];
+};
+
 /** 목록 불러오기 실패 — 응답 대신 이 값이 돌아오면 화면에 이유를 띄운다 */
 type FetchFailure = { failed: true; expired: boolean; message: string };
 function isFailure(d: unknown): d is FetchFailure {
@@ -191,6 +199,9 @@ export default function AdminClient({
   const [memberPageSize, setMemberPageSize] = useState(20);
   /** 지금 손보고 있는 회원 한 명 — 이름과 메모만 고친다 */
   const [memberEdit, setMemberEdit] = useState<{ id: number; name: string; note: string } | null>(null);
+  /** 데이터베이스 진단 결과 — 무엇이 막혔는지 사람 말로 */
+  const [diag, setDiag] = useState<Diagnosis | null>(null);
+  const [diagBusy, setDiagBusy] = useState(false);
 
   // 비밀번호 변경
   const [pwCurrent, setPwCurrent] = useState("");
@@ -271,6 +282,46 @@ export default function AdminClient({
     setMemberTotal(data.total);
     setMemberPageSize(data.pageSize || 20);
   }, [readJson, memberPage, memberSearch]);
+
+  /** 무엇이 막혔는지 데이터베이스에 직접 묻는다 — 짐작하지 않는다 */
+  async function runDiagnosis() {
+    setDiagBusy(true);
+    setError(null);
+    try {
+      const data = await readJson<Diagnosis>("/api/admin/diagnose");
+      if (isFailure(data)) {
+        setError(data.message);
+        return;
+      }
+      setDiag(data);
+    } finally {
+      setDiagBusy(false);
+    }
+  }
+
+  /** 고치기 — 잠금 풀기 / 메모 열 만들기. 끝나면 다시 진단해 보여 준다 */
+  async function repair(action: "unlock" | "note") {
+    setDiagBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const out = await send("/api/admin/diagnose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!out.ok) {
+        setError(out.error ?? "고치지 못했습니다.");
+        return;
+      }
+      setNotice(String(out.data.message ?? "끝났습니다."));
+      const data = await readJson<Diagnosis>("/api/admin/diagnose");
+      if (!isFailure(data)) setDiag(data);
+      await loadMembers();
+    } finally {
+      setDiagBusy(false);
+    }
+  }
 
   async function saveMember(e: React.FormEvent) {
     e.preventDefault();
@@ -1567,6 +1618,63 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 </div>
               </form>
             )}
+
+            <section className="admin-card">
+              <h2>회원 목록이 안 보일 때 — 진단</h2>
+              <p className="admin-note">
+                목록이 비거나 「답하지 않았습니다」가 뜨면 먼저 여기를 누르십시오. 데이터베이스에
+                직접 물어 무엇이 막혔는지 사람 말로 보여 주고, 그 자리에서 고칩니다.
+              </p>
+              <div className="admin-actions">
+                <button type="button" className="admin-btn" onClick={runDiagnosis} disabled={diagBusy}>
+                  {diagBusy ? "확인 중…" : "진단"}
+                </button>
+                {diag && !diag.healthy && (
+                  <>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--danger"
+                      onClick={() => repair("unlock")}
+                      disabled={diagBusy}
+                    >
+                      잠금 풀기
+                    </button>
+                    {diag.hasNote === false && (
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn--quiet"
+                        onClick={() => repair("note")}
+                        disabled={diagBusy}
+                      >
+                        메모 열 만들기
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+              {diag && (
+                <ul className="admin-list">
+                  {diag.findings.map((f) => (
+                    <li key={f} className={diag.healthy ? "" : "admin-diag-item"}>
+                      <p className="admin-list-prompt">{f}</p>
+                    </li>
+                  ))}
+                  {diag.sessions.length > 0 && (
+                    <li>
+                      <div className="admin-list-meta">
+                        <span>지금 돌고 있는 접속 {diag.sessions.length}개</span>
+                      </div>
+                      {diag.sessions.map((x) => (
+                        <p key={x.pid} className="admin-legacy">
+                          <strong>{x.state ?? "?"}</strong> · {x.age ?? 0}초
+                          {x.blocked ? " · 막혀 있음" : ""} — <code>{x.query ?? ""}</code>
+                        </p>
+                      ))}
+                    </li>
+                  )}
+                </ul>
+              )}
+            </section>
 
             <section className="admin-card">
               <h2>회원 ({memberTotal}명)</h2>
