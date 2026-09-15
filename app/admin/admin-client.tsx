@@ -47,6 +47,8 @@ type DocRow = {
   kind: string;
   fileName: string;
   fileSize: number;
+  /** text/plain 이면 붙여넣은 글, 아니면 예전에 올린 파일 */
+  mimeType: string;
   published: boolean;
   createdAt: string;
 };
@@ -176,7 +178,10 @@ export default function AdminClient({
   const [docs, setDocs] = useState<DocRow[]>([]);
   /** 값이 있으면 새로 올리는 것이 아니라 이미 올린 자료를 고치는 중이다 */
   const [docId, setDocId] = useState<number | null>(null);
-  const [docFile, setDocFile] = useState<File | null>(null);
+  /** 붙여넣은 본문 — 자료실은 이제 파일이 아니라 글이다 (회장 지시 2026-09-15) */
+  const [docBody, setDocBody] = useState("");
+  /** 고치는 중인 것이 예전에 올린 파일 자료면 본문 칸을 잠근다 */
+  const [docIsFile, setDocIsFile] = useState(false);
   const [docTitle, setDocTitle] = useState("");
   const [docSummary, setDocSummary] = useState("");
   const [docTrack, setDocTrack] = useState("");
@@ -753,7 +758,8 @@ export default function AdminClient({
   // ── 자료실 ──────────────────────────────────────────────────────────
   function resetDocForm() {
     setDocId(null);
-    setDocFile(null);
+    setDocBody("");
+    setDocIsFile(false);
     setDocTitle("");
     setDocSummary("");
     setDocTrack("");
@@ -766,11 +772,20 @@ export default function AdminClient({
    * 이미 올린 자료를 고친다 — 제목·설명·분야·구분·발행 여부까지.
    * 파일 자체는 바꾸지 않는다. 파일이 바뀌면 그것은 다른 자료이므로 새로 올린다.
    */
-  function editDocument(d: DocRow) {
+  async function editDocument(d: DocRow) {
     setError(null);
     setNotice(null);
     setDocId(d.id);
-    setDocFile(null);
+    setDocIsFile(!d.mimeType.startsWith("text/plain"));
+    setDocBody("");
+    if (d.mimeType.startsWith("text/plain")) {
+      const data = await readJson<{ document: { body: string } }>(`/api/admin/documents?id=${d.id}`);
+      if (isFailure(data)) {
+        setError(data.message);
+        return;
+      }
+      setDocBody(data.document.body ?? "");
+    }
     setDocTitle(d.title);
     setDocSummary(d.summary ?? "");
     setDocTrack(d.track ? normalizeTrack(d.track) : "");
@@ -782,31 +797,30 @@ export default function AdminClient({
 
   async function saveDocument(e: React.FormEvent) {
     e.preventDefault();
-    if (docId === null && !docFile) {
-      setError("파일을 선택해 주십시오.");
+    if (!docTrack) {
+      setError("분야를 선택해 주십시오. 자료는 그 분야 화면에 올라갑니다.");
       return;
     }
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
-      const out =
-        docId === null
-          ? // 8 MB짜리가 휴대전화 회선으로 올라갈 수 있다 — 이쪽만 길게 기다린다
-            await send("/api/admin/documents", { method: "POST", body: docFormData(docFile!) }, 120000)
-          : await send("/api/admin/documents", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                id: docId,
-                title: docTitle,
-                summary: docSummary,
-                track: docTrack,
-                stage: docStage,
-                kind: docKind,
-                published: docPublished,
-              }),
-            });
+      const payload = {
+        id: docId ?? undefined,
+        title: docTitle,
+        // 파일 자료를 고칠 때는 본문을 보내지 않는다 — 그 파일은 그대로 둔다
+        body: docIsFile ? "" : docBody,
+        summary: docSummary,
+        track: docTrack,
+        stage: docStage,
+        kind: docKind,
+        published: docPublished,
+      };
+      const out = await send("/api/admin/documents", {
+        method: docId === null ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       if (!out.ok) {
         setError(out.error ?? (docId === null ? "올리지 못했습니다." : "수정하지 못했습니다."));
         return;
@@ -817,18 +831,6 @@ export default function AdminClient({
     } finally {
       setBusy(false);
     }
-  }
-
-  function docFormData(file: File) {
-    const form = new FormData();
-    form.set("file", file);
-    form.set("title", docTitle);
-    form.set("summary", docSummary);
-    form.set("track", docTrack);
-    form.set("stage", docStage);
-    form.set("kind", docKind);
-    form.set("published", String(docPublished));
-    return form;
   }
 
   async function toggleDocPublish(d: DocRow) {
@@ -1439,30 +1441,28 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               <h2>{docId === null ? "자료 올리기" : "자료 수정"}</h2>
               <p className="admin-note">
                 {docId === null
-                  ? "워드(.doc·.docx) · PDF · 한글(.hwp·.hwpx) 파일을 올릴 수 있습니다. 한 건에 8 MB까지입니다. 내려받을 파일이 아니라 읽을 글을 올리시려면 「칼럼」 탭을 쓰십시오 — 분야를 정하시면 그 분야 자료실에 함께 섭니다."
-                  : "제목 · 설명 · 분야 · 단계 · 구분 · 발행 여부를 고칩니다. 파일을 바꾸시려면 새 파일로 다시 올리신 뒤 옛 자료를 지워 주십시오."}
+                  ? "칼럼처럼 제목과 본문을 붙여넣으면 됩니다. 분야를 고르시면 그 분야 화면의 업무자료에 올라가고, 누르면 그 자리에서 읽힙니다."
+                  : docIsFile
+                    ? "예전에 파일로 올린 자료입니다. 제목 · 설명 · 분야 · 단계 · 발행 여부만 고칩니다. 글로 바꾸시려면 새로 올리신 뒤 이것을 지워 주십시오."
+                    : "제목 · 본문 · 설명 · 분야 · 단계 · 발행 여부를 고칩니다."}
               </p>
-
-              {docId === null && (
-                <label className="admin-field">
-                  파일
-                  <input
-                    type="file"
-                    accept=".doc,.docx,.pdf,.hwp,.hwpx"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      setDocFile(f);
-                      if (f && !docTitle) setDocTitle(f.name.replace(/\.[^.]+$/, ""));
-                    }}
-                    required
-                  />
-                </label>
-              )}
 
               <label className="admin-field">
                 제목
                 <input value={docTitle} onChange={(e) => setDocTitle(e.target.value)} required />
               </label>
+
+              {!docIsFile && (
+                <label className="admin-field">
+                  본문 <small>워드에서 그대로 붙여넣으십시오. 빈 줄이 문단을 나눕니다.</small>
+                  <textarea
+                    rows={14}
+                    value={docBody}
+                    onChange={(e) => setDocBody(e.target.value)}
+                    required
+                  />
+                </label>
+              )}
 
               <label className="admin-field">
                 한 줄 설명 <small>목록에 제목 아래로 보입니다</small>
@@ -1471,9 +1471,9 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
               <div className="admin-row">
                 <label>
-                  분야 <small>선택</small>
-                  <select value={docTrack} onChange={(e) => setDocTrack(e.target.value)}>
-                    <option value="">분류 없음</option>
+                  분야 <small>이 분야 화면에 올라갑니다</small>
+                  <select value={docTrack} onChange={(e) => setDocTrack(e.target.value)} required>
+                    <option value="">선택</option>
                     {COURSES.map((c) => (
                       <option key={c.slug} value={c.slug}>
                         {c.label}
@@ -1544,18 +1544,29 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                         {d.track && (
                           <span>{COURSES.find((c) => c.slug === normalizeTrack(d.track!))?.label ?? d.track}</span>
                         )}
-                        <span>{formatSize(d.fileSize)}</span>
+                        {!d.mimeType.startsWith("text/plain") && <span>{formatSize(d.fileSize)}</span>}
                         <span>{d.createdAt.slice(0, 10)}</span>
                       </div>
                       <p className="admin-list-prompt">
                         <strong>{d.title}</strong>
                         {d.summary && <> — {d.summary}</>}
                       </p>
-                      <p className="admin-note">{d.fileName}</p>
+                      {!d.mimeType.startsWith("text/plain") && <p className="admin-note">{d.fileName}</p>}
                       <div className="admin-actions">
-                        <a className="admin-btn admin-btn--quiet" href={`/api/documents/${d.id}`}>
-                          받아보기
-                        </a>
+                        {d.mimeType.startsWith("text/plain") ? (
+                          <a
+                            className="admin-btn admin-btn--quiet"
+                            href={`/library/${d.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            읽기
+                          </a>
+                        ) : (
+                          <a className="admin-btn admin-btn--quiet" href={`/api/documents/${d.id}`}>
+                            받아보기
+                          </a>
+                        )}
                         <button className="admin-btn admin-btn--quiet" onClick={() => editDocument(d)}>
                           수정
                         </button>

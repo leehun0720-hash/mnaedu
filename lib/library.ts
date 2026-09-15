@@ -40,9 +40,10 @@ export async function getLibraryEntries(
         stage: d.stage,
         trackLabel: d.trackLabel,
         createdAt: d.createdAt,
-        href: `/api/documents/${d.id}`,
-        file: true,
-        size: formatSize(d.fileSize),
+        // 붙여넣은 글은 그 자리에서 읽고, 예전에 올린 파일은 그대로 내려받는다
+        href: d.readable ? `/library/${d.id}` : `/api/documents/${d.id}`,
+        file: !d.readable,
+        size: d.readable ? "" : formatSize(d.fileSize),
       })),
       ...posts.map((a) => ({
         key: `post-${a.id}`,

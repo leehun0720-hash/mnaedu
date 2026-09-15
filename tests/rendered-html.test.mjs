@@ -225,3 +225,12 @@ test("인증 링크가 실패하면 로그인 화면이 이유를 말한다", as
   const plain = await renderHtml("/login");
   assert.doesNotMatch(plain, /가입하신 브라우저가 아닌 곳에서/);
 });
+
+test("자료 읽기 화면은 없는 자료에 404로 답한다", async () => {
+  // 붙여넣은 글로 올린 자료는 /library/<id> 에서 읽는다. 없는 번호나 엉뚱한
+  // 값에는 오류 화면이 아니라 404 가 떠야 한다.
+  for (const path of ["/library/999999", "/library/abc"]) {
+    const res = await render(path);
+    assert.equal(res.status, 404, `${path} should 404`);
+  }
+});

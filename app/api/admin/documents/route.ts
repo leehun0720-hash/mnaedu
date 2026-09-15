@@ -9,12 +9,14 @@ import { COURSES, normalizeStage } from "@/lib/questions";
 import {
   DOCUMENT_KINDS,
   MAX_FILE_BYTES,
+  TEXT_MIME,
   formatSize,
   isAllowedFile,
+  isTextDocument,
   mimeFor,
   safeFileName,
 } from "@/lib/documents";
-import { runQuery, storageFailure } from "@/lib/admin-api";
+import { readJsonBody, runQuery } from "@/lib/admin-api";
 
 export const dynamic = "force-dynamic";
 // 파일이 붙는 요청이라 기본 시간으로는 모자랄 수 있다
@@ -33,39 +35,134 @@ function guardStorage() {
   );
 }
 
-/** 목록 — 본문(content)은 절대 싣지 않는다 */
-export async function GET() {
+const LIST = {
+  id: documents.id,
+  title: documents.title,
+  summary: documents.summary,
+  track: documents.track,
+  stage: documents.stage,
+  kind: documents.kind,
+  fileName: documents.fileName,
+  fileSize: documents.fileSize,
+  mimeType: documents.mimeType,
+  published: documents.published,
+  createdAt: documents.createdAt,
+} as const;
+
+/**
+ * 목록 — 본문(content)은 싣지 않는다.
+ * ?id= 를 주면 그 한 건을 본문까지 준다 — 붙여넣은 글을 고칠 때 쓴다.
+ */
+export async function GET(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const blocked = guardStorage();
   if (blocked) return blocked;
 
-  const out = await runQuery(
-    getDb()
-      .select({
-        id: documents.id,
-        title: documents.title,
-        summary: documents.summary,
-        track: documents.track,
-        stage: documents.stage,
-        kind: documents.kind,
-        fileName: documents.fileName,
-        fileSize: documents.fileSize,
-        published: documents.published,
-        createdAt: documents.createdAt,
-      })
-      .from(documents)
-      .orderBy(desc(documents.createdAt)),
-    "자료 목록"
-  );
+  const id = Number(new URL(request.url).searchParams.get("id"));
+  if (Number.isInteger(id) && id > 0) {
+    const one = await runQuery(
+      getDb().select({ ...LIST, content: documents.content }).from(documents).where(eq(documents.id, id)).limit(1),
+      "자료 한 건"
+    );
+    if (!one.ok) return one.response;
+    const row = one.value[0];
+    if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+    const { content, ...rest } = row;
+    // 파일 자료의 본문(base64)은 화면에 줄 이유가 없다 — 글일 때만 싣는다
+    return NextResponse.json({ document: { ...rest, body: isTextDocument(row.mimeType) ? content : "" } });
+  }
+
+  const out = await runQuery(getDb().select(LIST).from(documents).orderBy(desc(documents.createdAt)), "자료 목록");
   if (!out.ok) return out.response;
   return NextResponse.json({ documents: out.value });
 }
 
-/** 새 자료 올리기 — multipart/form-data */
+type TextPayload = {
+  id?: number;
+  title?: string;
+  body?: string;
+  summary?: string;
+  track?: string;
+  stage?: string;
+  kind?: string;
+  published?: boolean;
+};
+
+/**
+ * 붙여넣은 글을 검사한다. 조용히 뭉개는 것보다 되돌려 주는 편이 낫다.
+ *
+ * 분야는 반드시 있어야 한다 — 회장 지시: "해당 자료실에 올린 자료는 해당 섹션의
+ * 자료로 올라가야 한다." 분야 없는 자료는 어느 화면에도 서지 못한다.
+ */
+function validateText(input: TextPayload, { requireBody }: { requireBody: boolean }) {
+  const title = (input.title ?? "").trim();
+  if (title.length < 2) return { error: "제목을 입력해 주십시오." as const };
+  if (title.length > 200) return { error: "제목이 너무 깁니다." as const };
+
+  const track = (input.track ?? "").trim();
+  if (!COURSES.some((c) => c.slug === track)) {
+    return { error: "분야를 선택해 주십시오. 자료는 그 분야 화면에 올라갑니다." as const };
+  }
+
+  const body = (input.body ?? "").replace(/\r\n/g, "\n").trim();
+  if (requireBody && body.length < 20) {
+    return { error: "본문이 너무 짧습니다. 자료 전문을 붙여넣어 주십시오." as const };
+  }
+
+  const kindInput = String(input.kind ?? "");
+  return {
+    value: {
+      title,
+      body,
+      summary: (input.summary ?? "").trim().slice(0, 500) || null,
+      track,
+      stage: normalizeStage(input.stage),
+      kind: (DOCUMENT_KINDS as readonly string[]).includes(kindInput) ? kindInput : "자료",
+      published: Boolean(input.published),
+    },
+  };
+}
+
+/**
+ * 새 자료 올리기.
+ *
+ * JSON 이면 붙여넣은 글(기본), multipart 면 파일이다. 파일 길은 예전에 올린
+ * 자료를 위해 남겨 두었을 뿐, 관리자 화면은 글만 올린다.
+ */
 export async function POST(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const blocked = guardStorage();
   if (blocked) return blocked;
+
+  const type = request.headers.get("content-type") ?? "";
+  if (type.includes("application/json")) {
+    const body = await readJsonBody<TextPayload>(request);
+    if (!body) return NextResponse.json({ error: "요청을 읽을 수 없습니다." }, { status: 400 });
+    const parsed = validateText(body, { requireBody: true });
+    if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const v = parsed.value;
+
+    const out = await runQuery(
+      getDb()
+        .insert(documents)
+        .values({
+          title: v.title,
+          summary: v.summary,
+          track: v.track,
+          stage: v.stage,
+          kind: v.kind,
+          fileName: `${safeFileName(v.title)}.txt`,
+          mimeType: TEXT_MIME,
+          fileSize: Buffer.byteLength(v.body, "utf8"),
+          content: v.body,
+          published: v.published,
+        })
+        .returning({ id: documents.id, title: documents.title }),
+      "자료 저장"
+    );
+    if (!out.ok) return out.response;
+    return NextResponse.json({ document: out.value[0] }, { status: 201 });
+  }
 
   let form: FormData;
   try {
@@ -78,7 +175,6 @@ export async function POST(request: Request) {
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "파일을 선택해 주십시오." }, { status: 400 });
   }
-
   const fileName = safeFileName(file.name);
   if (!isAllowedFile(fileName)) {
     return NextResponse.json(
@@ -101,11 +197,10 @@ export async function POST(request: Request) {
   const track = COURSES.some((c) => c.slug === trackInput) ? trackInput : null;
   const stage = normalizeStage(String(form.get("stage") ?? ""));
   const published = String(form.get("published") ?? "") === "true";
-
   const content = Buffer.from(await file.arrayBuffer()).toString("base64");
 
-  try {
-    const [row] = await getDb()
+  const out = await runQuery(
+    getDb()
       .insert(documents)
       .values({
         title: title.slice(0, 200),
@@ -119,58 +214,62 @@ export async function POST(request: Request) {
         content,
         published,
       })
-      .returning({ id: documents.id, title: documents.title });
-
-    return NextResponse.json({ document: row }, { status: 201 });
-  } catch (err) {
-    return storageFailure(err, "document insert");
-  }
+      .returning({ id: documents.id, title: documents.title }),
+    "자료 저장"
+  );
+  if (!out.ok) return out.response;
+  return NextResponse.json({ document: out.value[0] }, { status: 201 });
 }
 
-/** 제목·설명·분류·발행 여부 수정 (파일 교체는 새로 올린다) */
+/**
+ * 수정. 제목·설명·분야·단계·구분·발행 여부를 고치고, 본문(body)이 오면 글도 바꾼다.
+ * 파일로 올린 자료의 본문은 여기서 바꾸지 않는다 — 그건 다른 파일이다.
+ */
 export async function PUT(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const blocked = guardStorage();
   if (blocked) return blocked;
 
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: "요청을 읽을 수 없습니다." }, { status: 400 });
-  }
+  const body = await readJsonBody<TextPayload>(request);
+  if (!body) return NextResponse.json({ error: "요청을 읽을 수 없습니다." }, { status: 400 });
 
   const id = Number(body.id);
   if (!Number.isInteger(id) || id <= 0) {
     return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
   }
 
-  const title = String(body.title ?? "").trim();
-  if (!title) return NextResponse.json({ error: "제목을 입력해 주십시오." }, { status: 400 });
+  const hasBody = typeof body.body === "string" && body.body.trim().length > 0;
+  const parsed = validateText(body, { requireBody: hasBody });
+  if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const v = parsed.value;
 
-  const kindInput = String(body.kind ?? "");
-  const trackInput = String(body.track ?? "");
-
-  try {
-    const [row] = await getDb()
+  const out = await runQuery(
+    getDb()
       .update(documents)
       .set({
-        title: title.slice(0, 200),
-        summary: String(body.summary ?? "").trim().slice(0, 500) || null,
-        kind: (DOCUMENT_KINDS as readonly string[]).includes(kindInput) ? kindInput : "자료",
-        track: COURSES.some((c) => c.slug === trackInput) ? trackInput : null,
-        stage: normalizeStage(String(body.stage ?? "")),
-        published: Boolean(body.published),
+        title: v.title,
+        summary: v.summary,
+        track: v.track,
+        stage: v.stage,
+        kind: v.kind,
+        published: v.published,
         updatedAt: new Date(),
+        ...(hasBody
+          ? {
+              content: v.body,
+              mimeType: TEXT_MIME,
+              fileName: `${safeFileName(v.title)}.txt`,
+              fileSize: Buffer.byteLength(v.body, "utf8"),
+            }
+          : {}),
       })
       .where(eq(documents.id, id))
-      .returning({ id: documents.id });
-
-    if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    return storageFailure(err, "document update");
-  }
+      .returning({ id: documents.id }),
+    "자료 수정"
+  );
+  if (!out.ok) return out.response;
+  if (!out.value[0]) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(request: Request) {
@@ -183,10 +282,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
   }
 
-  try {
-    await getDb().delete(documents).where(eq(documents.id, id));
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    return storageFailure(err, "document delete");
-  }
+  const out = await runQuery(getDb().delete(documents).where(eq(documents.id, id)), "자료 삭제");
+  if (!out.ok) return out.response;
+  return NextResponse.json({ ok: true });
 }

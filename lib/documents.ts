@@ -33,6 +33,27 @@ export const MAX_FILE_BYTES = 8 * 1024 * 1024;
 export const DOCUMENT_KINDS = ["자료", "칼럼"] as const;
 export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
 
+/**
+ * 붙여넣은 글로 올린 자료의 표시.
+ *
+ * 회장 지시(2026-09-15): 자료실도 칼럼처럼 본문을 붙여넣는 방식으로. 표를 새로
+ * 만들지 않는다 — 파일 본문을 담던 content 열에 글을 그대로 담고, mimeType 으로
+ * "이건 읽는 글"임을 표시한다. 그러면 예전에 올린 파일 자료도 그대로 내려받힌다.
+ */
+export const TEXT_MIME = "text/plain; charset=utf-8";
+export function isTextDocument(mimeType: string | null | undefined): boolean {
+  return (mimeType ?? "").startsWith("text/plain");
+}
+
+/** 빈 줄 기준으로 문단을 끊는다 — 태그는 해석하지 않으므로 화면에서 그대로 escape 된다 */
+export function toParagraphs(body: string): string[] {
+  return body
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
 const MIME_BY_EXTENSION: Record<string, string> = {
   ".doc": "application/msword",
   ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -53,6 +74,8 @@ export type PublicDocument = {
   stage: Stage | null;
   fileName: string;
   fileSize: number;
+  /** 참이면 붙여넣은 글 — 내려받지 않고 그 자리에서 읽는다 */
+  readable: boolean;
   createdAt: string;
 };
 
@@ -95,6 +118,7 @@ function toPublic(row: {
   stage: string | null;
   fileName: string;
   fileSize: number;
+  mimeType: string;
   createdAt: Date;
 }): PublicDocument {
   return {
@@ -107,6 +131,7 @@ function toPublic(row: {
     stage: normalizeStage(row.stage),
     fileName: row.fileName,
     fileSize: row.fileSize,
+    readable: isTextDocument(row.mimeType),
     createdAt: row.createdAt.toISOString().slice(0, 10),
   };
 }
@@ -121,6 +146,7 @@ const LIST_COLUMNS = {
   stage: documents.stage,
   fileName: documents.fileName,
   fileSize: documents.fileSize,
+  mimeType: documents.mimeType,
   createdAt: documents.createdAt,
 } as const;
 
@@ -138,6 +164,47 @@ export async function getPublicDocuments(limit = 30): Promise<PublicDocument[]> 
     // 자료실이 비어 보이는 편이, 자료실 때문에 홈페이지가 멎는 것보다 낫다
     console.error("[documents] list failed:", err);
     return [];
+  }
+}
+
+/** 읽는 자료 한 편 — 화면이 그대로 그리기만 한다 */
+export type ReadableDocument = {
+  id: number;
+  title: string;
+  summary: string | null;
+  kind: string;
+  track: string | null;
+  trackLabel: string | null;
+  stage: Stage | null;
+  date: string;
+  paragraphs: string[];
+};
+
+/** 붙여넣은 글로 올린 자료 — 발행된 것만, 글로 올린 것만 나간다 */
+export async function getDocumentForReading(id: number): Promise<ReadableDocument | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const [row] = await getDb()
+      .select({ ...LIST_COLUMNS, content: documents.content })
+      .from(documents)
+      .where(and(eq(documents.id, id), eq(documents.published, true)))
+      .limit(1);
+    if (!row || !isTextDocument(row.mimeType)) return null;
+    const pub = toPublic(row);
+    return {
+      id: pub.id,
+      title: pub.title,
+      summary: pub.summary,
+      kind: pub.kind,
+      track: pub.track,
+      trackLabel: pub.trackLabel,
+      stage: pub.stage,
+      date: pub.createdAt,
+      paragraphs: toParagraphs(row.content),
+    };
+  } catch (err) {
+    console.error("[documents] read failed:", err);
+    return null;
   }
 }
 
