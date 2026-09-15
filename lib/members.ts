@@ -21,30 +21,54 @@ export type MemberProfile = {
 };
 
 /**
- * 로그인한 회원의 프로필. 없으면 만들어 준다 — Supabase Auth로 가입은
- * 끝났는데 우리 쪽 행이 없는 상태(웹훅 유실 등)에서도 화면이 멎지 않도록.
+ * 한 사람을 회원 명단에 올린다. 이미 있으면 그대로 돌려준다.
+ *
+ * 인증이 끝난 그 자리(/auth/callback)에서 부르는 것이 원칙이다. 예전에는
+ * 이 일이 '로그인한 채로 공개 페이지를 한 번 열었을 때'에만 일어나서,
+ * 메일 인증을 마치고도 명단에 오르지 않는 분이 생겼다 — 회장이 "회원은
+ * 등록됐는데 회원 수가 0명"이라 하신 그 자리다.
+ *
+ * 저장소가 흔들려도 홈페이지가 멎지는 않게, 실패는 null로 돌린다.
+ */
+export async function recordMember(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}): Promise<MemberProfile | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const db = getDb();
+    const [existing] = await db.select().from(members).where(eq(members.authId, user.id)).limit(1);
+    if (existing) return toProfile(existing);
+
+    const email = user.email ?? "";
+    const name = (user.user_metadata?.name as string | undefined) ?? null;
+    const [created] = await db
+      .insert(members)
+      .values({ authId: user.id, email, name })
+      .onConflictDoNothing({ target: members.authId })
+      .returning();
+
+    if (created) return toProfile(created);
+
+    // 동시 요청이 먼저 만들었다면 그것을 읽어 온다
+    const [raced] = await db.select().from(members).where(eq(members.authId, user.id)).limit(1);
+    return raced ? toProfile(raced) : null;
+  } catch (err) {
+    // 명단에 못 올리더라도 들어오신 분을 문밖에 세우지는 않는다
+    console.error("[members] record failed:", err);
+    return null;
+  }
+}
+
+/**
+ * 로그인한 회원의 프로필. 없으면 만들어 준다 — 인증 직후 기록이 어떤 이유로
+ * 빠졌더라도(연결 실패 등) 다음 방문에서 다시 시도한다.
  */
 export async function getCurrentMember(): Promise<MemberProfile | null> {
   const user = await getAuthUser();
-  if (!user || !isDbConfigured()) return null;
-
-  const db = getDb();
-  const [existing] = await db.select().from(members).where(eq(members.authId, user.id)).limit(1);
-  if (existing) return toProfile(existing);
-
-  const email = user.email ?? "";
-  const name = (user.user_metadata?.name as string | undefined) ?? null;
-  const [created] = await db
-    .insert(members)
-    .values({ authId: user.id, email, name })
-    .onConflictDoNothing({ target: members.authId })
-    .returning();
-
-  if (created) return toProfile(created);
-
-  // 동시 요청이 먼저 만들었다면 그것을 읽어 온다
-  const [raced] = await db.select().from(members).where(eq(members.authId, user.id)).limit(1);
-  return raced ? toProfile(raced) : null;
+  if (!user) return null;
+  return recordMember(user);
 }
 
 export function toProfile(row: typeof members.$inferSelect): MemberProfile {

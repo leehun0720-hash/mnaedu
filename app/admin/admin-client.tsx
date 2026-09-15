@@ -1428,7 +1428,18 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               정답과 해설을 열람하려고 등록한 분들입니다. 등급도 결제도 없으므로 여기서 조정할 것은 없습니다.
             </p>
             {members.length === 0 ? (
-              <p className="admin-note">아직 등록한 회원이 없습니다.</p>
+              <div className="admin-note">
+                <p>아직 명단에 오른 회원이 없습니다.</p>
+                <p>
+                  이 명단에는 <strong>메일로 보낸 인증 링크를 눌러 가입을 마치신 분</strong>만 오릅니다.
+                  가입 신청만 하고 인증을 마치지 않으신 분은 여기에 나타나지 않습니다.
+                </p>
+                <p>
+                  누가 신청했는지까지 보시려면 Supabase 대시보드의{" "}
+                  <strong>Authentication → Users</strong> 를 보십시오. 그곳의{" "}
+                  <code>Last sign in</code> 이 비어 있으면 아직 인증을 마치지 않으신 것입니다.
+                </p>
+              </div>
             ) : (
               <ul className="admin-list">
                 {members.map((m) => (

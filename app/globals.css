@@ -5209,6 +5209,18 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   background: transparent;
 }
 
+/* 인증 링크가 실패했을 때 가입 화면 위에 서는 안내 */
+.auth-callout {
+  max-width: 420px;
+  margin: 0 auto 18px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--co-gold, #c8a55b);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: inherit;
+}
+
 /* 관리자 로그인 — 입력칸과 「표시」 단추를 한 줄에 */
 .admin-pwrow { display: flex; gap: 8px; align-items: stretch; }
 .admin-pwrow input { flex: 1; min-width: 0; }

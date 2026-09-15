@@ -207,3 +207,21 @@ test("단계를 고른 채로도 화면이 선다", async () => {
     assert.doesNotMatch(html, leak);
   }
 });
+
+test("출제자 입장은 새 창으로 열린다", async () => {
+  // 회장 지시 — 출제 도중 홈페이지를 보실 때 쓰시던 화면이 사라지지 않게 한다
+  const html = await renderHtml("/");
+  const link = html.match(/<a[^>]*class="footer-admin"[^>]*>/)?.[0] ?? "";
+  assert.ok(link, "출제자 입장 링크가 있어야 한다");
+  assert.match(link, /target="_blank"/);
+  // 새 창에 원래 창을 넘겨주지 않는다
+  assert.match(link, /noopener/);
+});
+
+test("인증 링크가 실패하면 로그인 화면이 이유를 말한다", async () => {
+  // 아무 말 없이 로그인 화면만 띄우면, 인증을 마쳤다고 믿는 분이 되돌아간다
+  const html = await renderHtml("/login?auth=othertab");
+  assert.match(html, /가입하신 브라우저가 아닌 곳에서 열렸습니다/);
+  const plain = await renderHtml("/login");
+  assert.doesNotMatch(plain, /가입하신 브라우저가 아닌 곳에서/);
+});
