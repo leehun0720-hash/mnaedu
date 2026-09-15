@@ -3,7 +3,7 @@
 프론티어 M&A 아카데미의 디자인 체계를 부품으로 쪼갠 **위지윅 홈페이지 제작 도구**입니다.
 구역(Section)을 쌓아 사이트를 만들고, **HTML 파일 한 장으로 내보내** 어디에나 올릴 수 있습니다.
 
-- **주소**: https://mnaedu.vercel.app/builder
+- **주소**: https://www.frontierexpert.com/builder (예비: https://mnaedu.vercel.app/builder)
 - 검색에는 노출되지 않습니다(`robots: noindex`).
 
 ---

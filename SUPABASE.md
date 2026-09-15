@@ -87,7 +87,7 @@ POSTGRES_URL="<직결 문자열>" npx drizzle-kit migrate
 Supabase 대시보드 → **Authentication**
 
 - **Providers → Email**: 활성화, `Confirm email` 켜기
-- **URL Configuration → Site URL**: 배포 주소 (예: `https://frontiermade.co.kr`)
+- **URL Configuration → Site URL**: `https://www.frontierexpert.com`
 - **Redirect URLs**에 추가:
   - `https://<배포주소>/auth/callback`
   - `http://localhost:3000/auth/callback` (로컬 개발용)

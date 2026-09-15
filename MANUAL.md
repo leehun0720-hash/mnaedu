@@ -3,8 +3,8 @@
 구축한 홈페이지의 **전 기능과 운영 방법**을 한곳에 정리한 상세본입니다.
 회장님께 드리는 요약은 `기능안내서.md`에 있습니다.
 
-- **배포 주소**: https://mnaedu.vercel.app
-- **관리자 화면**: https://mnaedu.vercel.app/admin
+- **주소**: https://www.frontierexpert.com (예비: https://mnaedu.vercel.app)
+- **관리자 화면**: https://www.frontierexpert.com/admin
 - 관련 문서: 설정은 `SUPABASE.md`, 관리자 설정은 `ADMIN.md`, 코드 구조는 `README.md`
 
 ---
@@ -147,7 +147,7 @@ AI 채점을 쓰지 않으므로 사용량에 비례해 오르는 비용이 없�
 
 ## 8. 아직 확정되지 않은 항목
 
-1. 도메인 (설계서 표기: `frontiermade.co.kr`) — 등록·연결 확인 필요
+1. 도메인 `www.frontierexpert.com` — 연결 절차는 아래 「도메인 연결」 참조
 2. 문의 양식의 수신 메일 계정 — 확정 전까지 메일 초안으로 넘깁니다
 3. 실적 공개 문구 승인 (예: "27건 수행 · 26승 1무")
 4. 업무정보실 초기 게재분 — 어떤 자료부터 올릴지
@@ -163,3 +163,55 @@ git checkout app1-academy
 ```
 
 폴더 사본: `../_백업_1번앱_퀴즈아카데미_실제운영본` (`.git` 포함)
+
+
+## 도메인 연결 — www.frontierexpert.com
+
+코드는 주소를 요청에서 읽으므로, 아래 세 곳만 맞추면 끝납니다. 순서대로 하십시오.
+
+### 1. Vercel — 프로젝트에 도메인 추가
+
+Vercel → 프로젝트 **mnaedu** → **Settings → Domains** → **Add**
+
+| 넣을 도메인 | 설정 |
+| --- | --- |
+| `www.frontierexpert.com` | 기본 주소 |
+| `frontierexpert.com` | 「Redirect to www.frontierexpert.com」 선택 (코드에도 같은 규칙이 있습니다) |
+
+추가하면 Vercel 이 **DNS 에 넣을 값**을 화면에 보여 줍니다. 그 값을 그대로 2번에 쓰십시오.
+
+### 2. 도메인 등록업체 — DNS 레코드
+
+`frontierexpert.com` 을 등록한 곳(가비아·후이즈·카페24 등)의 **DNS 관리**에서:
+
+| 종류 | 호스트 | 값 |
+| --- | --- | --- |
+| CNAME | `www` | `cname.vercel-dns.com.` |
+| A | `@` (또는 비움) | Vercel 화면이 보여 준 IP (현재 `76.76.21.21`) |
+
+기존에 같은 호스트로 잡힌 레코드가 있으면 지우고 넣으십시오. 반영에 몇 분~수 시간이
+걸리며, Vercel Domains 화면의 표시가 **Valid Configuration** 으로 바뀌면 끝난 것입니다.
+SSL 인증서는 Vercel 이 자동으로 발급합니다.
+
+### 3. Supabase — 회원 로그인 주소
+
+Supabase → **Authentication → URL Configuration**
+
+| 항목 | 값 |
+| --- | --- |
+| Site URL | `https://www.frontierexpert.com` |
+| Redirect URLs (추가) | `https://www.frontierexpert.com/auth/callback` |
+
+`mnaedu.vercel.app` 쪽 값은 지우지 말고 함께 두십시오 — 예비 주소로 계속 씁니다.
+이 단계를 빼먹으면 새 주소에서 가입 인증 메일의 링크가 옛 주소로 돌아갑니다.
+
+### 확인
+
+- `https://www.frontierexpert.com` 이 열리고 자물쇠(SSL)가 보인다
+- `https://frontierexpert.com` 을 치면 `www` 로 넘어간다
+- 새 주소에서 회원가입 → 로그인이 된다
+
+### 그 뒤 (선택)
+
+새 주소가 안정되면 Vercel Domains 에서 `mnaedu.vercel.app` 을 **www 로 보내기**로
+바꾸십시오. 검색엔진이 두 주소를 다른 사이트로 세지 않게 하는 마무리입니다.
