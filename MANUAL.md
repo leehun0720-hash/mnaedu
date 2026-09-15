@@ -186,12 +186,16 @@ Vercel → 프로젝트 **mnaedu** → **Settings → Domains** → **Add**
 
 | 종류 | 호스트 | 값 |
 | --- | --- | --- |
-| CNAME | `www` | `cname.vercel-dns.com.` |
-| A | `@` (또는 비움) | Vercel 화면이 보여 준 IP (현재 `76.76.21.21`) |
+| CNAME | `www` | Vercel 화면이 보여 준 값 (예전 값 `cname.vercel-dns.com.` 도 계속 됩니다) |
+| A | `@` (또는 비움) | Vercel 화면이 보여 준 IP (2026-09 기준 `216.198.79.1`, 예전 값 `76.76.21.21` 도 계속 됩니다) |
 
 기존에 같은 호스트로 잡힌 레코드가 있으면 지우고 넣으십시오. 반영에 몇 분~수 시간이
-걸리며, Vercel Domains 화면의 표시가 **Valid Configuration** 으로 바뀌면 끝난 것입니다.
-SSL 인증서는 Vercel 이 자동으로 발급합니다.
+걸립니다. SSL 인증서는 Vercel 이 자동으로 발급합니다.
+
+Vercel Domains 화면의 표시가 **Valid Configuration** 이면 끝난 것입니다.
+노란 **DNS Change Recommended** 는 오류가 아닙니다 — 예전 값(`cname.vercel-dns.com`,
+`76.76.21.21`)으로 잡혀 있어 "새 값으로 바꾸길 권한다"는 뜻일 뿐, 사이트는 그대로
+열립니다. 시간이 날 때 화면에 보이는 새 값으로 바꾸시면 표시가 사라집니다.
 
 ### 3. Supabase — 회원 로그인 주소
 
@@ -210,6 +214,10 @@ Supabase → **Authentication → URL Configuration**
 - `https://www.frontierexpert.com` 이 열리고 자물쇠(SSL)가 보인다
 - `https://frontierexpert.com` 을 치면 `www` 로 넘어간다
 - 새 주소에서 회원가입 → 로그인이 된다
+
+2026-09-15 연결 완료 — 1·2번은 끝났고 위 두 줄은 확인했습니다. 3번(Supabase 주소)은
+회장이 직접 넣으셔야 하고, 넣기 전까지는 새 주소에서 보낸 가입 인증 메일이 옛 주소로
+돌아갑니다.
 
 ### 그 뒤 (선택)
 
