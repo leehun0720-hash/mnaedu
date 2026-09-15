@@ -6,6 +6,7 @@ import { members } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
 import { readJsonBody, runQuery } from "@/lib/admin-api";
+import { canManageAccounts, deleteAuthUser } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -112,11 +113,15 @@ export async function PUT(request: Request) {
 }
 
 /**
- * 명단에서 내린다.
+ * 회원을 지운다.
  *
- * Supabase Auth 계정은 그대로 남는다. 그래서 그분이 다시 들어오시면 명단에
- * 새 행으로 다시 오른다 — 정말로 탈퇴시키려면 Supabase의 Authentication 에서
- * 계정을 지워야 한다. 화면에서 그렇게 안내한다.
+ * 명단(우리 표)과 계정(Supabase Auth)은 다른 것이다. 관리 키가 설정돼 있으면
+ * 둘 다 지운다 — 그래야 "지웠는데 로그인이 된다"는 일이 없다. 키가 없으면
+ * 명단에서만 내리고, 응답에 그 사실(account: false)을 실어 화면이 그대로
+ * 말하게 한다.
+ *
+ * 계정을 먼저 지운다. 명단만 지워 놓고 계정이 남으면 그분이 다시 들어오실 때
+ * 명단에 새로 올라와, 지운 적이 없는 것처럼 보이기 때문이다.
  */
 export async function DELETE(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -129,7 +134,24 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
   }
 
+  const found = await runQuery(
+    getDb().select({ authId: members.authId }).from(members).where(eq(members.id, id)).limit(1),
+    "회원 확인"
+  );
+  if (!found.ok) return found.response;
+  const authId = found.value[0]?.authId;
+  if (!authId) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+
+  const account = await deleteAuthUser(authId);
+
   const out = await runQuery(getDb().delete(members).where(eq(members.id, id)), "회원 삭제");
   if (!out.ok) return out.response;
-  return NextResponse.json({ ok: true });
+
+  return NextResponse.json({
+    ok: true,
+    /** 참이면 계정까지 지웠다. 거짓이면 명단에서만 내렸다. */
+    account,
+    /** 계정까지 지울 수 있는 상태인가 — 화면이 안내 문구를 고르는 데 쓴다 */
+    canManageAccounts: canManageAccounts(),
+  });
 }

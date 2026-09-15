@@ -117,9 +117,63 @@ Vercel 대시보드 → Settings → Environment Variables 에 네 개를 넣습
 >   (`lib/supabase/config.ts`가 새 이름을 먼저 보고 없으면 옛 이름을 씁니다).
 >   둘 다 넣을 필요는 없습니다.
 >
-> 같은 화면의 **`sb_secret_…`(옛 service_role) 키는 넣지 마십시오.** 이 사이트는
-> 쓰지 않습니다 — 서버는 Postgres에 직접 붙고, RLS를 우회하는 키를 배포 환경에
-> 두면 그만큼 노출면만 넓어집니다.
+> 같은 화면의 **`sb_secret_…`(옛 service_role) 키는 선택입니다.** 기본 동작에는
+> 필요 없습니다 — 서버는 Postgres에 직접 붙습니다. 아래 한 가지에만 쓰입니다.
+
+### (선택) 관리자 화면에서 회원 계정까지 지우려면
+
+우리 `members` 표는 **명단**이고, 신원(비밀번호·이메일)은 Supabase Auth가 쥐고
+있습니다. 그래서 명단에서만 지우면 **계정이 남아 로그인이 계속 됩니다.**
+
+관리자 화면에서 계정까지 함께 지우시려면 Vercel 환경변수에 하나를 더 넣으십시오.
+
+| 이름 | 값 |
+| --- | --- |
+| `SUPABASE_SECRET_KEY` | Project Settings → API Keys 의 `sb_secret_…` (옛 `service_role`) |
+
+넣으신 뒤 **재배포**하면 회원 탭의 단추가 「명단에서 내리기」에서 **「회원 삭제」**로
+바뀌고, 누르면 계정까지 지워집니다. 넣지 않으셔도 사이트는 그대로 동작하며,
+화면이 "명단에서만 내려집니다"라고 그대로 말합니다.
+
+> **이 키의 무게** — 이 키는 RLS를 통째로 지나칩니다. 저장소에는 절대 두지 않고
+> (이 저장소는 공개되어 있습니다), 이름에 `NEXT_PUBLIC_`을 붙이지 마십시오 —
+> 붙이면 브라우저로 나갑니다. 서버에서만, 관리자 로그인을 통과한 요청에서만
+> 쓰입니다(`lib/supabase/admin.ts`).
+
+## 저장이나 조회가 멈출 때 — 표 잠금 풀기
+
+SQL Editor에서 `ALTER TABLE`이 **Running…** 에서 멈추거나 "upstream timeout"이
+뜨고, 동시에 관리자 화면이 "데이터베이스가 12초 안에 답하지 않았습니다"라고
+말하면, 그 표를 **다른 접속이 잠그고 있는 것**입니다.
+
+Postgres에서 `ALTER TABLE`은 표 전체를 독점해야 합니다. 그래서 누군가 트랜잭션을
+열어 둔 채 두면(Table Editor를 열어 두었거나, SQL Editor의 다른 탭이 돌고 있거나)
+그 뒤로 들어오는 **평범한 조회까지 줄줄이 함께 멈춥니다.**
+
+새 SQL 탭에서 아래를 실행하십시오. 무엇이 막고 있는지 보여 주고, 그 접속만 끊습니다.
+
+```sql
+-- 1) 무엇이 막고 있는지 봅니다
+select pid, state, round(extract(epoch from (now() - xact_start))) as 열린초,
+       left(query, 60) as 쿼리
+from pg_stat_activity
+where datname = current_database() and pid <> pg_backend_pid() and state <> 'idle'
+order by xact_start;
+
+-- 2) 열어 둔 채 놀고 있거나, 30초 넘게 붙들고 있는 접속을 끊습니다
+select pg_terminate_backend(pid)
+from pg_stat_activity
+where datname = current_database()
+  and pid <> pg_backend_pid()
+  and (state = 'idle in transaction'
+       or (state = 'active' and xact_start < now() - interval '30 seconds'));
+```
+
+끊고 나면 멈춰 있던 `ALTER TABLE`이 곧바로 끝나고 화면도 돌아옵니다. 앱의 정상
+요청은 1초 안에 끝나므로 위 조건에 걸리지 않습니다.
+
+예방: SQL을 실행하실 때는 **탭을 하나만** 쓰시고, Table Editor로 같은 표를 열어
+둔 채 DDL을 돌리지 마십시오.
 
 ## 동작 방식 요약
 

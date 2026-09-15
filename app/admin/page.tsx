@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { isDbConfigured } from "@/db";
 import { SESSION_COOKIE, isAuthConfigured } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
+import { canManageAccounts } from "@/lib/supabase/admin";
 import AdminClient from "./admin-client";
 
 // Never index the admin surface, and never serve it from a cache
@@ -18,6 +19,7 @@ export default async function AdminPage() {
       authed={authed}
       authConfigured={isAuthConfigured()}
       dbConfigured={isDbConfigured()}
+      canDeleteAccounts={canManageAccounts()}
     />
   );
 }

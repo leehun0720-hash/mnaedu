@@ -135,10 +135,13 @@ export default function AdminClient({
   authed,
   authConfigured,
   dbConfigured,
+  canDeleteAccounts,
 }: {
   authed: boolean;
   authConfigured: boolean;
   dbConfigured: boolean;
+  /** 계정까지 지울 수 있는 상태인가 — 관리 키가 설정돼 있을 때만 참 */
+  canDeleteAccounts: boolean;
 }) {
   const [loggedIn, setLoggedIn] = useState(authed);
   const [password, setPassword] = useState("");
@@ -295,23 +298,26 @@ export default function AdminClient({
 
   async function removeMember(m: MemberRow) {
     const who = m.name ? `${m.name}(${m.email})` : m.email;
-    if (
-      !confirm(
-        `${who} 님을 명단에서 내릴까요?\n\n` +
-          "계정 자체는 남아 있어, 그분이 다시 들어오시면 명단에 새로 오릅니다. " +
-          "정말로 탈퇴시키시려면 Supabase의 Authentication 에서 계정을 지우셔야 합니다."
-      )
-    ) {
-      return;
-    }
+    const warning = canDeleteAccounts
+      ? `${who} 님을 삭제할까요?\n\n계정까지 함께 지워집니다. 되돌릴 수 없으며, 다시 이용하시려면 새로 가입하셔야 합니다.`
+      : `${who} 님을 명단에서 내릴까요?\n\n` +
+        "계정 자체는 남아 있어, 그분이 다시 들어오시면 명단에 새로 오릅니다. " +
+        "계정까지 지우려면 배포 설정에 Supabase 관리 키를 넣으셔야 합니다 (SUPABASE.md 참조).";
+    if (!confirm(warning)) return;
+
     setError(null);
     const out = await send(`/api/admin/members?id=${m.id}`, { method: "DELETE" });
     if (!out.ok) {
-      setError(out.error ?? "명단에서 내리지 못했습니다.");
+      setError(out.error ?? "삭제하지 못했습니다.");
       return;
     }
     if (memberEdit?.id === m.id) setMemberEdit(null);
-    setNotice("명단에서 내렸습니다.");
+    // 계정까지 지웠는지를 그대로 말한다 — "지웠는데 로그인이 된다"를 막는 것이 목적이다
+    setNotice(
+      out.data.account
+        ? "회원과 계정을 모두 지웠습니다."
+        : "명단에서 내렸습니다. 계정은 남아 있어 다시 들어오시면 명단에 새로 오릅니다."
+    );
     await loadMembers();
   }
 
@@ -1566,8 +1572,15 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               <h2>회원 ({memberTotal}명)</h2>
               <p className="admin-note">
                 정답과 해설을 열람하려고 등록한 분들입니다. 등급도 결제도 없으므로, 여기서
-                하시는 일은 찾고 · 이름을 바로잡고 · 메모를 남기고 · 명단에서 내리는 것입니다.
+                하시는 일은 찾고 · 이름을 바로잡고 · 메모를 남기고 · 지우는 것입니다.
               </p>
+              {!canDeleteAccounts && (
+                <p className="admin-note">
+                  지금은 <strong>명단에서만</strong> 내려집니다 — 계정은 Supabase에 남아 있어,
+                  그분이 다시 들어오시면 명단에 새로 오릅니다. 계정까지 함께 지우시려면 배포
+                  설정에 Supabase 관리 키를 넣으십시오 (SUPABASE.md).
+                </p>
+              )}
 
               <div className="admin-filters">
                 <input
@@ -1642,7 +1655,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                           className="admin-btn admin-btn--danger"
                           onClick={() => removeMember(m)}
                         >
-                          명단에서 내리기
+                          {canDeleteAccounts ? "회원 삭제" : "명단에서 내리기"}
                         </button>
                       </div>
                     </li>

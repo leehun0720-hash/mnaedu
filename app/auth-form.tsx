@@ -30,7 +30,7 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
     setError("");
 
     if (isJoin) {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -38,8 +38,26 @@ export default function AuthForm({ mode }: { mode: "join" | "login" }) {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
+      if (error) {
+        setBusy(false);
+        return setError(translate(error.message));
+      }
+
+      /**
+       * 메일 인증을 끄셨다면(Supabase의 Confirm email) signUp이 그 자리에서
+       * 세션을 준다. 그때는 이미 들어오신 것이므로 "메일을 확인해 주십시오"를
+       * 띄우면 안 된다 — 오지 않을 메일을 기다리시게 되고, 명단에도 오르지
+       * 않는다(명단은 홈으로 돌아오실 때 올라간다).
+       *
+       * 전체 이동으로 넘기는 이유는 서버 컴포넌트가 새 세션 쿠키를 읽어야
+       * 하기 때문이다. 그 자리에서 회원 명단에 오른다.
+       */
+      if (data.session) {
+        window.location.href = "/?welcome=1";
+        return;
+      }
+
       setBusy(false);
-      if (error) return setError(translate(error.message));
       setSent(true);
       return;
     }
