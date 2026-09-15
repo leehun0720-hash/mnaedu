@@ -3017,8 +3017,12 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   align-items: flex-start;
   width: min(1160px, 100%);
   margin: 0 auto;
-  padding: clamp(64px, 11vh, 130px) clamp(20px, 4vw, 48px) clamp(48px, 8vh, 90px);
+  /* 아래 여백은 짧게 — 회장 지시(2026-09-15): 첫 화면과 회사소개가 너무 떨어져 있다.
+     hero 아래 + about 위가 합쳐 150px 를 넘었다. 둘을 합쳐 90px 안쪽으로 둔다. */
+  padding: clamp(64px, 11vh, 130px) clamp(20px, 4vw, 48px) clamp(28px, 4vh, 44px);
 }
+/* hero 바로 다음 구역(회사소개)만 위 여백을 줄인다 — 다른 구역 사이는 그대로 */
+.co-hero + .co-section { padding-top: clamp(28px, 4vh, 44px); }
 .co-hero-eyebrow {
   display: inline-flex;
   align-items: center;
