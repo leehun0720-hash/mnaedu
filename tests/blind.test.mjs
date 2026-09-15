@@ -2,43 +2,55 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 const url = new URL("../lib/questions.ts", import.meta.url).href;
-const { OFFLINE_TRACKS, isOfflineTrack } = await import(url);
+const { STAGES, normalizeStage, trackAliases, normalizeTrack, COURSES } = await import(url);
+const company = new URL("../lib/company.ts", import.meta.url).href;
+const { BUSINESS_AREAS } = await import(company);
 
-// 시크릿 오피스(패밀리오피스·투자가 클럽)는 오프라인 전용 — 문제은행 블라인드.
-// 이 분류가 무너지면 공개 화면·풀이·해설 경로가 한꺼번에 뚫린다.
+/**
+ * 2026-09-15 회장 지시로 규칙이 바뀌었다.
+ *
+ * 전에는 패밀리오피스·투자가 클럽을 분야째 블라인드했다. 이제 그 두 분야에서도
+ * 출제하고 자료를 운용하시므로, 분야로 막던 것을 걷고 '발행' 하나가 그 자리를
+ * 맡는다. 아래는 그 새 규칙과, 바뀌지 않은 것들을 붙들어 둔다.
+ */
 
-test("시크릿 오피스 두 분야는 오프라인 전용으로 분류된다", () => {
-  assert.equal(isOfflineTrack("family-office"), true);
-  assert.equal(isOfflineTrack("investor-club"), true);
-  // 옛 슬러그로 저장된 문제도 같은 분야다
-  assert.equal(isOfflineTrack("family"), true);
-  assert.equal(isOfflineTrack("club"), true);
+test("다섯 분야가 모두 문제은행에 오른다 — 분야로 막지 않는다", () => {
+  // 코드 어디에도 분야 단위 차단이 남아 있지 않아야 한다. 남아 있으면
+  // 회장이 시크릿 오피스에 출제하셔도 화면에 서지 않는다.
+  assert.equal(COURSES.length, 5);
+  for (const area of BUSINESS_AREAS) {
+    assert.ok(
+      COURSES.some((c) => c.slug === area.slug),
+      `${area.name} 이(가) 출제 분야 목록에 없다`
+    );
+  }
 });
 
-test("M&A 오피스 세 분야는 온라인 문제은행에 남는다", () => {
-  assert.equal(isOfflineTrack("brokerage"), false);
-  assert.equal(isOfflineTrack("dispute"), false);
-  assert.equal(isOfflineTrack("financing"), false);
-  // 옛 슬러그 중 M&A 오피스로 이어지는 것들도 막히지 않는다
-  assert.equal(isOfflineTrack("friendly"), false);
-  assert.equal(isOfflineTrack("hostile"), false);
+test("오프라인 전용 표시는 남아 있다 — 안내 문구가 그것을 쓴다", () => {
+  // 게시판을 막는 데는 더 쓰지 않지만, '웹 안내 범위' 고지는 이 표시로 세운다
+  const secret = BUSINESS_AREAS.filter((b) => b.offlineOnly).map((b) => b.slug);
+  assert.deepEqual(secret.sort(), ["family-office", "investor-club"]);
 });
 
-test("DB 필터 목록은 현행·옛 슬러그를 모두 담는다", () => {
-  // notInArray는 저장된 원문 값과 대조하므로, 옛 슬러그가 빠지면
-  // 개편 전에 저장된 문제가 블라인드를 비켜 간다.
-  for (const slug of ["family-office", "investor-club", "family", "club"]) {
-    assert.ok(OFFLINE_TRACKS.includes(slug), `${slug}이(가) 필터 목록에 없다`);
-  }
-  // 온라인 분야가 잘못 들어가면 문제은행이 통째로 빈다
-  for (const slug of ["brokerage", "dispute", "financing"]) {
-    assert.ok(!OFFLINE_TRACKS.includes(slug), `${slug}이(가) 필터 목록에 들어 있다`);
-  }
+test("옛 슬러그로 저장된 것도 제 분야에서 보인다", () => {
+  // 개편 전에 올린 문제·자료가 분야별 화면에서 사라지면 안 된다
+  assert.ok(trackAliases("family-office").includes("family"));
+  assert.ok(trackAliases("investor-club").includes("club"));
+  assert.ok(trackAliases("brokerage").includes("friendly"));
+  assert.ok(trackAliases("dispute").includes("hostile"));
+  assert.ok(trackAliases("dispute").includes("control"));
+  // 현행 값 자신도 늘 들어 있다
+  for (const c of COURSES) assert.ok(trackAliases(c.slug).includes(c.slug));
+});
+
+test("옛 슬러그는 현행 분야로 읽힌다", () => {
+  assert.equal(normalizeTrack("family"), "family-office");
+  assert.equal(normalizeTrack("club"), "investor-club");
+  assert.equal(normalizeTrack("brokerage"), "brokerage");
 });
 
 // ── 단계(기초·심화) ────────────────────────────────────────────────
 // 폐지한 '레벨'과 혼동하면 안 된다. 단계는 잠그지도 세지도 않는 표시일 뿐이다.
-const { STAGES, normalizeStage } = await import(url);
 
 test("단계는 기초와 심화 둘뿐이다", () => {
   assert.deepEqual([...STAGES], ["기초", "심화"]);

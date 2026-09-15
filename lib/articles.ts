@@ -1,9 +1,15 @@
 import "server-only";
 
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { articles } from "@/db/schema";
-import { courseLabel, normalizeTrack } from "@/lib/questions";
+import {
+  courseLabel,
+  normalizeStage,
+  normalizeTrack,
+  trackAliases,
+  type Stage,
+} from "@/lib/questions";
 
 /** 목록에 한 번에 세우는 최대 건수 — 연재 100여 회를 페이지로 나눈다 */
 /** 한 면에 10개씩 노출 (회장 지시 2026-09) */
@@ -16,7 +22,11 @@ export type ArticleSummary = {
   title: string;
   lede: string;
   source: string | null;
+  /** 분야 슬러그 — 그 분야 자료실에 함께 세울 때 쓴다 */
+  track: string | null;
   trackLabel: string | null;
+  /** 기초 | 심화 — 나누지 않은 글에는 없다 */
+  stage: Stage | null;
   /** YYYY-MM-DD */
   date: string;
 };
@@ -81,6 +91,7 @@ function toSummary(row: {
   body?: string;
   source: string | null;
   track: string | null;
+  stage: string | null;
   publishedOn: Date | null;
   createdAt: Date;
 }): ArticleSummary {
@@ -90,7 +101,9 @@ function toSummary(row: {
     title: row.title,
     lede: row.lede?.trim() || (row.body ? fallbackLede(row.body) : ""),
     source: row.source,
+    track: row.track ? normalizeTrack(row.track) : null,
     trackLabel: row.track ? courseLabel(normalizeTrack(row.track)) : null,
+    stage: normalizeStage(row.stage),
     date: (row.publishedOn ?? row.createdAt).toISOString().slice(0, 10),
   };
 }
@@ -103,6 +116,7 @@ const LIST_COLUMNS = {
   lede: articles.lede,
   source: articles.source,
   track: articles.track,
+  stage: articles.stage,
   publishedOn: articles.publishedOn,
   createdAt: articles.createdAt,
 } as const;
@@ -166,6 +180,57 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
   } catch (err) {
     console.error("[articles] read failed:", err);
     return null;
+  }
+}
+
+/**
+ * 한 분야의 글 — 그 분야 자료실에 자료와 나란히 선다.
+ *
+ * 회장 지시(2026-09-15): "각 클럽 자료실에 글을 업로드할 수 있게." 자료실은
+ * 내려받는 파일만 받았고, 글은 칼럼으로만 올라가 /insights 에만 섰다. 그래서
+ * 패밀리오피스에 올리려던 글이 그 분야 화면 어디에도 보이지 않았다.
+ *
+ * 표를 새로 만들지 않는다. 칼럼은 이미 분야를 달고 있으니, 분야를 정해 올리신
+ * 글을 그 분야 자료실에서도 함께 읽어 오면 된다 — 한 번 쓰신 글이 두 곳에 선다.
+ */
+export async function getArticlesByTrack(
+  slug: string,
+  limit = 20,
+  stage: Stage | null = null
+): Promise<ArticleSummary[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const where = [eq(articles.published, true), inArray(articles.track, trackAliases(slug))];
+    if (stage) where.push(eq(articles.stage, stage));
+    const rows = await getDb()
+      .select(LIST_COLUMNS)
+      .from(articles)
+      .where(and(...where))
+      .orderBy(desc(articles.publishedOn), desc(articles.createdAt))
+      .limit(limit);
+    return rows.map(toSummary);
+  } catch (err) {
+    console.error("[articles] track list failed:", err);
+    return [];
+  }
+}
+
+export async function countArticlesByTrack(
+  slug: string,
+  stage: Stage | null = null
+): Promise<number> {
+  if (!isDbConfigured()) return 0;
+  try {
+    const where = [eq(articles.published, true), inArray(articles.track, trackAliases(slug))];
+    if (stage) where.push(eq(articles.stage, stage));
+    const [row] = await getDb()
+      .select({ n: sql<number>`count(*)::int` })
+      .from(articles)
+      .where(and(...where));
+    return row?.n ?? 0;
+  } catch (err) {
+    console.error("[articles] track count failed:", err);
+    return 0;
   }
 }
 

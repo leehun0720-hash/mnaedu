@@ -73,18 +73,18 @@ export function normalizeTrack(slug: string): string {
 }
 
 /**
- * 시크릿 오피스(패밀리오피스·투자가 클럽)는 오직 오프라인 교육·커뮤니티로만
- * 진행한다 — 문제은행에서는 블라인드다. 발행 여부와 무관하게 공개 목록·풀이·
- * 해설 경로 어디에도 오르지 않는다. 어느 분야가 오프라인 전용인지는 정본
- * (lib/company.ts)의 offlineOnly 표시 한 곳에서만 정한다.
+ * ── 시크릿 오피스의 문제은행 (2026-09-15 회장 지시로 바뀐 규칙) ──
+ *
+ * 전에는 패밀리오피스·투자가 클럽을 분야째 블라인드했다. 오프라인 전용이라는
+ * 이유였다. 이제 회장이 그 두 분야에서도 출제하고 자료를 운용하겠다고 하셨다.
+ *
+ * 그래서 분야로 막던 것을 걷고, '발행' 하나가 그 자리를 맡는다 — 어느 분야든
+ * 발행하지 않은 것은 목록에도, 직접 링크로도, 정답·해설 경로에도 오르지 않는다.
+ * 무엇을 세울지는 이제 코드가 아니라 회장이 그때그때 정하신다.
+ *
+ * 바뀌지 않은 것: 정답과 해설은 어느 분야에서든 공개 HTML에 실리지 않고,
+ * 로그인한 회원에게 /api/answer 로만 나간다.
  */
-export const OFFLINE_TRACKS: string[] = [
-  ...BUSINESS_AREAS.filter((b) => b.offlineOnly).map((b) => b.slug),
-  // 옛 슬러그로 저장된 문제도 같은 분야다 — DB 조회는 원문 값으로 거른다
-  ...Object.entries(LEGACY_TRACKS)
-    .filter(([, target]) => BUSINESS_AREAS.some((b) => b.slug === target && b.offlineOnly))
-    .map(([legacy]) => legacy),
-];
 
 /**
  * 한 분야를 가리키는 모든 슬러그 — 현행 값과, 그 분야로 이어지는 옛 값들.
@@ -98,10 +98,6 @@ export function trackAliases(slug: string): string[] {
     .filter(([, target]) => target === current)
     .map(([old]) => old);
   return [current, ...legacy];
-}
-
-export function isOfflineTrack(slug: string): boolean {
-  return BUSINESS_AREAS.some((b) => b.slug === normalizeTrack(slug) && b.offlineOnly);
 }
 
 export function courseLabel(slug: string): string {

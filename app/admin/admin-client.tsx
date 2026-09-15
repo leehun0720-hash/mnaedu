@@ -95,6 +95,7 @@ type ArticleRow = {
   lede: string | null;
   source: string | null;
   track: string | null;
+  stage: string | null;
   publishedOn: string | null;
   published: boolean;
   createdAt: string;
@@ -108,6 +109,7 @@ type ArticleDraft = {
   source: string;
   publishedOn: string;
   track: string;
+  stage: string;
   published: boolean;
 };
 
@@ -118,6 +120,7 @@ const EMPTY_ARTICLE: ArticleDraft = {
   source: "",
   publishedOn: "",
   track: "",
+  stage: "",
   published: true,
 };
 
@@ -543,6 +546,7 @@ export default function AdminClient({
       source: row.source ?? "",
       publishedOn: data.article.publishedOn ? data.article.publishedOn.slice(0, 10) : "",
       track: row.track ? normalizeTrack(row.track) : "",
+      stage: normalizeStage(row.stage) ?? "",
       published: row.published,
     });
     window.scrollTo({ top: 0 });
@@ -552,7 +556,7 @@ export default function AdminClient({
   async function articlePayload(row: ArticleRow) {
     const res = await fetch(`/api/admin/articles?id=${row.id}`);
     const data = (await res.json()) as {
-      article: { title: string; lede: string | null; body: string; source: string | null; publishedOn: string | null; track: string | null };
+      article: { title: string; lede: string | null; body: string; source: string | null; publishedOn: string | null; track: string | null; stage: string | null };
     };
     return {
       id: row.id,
@@ -562,6 +566,7 @@ export default function AdminClient({
       source: data.article.source ?? "",
       publishedOn: data.article.publishedOn ?? "",
       track: data.article.track ? normalizeTrack(data.article.track) : "",
+      stage: normalizeStage(data.article.stage) ?? "",
     };
   }
 
@@ -1105,8 +1110,12 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             <form className="admin-card" onSubmit={saveArticle}>
               <h2>{articleDraft.id ? `칼럼 수정 (#${articleDraft.id})` : "칼럼 올리기"}</h2>
               <p className="admin-note">
-                아주경제 연재분을 옮기실 때 쓰십시오. 제목과 본문만 붙여넣으면 됩니다.
-                자료실과 달리 <strong>웹 페이지로 발행되어 검색에 잡힙니다.</strong>
+                <strong>글은 여기서 올리십시오.</strong> 파일을 내려받게 하는 것이 아니라 읽히는 글입니다 —
+                제목과 본문만 붙여넣으면 웹 페이지로 발행되어 검색에 잡힙니다. 아주경제 연재분을 옮기실 때도 씁니다.
+              </p>
+              <p className="admin-note">
+                아래에서 <strong>분야</strong>를 정하시면 그 분야 화면의 <strong>업무자료</strong>에도 함께 서고,
+                누르면 이 글을 읽는 쪽으로 이어집니다. 분야를 비우시면 칼럼 목록에만 섭니다.
               </p>
 
               <label className="admin-field">
@@ -1159,7 +1168,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   />
                 </label>
                 <label>
-                  분야 <small>선택</small>
+                  분야 <small>그 분야 자료실에도 함께</small>
                   <select
                     value={articleDraft.track}
                     onChange={(e) => setArticleDraft({ ...articleDraft, track: e.target.value })}
@@ -1168,6 +1177,20 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     {COURSES.map((c) => (
                       <option key={c.slug} value={c.slug}>
                         {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  단계 <small>선택</small>
+                  <select
+                    value={articleDraft.stage}
+                    onChange={(e) => setArticleDraft({ ...articleDraft, stage: e.target.value })}
+                  >
+                    <option value="">나누지 않음</option>
+                    {STAGES.map((v) => (
+                      <option key={v} value={v}>
+                        {v}
                       </option>
                     ))}
                   </select>
@@ -1262,8 +1285,8 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               <h2>{docId === null ? "자료 올리기" : "자료 수정"}</h2>
               <p className="admin-note">
                 {docId === null
-                  ? "워드(.doc·.docx) · PDF · 한글(.hwp·.hwpx) 파일을 올릴 수 있습니다. 한 건에 8 MB까지입니다."
-                  : "제목 · 설명 · 분야 · 구분 · 발행 여부를 고칩니다. 파일을 바꾸시려면 새 파일로 다시 올리신 뒤 옛 자료를 지워 주십시오."}
+                  ? "워드(.doc·.docx) · PDF · 한글(.hwp·.hwpx) 파일을 올릴 수 있습니다. 한 건에 8 MB까지입니다. 내려받을 파일이 아니라 읽을 글을 올리시려면 「칼럼」 탭을 쓰십시오 — 분야를 정하시면 그 분야 자료실에 함께 섭니다."
+                  : "제목 · 설명 · 분야 · 단계 · 구분 · 발행 여부를 고칩니다. 파일을 바꾸시려면 새 파일로 다시 올리신 뒤 옛 자료를 지워 주십시오."}
               </p>
 
               {docId === null && (

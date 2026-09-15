@@ -94,10 +94,9 @@ test("업무 화면이 그 분야의 업무자료와 평가문제를 싣는다",
   }
 });
 
-test("시크릿 오피스 두 분야는 자료는 싣되 평가문제는 싣지 않는다", async () => {
-  // 회장 지시 14·15 — 가입 안내는 세우고, 평가문제는 온라인에 두지 않는다.
-  // 다만 업무자료는 모임을 소개하는 글이므로 그 분야에도 올릴 수 있어야 한다
-  // (2026-09 회장 지적: "이 자료를 패밀리오피스 분야에 올리려는데 안 된다").
+test("시크릿 오피스도 자료실과 문제은행을 갖는다", async () => {
+  // 2026-09-15 회장 지시 — 두 오피스 모두에서 출제하고 자료를 운용하신다.
+  // 가입 안내(지시 14·15)는 그대로 서고, 무엇을 세울지는 '발행'이 정한다.
   for (const [slug, label, needle] of [
     ["family-office", "패밀리오피스", /패밀리오피스 운영전문가 모임은 온-라인 상에 공개하지 않는 것을 원칙으로/],
     ["investor-club", "투자가 클럽", /투자가 클럽 운영전문가의 오프-라인 모임은 온-라인 상에 공개하지 않는 것을 원칙으로/],
@@ -105,9 +104,11 @@ test("시크릿 오피스 두 분야는 자료는 싣되 평가문제는 싣지 
     const html = await renderHtml(`/business/${slug}`);
     assert.match(html, needle);
     assert.match(html, new RegExp(`${label} 업무자료`), `${slug}에 업무자료 칸이 서야 한다`);
-    assert.doesNotMatch(html, new RegExp(`${label} 평가문제`));
-    // 없는 칸으로 가는 표도 남기지 않는다
-    assert.doesNotMatch(html, /평가문제 ↓/);
+    assert.match(html, new RegExp(`${label} 평가문제`), `${slug}에 평가문제 칸이 서야 한다`);
+    // 정답·해설은 어느 분야에서도 공개 화면에 실리지 않는다 — 이것만은 그대로다
+    for (const leak of [/"answer":/, /"explanation":/, /"intent":/]) {
+      assert.doesNotMatch(html, leak, `${slug}: ${leak} must never reach the public page`);
+    }
   }
 });
 

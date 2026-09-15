@@ -22,7 +22,7 @@ import StageTabs from "../../stage-tabs";
 import { getCurrentMember } from "@/lib/members";
 import { normalizeStage } from "@/lib/questions";
 import { countQuestionsByTrack, getQuestionsByTrack } from "@/lib/questions-db";
-import { countDocumentsByTrack, getDocumentsByTrack } from "@/lib/documents";
+import { countLibraryEntries, getLibraryEntries } from "@/lib/library";
 
 type Params = { slug: string };
 /** 자료·문제 게시판이 붙으므로 요청 시점에 그린다 */
@@ -61,9 +61,9 @@ export default async function BusinessDetailPage({
   const quizPage = Math.max(1, Number(qp) || 1);
   const docStage = normalizeStage(ds);
   const quizStage = normalizeStage(qs);
-  const [documents, documentCount, questions, questionCount, member] = await Promise.all([
-    getDocumentsByTrack(area.slug, BOARD_PAGE_SIZE, (docPage - 1) * BOARD_PAGE_SIZE, docStage),
-    countDocumentsByTrack(area.slug, docStage),
+  const [library, libraryCount, questions, questionCount, member] = await Promise.all([
+    getLibraryEntries(area.slug, BOARD_PAGE_SIZE, (docPage - 1) * BOARD_PAGE_SIZE, docStage),
+    countLibraryEntries(area.slug, docStage),
     getQuestionsByTrack(area.slug, BOARD_PAGE_SIZE, (quizPage - 1) * BOARD_PAGE_SIZE, quizStage),
     countQuestionsByTrack(area.slug, quizStage),
     getCurrentMember(),
@@ -148,12 +148,9 @@ export default async function BusinessDetailPage({
               <span className="co-mastertip-title">{area.masterTip}</span>
               <span className="co-topic-tags">
                 <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                {/* 시크릿 오피스에는 평가문제 칸이 없다 — 없는 곳으로 가는 표를 걸지 않는다 */}
-                {!area.offlineOnly && (
-                  <Link className="co-tag co-tag--quiz" href="#questions">
-                    평가문제 ↓
-                  </Link>
-                )}
+                <Link className="co-tag co-tag--quiz" href="#questions">
+                  평가문제 ↓
+                </Link>
               </span>
             </div>
           )}
@@ -167,11 +164,9 @@ export default async function BusinessDetailPage({
                 <span className="co-topic-title">{topic.label}</span>
                 <span className="co-topic-tags">
                   <i className="co-tag co-tag--soon">업무자료 준비 중</i>
-                  {!area.offlineOnly && (
-                    <Link className="co-tag co-tag--quiz" href="#questions">
-                      평가문제 ↓
-                    </Link>
-                  )}
+                  <Link className="co-tag co-tag--quiz" href="#questions">
+                    평가문제 ↓
+                  </Link>
                 </span>
               </li>
             ))}
@@ -183,11 +178,11 @@ export default async function BusinessDetailPage({
         </section>
 
         {/* 회장 지시 1 — 업무자료와 평가문제는 각 주요업무 화면에 둔다.
-            시크릿 오피스(패밀리오피스·투자가 클럽)에서 닫는 것은 평가문제뿐이다.
-            그 두 분야는 오프라인으로만 교육하므로 문제은행에 오르지 않는다.
-            반면 업무자료는 회원을 모으는 소개 자료이므로 그대로 세운다. */}
+            2026-09-15 지시로 다섯 분야가 모두 같아졌다. 시크릿 오피스에서도
+            출제하고 자료를 운용하신다. 무엇을 세울지는 분야가 아니라 '발행'이
+            정하므로, 발행하지 않으신 것은 어느 분야에서도 서지 않는다. */}
         <LibrarySection
-          documents={documents}
+          entries={library}
           index="LIBRARY"
           title={`${area.name} 업무자료`}
           note={area.offlineOnly ? OFFLINE_LIBRARY_NOTICE : OPEN_POLICY_NOTICE}
@@ -203,7 +198,7 @@ export default async function BusinessDetailPage({
           pager={
             <BoardPager
               page={docPage}
-              total={documentCount}
+              total={libraryCount}
               param="dp"
               basePath={`/business/${area.slug}`}
               hash="library"
@@ -212,34 +207,32 @@ export default async function BusinessDetailPage({
           }
         />
 
-        {!area.offlineOnly && (
-          <QuestionsSection
-            questions={questions}
-            signedIn={member !== null}
-            index="PRACTICE"
-            title={`${area.name} 평가문제`}
-            note="문제 본문은 누구나 보실 수 있습니다. 정답과 해설은 회원등록 후에 열람하실 수 있습니다."
-            stages={
-              <StageTabs
-                current={quizStage}
-                param="qs"
-                basePath={`/business/${area.slug}`}
-                hash="questions"
-                keep={{ ds: docStage ?? undefined }}
-              />
-            }
-            pager={
-              <BoardPager
-                page={quizPage}
-                total={questionCount}
-                param="qp"
-                basePath={`/business/${area.slug}`}
-                hash="questions"
-                keep={{ ds: docStage ?? undefined, qs: quizStage ?? undefined }}
-              />
-            }
-          />
-        )}
+        <QuestionsSection
+          questions={questions}
+          signedIn={member !== null}
+          index="PRACTICE"
+          title={`${area.name} 평가문제`}
+          note="문제 본문은 누구나 보실 수 있습니다. 정답과 해설은 회원등록 후에 열람하실 수 있습니다."
+          stages={
+            <StageTabs
+              current={quizStage}
+              param="qs"
+              basePath={`/business/${area.slug}`}
+              hash="questions"
+              keep={{ ds: docStage ?? undefined }}
+            />
+          }
+          pager={
+            <BoardPager
+              page={quizPage}
+              total={questionCount}
+              param="qp"
+              basePath={`/business/${area.slug}`}
+              hash="questions"
+              keep={{ ds: docStage ?? undefined, qs: quizStage ?? undefined }}
+            />
+          }
+        />
 
         <section className="co-section co-section--contact" id="contact">
           <div className="co-contact co-contact--slim">

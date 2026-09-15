@@ -1,13 +1,11 @@
 import "server-only";
 
-import { and, count, desc, eq, inArray, notInArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
 import {
-  OFFLINE_TRACKS,
   SEED_QUESTIONS,
   courseLabel,
-  isOfflineTrack,
   normalizeStage,
   normalizeTrack,
   trackAliases,
@@ -31,8 +29,7 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
     const rows = await getDb()
       .select()
       .from(questions)
-      // 시크릿 오피스 분야는 발행돼 있어도 공개 화면에 오르지 않는다 (블라인드)
-      .where(and(eq(questions.published, true), notInArray(questions.track, OFFLINE_TRACKS)))
+      .where(eq(questions.published, true))
       .orderBy(desc(questions.createdAt))
       .limit(limit);
 
@@ -73,8 +70,8 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
       .from(questions)
       .where(eq(questions.id, id))
       .limit(1);
-    // 오프라인 전용 분야의 문제는 직접 링크로도 열리지 않는다
-    if (!r || !r.published || isOfflineTrack(r.track)) return null;
+    // 발행하지 않은 문제는 직접 링크로도 열리지 않는다
+    if (!r || !r.published) return null;
     return {
       id: r.id,
       track: r.track,
@@ -92,6 +89,7 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
 
 /**
  * 한 분야를 거르는 조건. 단계를 주면 그 단계만 남긴다.
+ * 분야로 막는 조건은 없다 — 무엇을 세울지는 '발행'이 정한다.
  * 목록과 개수가 같은 조건을 봐야 쪽 번호가 어긋나지 않으므로 한 곳에 둔다.
  */
 function trackFilter(slug: string, stage: Stage | null) {
@@ -100,19 +98,14 @@ function trackFilter(slug: string, stage: Stage | null) {
   return where;
 }
 
-/**
- * 한 분야의 평가문제 — 업무 상세 화면이 쓴다.
- *
- * 시크릿 오피스(오프라인 전용) 분야는 여기서도 빈 목록이다. 분야 자체가
- * 블라인드이므로 상세 화면에 문제가 서는 순간 블라인드가 무너진다.
- */
+/** 한 분야의 평가문제 — 업무 상세 화면이 쓴다. 다섯 분야 모두 같은 규칙이다. */
 export async function getQuestionsByTrack(
   slug: string,
   limit = 10,
   offset = 0,
   stage: Stage | null = null
 ): Promise<PublicQuestion[]> {
-  if (!isDbConfigured() || isOfflineTrack(slug)) return [];
+  if (!isDbConfigured()) return [];
   try {
     const rows = await getDb()
       .select()
@@ -141,7 +134,7 @@ export async function countQuestionsByTrack(
   slug: string,
   stage: Stage | null = null
 ): Promise<number> {
-  if (!isDbConfigured() || isOfflineTrack(slug)) return 0;
+  if (!isDbConfigured()) return 0;
   try {
     const [row] = await getDb()
       .select({ value: count() })

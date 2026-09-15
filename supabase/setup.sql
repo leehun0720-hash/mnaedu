@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	"source" text,
 	"published_on" timestamp with time zone,
 	"track" text,
+	"stage" text,
 	"published" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -136,6 +137,7 @@ ALTER TABLE "questions" ADD COLUMN IF NOT EXISTS "intent" text;
 -- 단계(기초·심화). 한 분야 안에서 자료와 문제를 나눠 세우기 위한 표시입니다.
 ALTER TABLE "questions" ADD COLUMN IF NOT EXISTS "stage" text;
 ALTER TABLE "documents" ADD COLUMN IF NOT EXISTS "stage" text;
+ALTER TABLE "articles" ADD COLUMN IF NOT EXISTS "stage" text;
 
 -- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다

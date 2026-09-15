@@ -130,8 +130,10 @@ export const articles = pgTable(
     source: text("source"),
     /** 원문이 실린 날. 지난 연재를 옮길 때 이 날짜로 줄 세운다 */
     publishedOn: timestamp("published_on", { withTimezone: true }),
-    /** 5분야 중 하나 — 비우면 분류 없음 */
+    /** 5분야 중 하나 — 비우면 분류 없음. 정하면 그 분야 자료실에도 함께 선다 */
     track: text("track"),
+    /** 기초 | 심화 — 분야 안에서의 단계. 비워 두면 미분류 */
+    stage: text("stage"),
     published: boolean("published").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

@@ -4,7 +4,6 @@ import { and, eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { members, questions } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
-import { isOfflineTrack } from "@/lib/questions";
 
 /**
  * 회원 저장소.
@@ -74,8 +73,8 @@ export async function revealAnswer(questionId: number): Promise<RevealResult> {
     .where(and(eq(questions.id, questionId), eq(questions.published, true)))
     .limit(1);
 
-  // 시크릿 오피스 분야는 블라인드 — 온라인 경로로는 나가지 않는다
-  if (!question || isOfflineTrack(question.track)) return { ok: false, reason: "not-found" };
+  // 발행하지 않은 문제는 위 조건에서 이미 걸러진다
+  if (!question) return { ok: false, reason: "not-found" };
   if (!question.answer && !question.explanation) return { ok: false, reason: "not-found" };
 
   return {

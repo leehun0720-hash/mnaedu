@@ -5,7 +5,7 @@ import { getDb, isDbConfigured } from "@/db";
 import { articles } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
-import { COURSES } from "@/lib/questions";
+import { COURSES, normalizeStage } from "@/lib/questions";
 import { uniqueSlug } from "@/lib/articles";
 import { describeDbError, isMissingTable } from "@/lib/db-error";
 
@@ -62,6 +62,7 @@ type Payload = {
   source?: string;
   publishedOn?: string;
   track?: string;
+  stage?: string;
   published?: boolean;
 };
 
@@ -94,6 +95,7 @@ function validate(input: Payload) {
       body,
       source: (input.source ?? "").trim() || null,
       track: track || null,
+      stage: normalizeStage(input.stage),
       publishedOn,
       published: Boolean(input.published),
     },
@@ -122,6 +124,7 @@ export async function GET(request: Request) {
       lede: articles.lede,
       source: articles.source,
       track: articles.track,
+      stage: articles.stage,
       publishedOn: articles.publishedOn,
       published: articles.published,
       createdAt: articles.createdAt,
