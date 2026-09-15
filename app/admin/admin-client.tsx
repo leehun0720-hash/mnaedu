@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { COURSES, FORMATS, STAGES, normalizeStage, normalizeTrack } from "@/lib/questions";
+import { bodyToHtml, textLength } from "@/lib/rich-text";
+import RichEditor from "./rich-editor";
 import { parseQuestion } from "@/lib/parse-question";
 
 /**
@@ -180,6 +182,7 @@ export default function AdminClient({
   const [docId, setDocId] = useState<number | null>(null);
   /** 붙여넣은 본문 — 자료실은 이제 파일이 아니라 글이다 (회장 지시 2026-09-15) */
   const [docBody, setDocBody] = useState("");
+  const [docEditor, setDocEditor] = useState({ html: "", key: 0 });
   /** 고치는 중인 것이 예전에 올린 파일 자료면 본문 칸을 잠근다 */
   const [docIsFile, setDocIsFile] = useState(false);
   const [docTitle, setDocTitle] = useState("");
@@ -191,6 +194,8 @@ export default function AdminClient({
   // 칼럼
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [articleDraft, setArticleDraft] = useState<ArticleDraft>(EMPTY_ARTICLE);
+  /** 편집기의 시작 본문. key 가 바뀔 때만 편집기가 다시 읽는다 */
+  const [articleEditor, setArticleEditor] = useState({ html: "", key: 0 });
 
   // 회원
   const [members, setMembers] = useState<MemberRow[]>([]);
@@ -657,8 +662,17 @@ export default function AdminClient({
     await loadQuestions();
   }
 
+  function resetArticleForm() {
+    setArticleDraft(EMPTY_ARTICLE);
+    setArticleEditor((s) => ({ html: "", key: s.key + 1 }));
+  }
+
   async function saveArticle(e: React.FormEvent) {
     e.preventDefault();
+    if (textLength(articleDraft.body) < 50) {
+      setError("본문이 너무 짧습니다. 칼럼 전문을 붙여넣어 주십시오.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -678,7 +692,7 @@ export default function AdminClient({
           ? "칼럼을 수정했습니다."
           : `칼럼을 올렸습니다. 주소: /insights/${saved?.slug ?? ""}`
       );
-      setArticleDraft(EMPTY_ARTICLE);
+      resetArticleForm();
       await loadArticles();
     } finally {
       setBusy(false);
@@ -707,6 +721,7 @@ export default function AdminClient({
       stage: normalizeStage(row.stage) ?? "",
       published: row.published,
     });
+    setArticleEditor((s) => ({ html: bodyToHtml(data.article.body), key: s.key + 1 }));
     window.scrollTo({ top: 0 });
   }
 
@@ -758,6 +773,7 @@ export default function AdminClient({
   function resetDocForm() {
     setDocId(null);
     setDocBody("");
+    setDocEditor((s) => ({ html: "", key: s.key + 1 }));
     setDocIsFile(false);
     setDocTitle("");
     setDocTrack("");
@@ -776,6 +792,7 @@ export default function AdminClient({
     setDocId(d.id);
     setDocIsFile(!d.mimeType.startsWith("text/plain"));
     setDocBody("");
+    setDocEditor((s) => ({ html: "", key: s.key + 1 }));
     if (d.mimeType.startsWith("text/plain")) {
       const data = await readJson<{ document: { body: string } }>(`/api/admin/documents?id=${d.id}`);
       if (isFailure(data)) {
@@ -783,6 +800,7 @@ export default function AdminClient({
         return;
       }
       setDocBody(data.document.body ?? "");
+      setDocEditor((s) => ({ html: bodyToHtml(data.document.body ?? ""), key: s.key + 1 }));
     }
     setDocTitle(d.title);
     setDocTrack(d.track ? normalizeTrack(d.track) : "");
@@ -796,6 +814,10 @@ export default function AdminClient({
     e.preventDefault();
     if (!docTrack) {
       setError("분야를 선택해 주십시오. 자료는 그 분야 화면에 올라갑니다.");
+      return;
+    }
+    if (!docIsFile && textLength(docBody) < 20) {
+      setError("본문이 너무 짧습니다. 자료 전문을 붙여넣어 주십시오.");
       return;
     }
     setBusy(true);
@@ -1280,15 +1302,15 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 />
               </label>
 
-              <label className="admin-field">
-                본문 <small>워드에서 그대로 붙여넣으십시오. 빈 줄이 문단을 나눕니다.</small>
-                <textarea
-                  rows={14}
-                  value={articleDraft.body}
-                  onChange={(e) => setArticleDraft({ ...articleDraft, body: e.target.value })}
-                  required
+              <div className="admin-field">
+                본문 <small>워드에서 그대로 붙여넣으셔도 됩니다 — 서식은 살고 잡동사니는 빠집니다.</small>
+                <RichEditor
+                  initialHtml={articleEditor.html}
+                  resetKey={articleEditor.key}
+                  placeholder="여기에 본문을 쓰거나 붙여넣으십시오."
+                  onChange={(html) => setArticleDraft((d) => ({ ...d, body: html }))}
                 />
-              </label>
+              </div>
 
               <div className="admin-row">
                 <label>
@@ -1359,7 +1381,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   <button
                     type="button"
                     className="admin-btn admin-btn--quiet"
-                    onClick={() => setArticleDraft(EMPTY_ARTICLE)}
+                    onClick={resetArticleForm}
                   >
                     새 칼럼 쓰기
                   </button>
@@ -1440,15 +1462,15 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               </label>
 
               {!docIsFile && (
-                <label className="admin-field">
-                  본문 <small>워드에서 그대로 붙여넣으십시오. 빈 줄이 문단을 나눕니다.</small>
-                  <textarea
-                    rows={14}
-                    value={docBody}
-                    onChange={(e) => setDocBody(e.target.value)}
-                    required
+                <div className="admin-field">
+                  본문 <small>워드에서 그대로 붙여넣으셔도 됩니다 — 서식은 살고 잡동사니는 빠집니다.</small>
+                  <RichEditor
+                    initialHtml={docEditor.html}
+                    resetKey={docEditor.key}
+                    placeholder="여기에 자료 본문을 쓰거나 붙여넣으십시오."
+                    onChange={setDocBody}
                   />
-                </label>
+                </div>
               )}
 
               <div className="admin-row">

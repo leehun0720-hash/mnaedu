@@ -99,11 +99,8 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
             {article.lede && <p className="ins-article-lede">{article.lede}</p>}
           </header>
 
-          <div className="ins-body">
-            {article.paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
+          {/* 저장할 때 lib/rich-text 로 걸렀고 읽을 때 한 번 더 걸렀다 — 그래서 그대로 그린다 */}
+          <div className="ins-body" dangerouslySetInnerHTML={{ __html: article.html }} />
 
           <footer className="ins-foot">
             <p className="ins-back">

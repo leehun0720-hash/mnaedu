@@ -6,6 +6,7 @@ import { articles } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
 import { COURSES, normalizeStage } from "@/lib/questions";
+import { sanitizeHtml, textLength } from "@/lib/rich-text";
 import { uniqueSlug } from "@/lib/articles";
 import { describeDbError, isMissingTable } from "@/lib/db-error";
 
@@ -72,8 +73,9 @@ function validate(input: Payload) {
   if (title.length < 2) return { error: "제목을 입력해 주세요." as const };
   if (title.length > 200) return { error: "제목이 너무 깁니다." as const };
 
-  const body = (input.body ?? "").replace(/\r\n/g, "\n").trim();
-  if (body.length < 50) return { error: "본문이 너무 짧습니다. 칼럼 전문을 붙여넣어 주세요." as const };
+  // 편집기가 내놓는 HTML 은 여기서 거른다 — 허락한 서식만 남는다
+  const body = sanitizeHtml((input.body ?? "").replace(/\r\n/g, "\n").trim());
+  if (textLength(body) < 50) return { error: "본문이 너무 짧습니다. 칼럼 전문을 붙여넣어 주세요." as const };
 
   const track = (input.track ?? "").trim();
   if (track && !COURSES.some((c) => c.slug === track)) {

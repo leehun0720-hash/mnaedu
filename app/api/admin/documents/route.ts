@@ -17,6 +17,7 @@ import {
   safeFileName,
 } from "@/lib/documents";
 import { readJsonBody, runQuery } from "@/lib/admin-api";
+import { sanitizeHtml, textLength } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
 // 파일이 붙는 요청이라 기본 시간으로는 모자랄 수 있다
@@ -104,8 +105,9 @@ function validateText(input: TextPayload, { requireBody }: { requireBody: boolea
     return { error: "분야를 선택해 주십시오. 자료는 그 분야 화면에 올라갑니다." as const };
   }
 
-  const body = (input.body ?? "").replace(/\r\n/g, "\n").trim();
-  if (requireBody && body.length < 20) {
+  // 편집기가 내놓는 HTML 은 여기서 거른다 — 허락한 서식만 남는다
+  const body = sanitizeHtml((input.body ?? "").replace(/\r\n/g, "\n").trim());
+  if (requireBody && textLength(body) < 20) {
     return { error: "본문이 너무 짧습니다. 자료 전문을 붙여넣어 주십시오." as const };
   }
 

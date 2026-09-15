@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!doc) return { title: "업무자료 | ㈜프론티어 M&A" };
   return {
     title: `${doc.title} | ㈜프론티어 M&A`,
-    description: doc.summary ?? doc.paragraphs[0]?.slice(0, 150),
+    description: doc.summary ?? doc.excerpt,
   };
 }
 
@@ -93,11 +93,8 @@ export default async function LibraryDocumentPage({ params }: { params: Promise<
             {doc.summary && <p className="ins-article-lede">{doc.summary}</p>}
           </header>
 
-          <div className="ins-body">
-            {doc.paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
+          {/* 저장할 때 lib/rich-text 로 걸렀고 읽을 때 한 번 더 걸렀다 — 그래서 그대로 그린다 */}
+          <div className="ins-body" dangerouslySetInnerHTML={{ __html: doc.html }} />
 
           <footer className="ins-foot">
             <p className="ins-back">

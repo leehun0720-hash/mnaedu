@@ -10,6 +10,7 @@ import {
   trackAliases,
   type Stage,
 } from "@/lib/questions";
+import { bodyToHtml, htmlToText } from "@/lib/rich-text";
 
 /**
  * 자료실.
@@ -45,14 +46,7 @@ export function isTextDocument(mimeType: string | null | undefined): boolean {
   return (mimeType ?? "").startsWith("text/plain");
 }
 
-/** 빈 줄 기준으로 문단을 끊는다 — 태그는 해석하지 않으므로 화면에서 그대로 escape 된다 */
-export function toParagraphs(body: string): string[] {
-  return body
-    .replace(/\r\n/g, "\n")
-    .split(/\n{2,}/)
-    .map((x) => x.trim())
-    .filter(Boolean);
-}
+
 
 const MIME_BY_EXTENSION: Record<string, string> = {
   ".doc": "application/msword",
@@ -177,7 +171,10 @@ export type ReadableDocument = {
   trackLabel: string | null;
   stage: Stage | null;
   date: string;
-  paragraphs: string[];
+  /** 그릴 준비가 된 본문 HTML */
+  html: string;
+  /** 태그를 벗긴 앞부분 — 검색 설명에 쓴다 */
+  excerpt: string;
 };
 
 /** 붙여넣은 글로 올린 자료 — 발행된 것만, 글로 올린 것만 나간다 */
@@ -200,7 +197,8 @@ export async function getDocumentForReading(id: number): Promise<ReadableDocumen
       trackLabel: pub.trackLabel,
       stage: pub.stage,
       date: pub.createdAt,
-      paragraphs: toParagraphs(row.content),
+      html: bodyToHtml(row.content),
+      excerpt: htmlToText(bodyToHtml(row.content)).replace(/\s+/g, " ").slice(0, 150),
     };
   } catch (err) {
     console.error("[documents] read failed:", err);

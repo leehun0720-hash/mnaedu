@@ -10,6 +10,7 @@ import {
   trackAliases,
   type Stage,
 } from "@/lib/questions";
+import { bodyToHtml, htmlToText } from "@/lib/rich-text";
 
 /** 목록에 한 번에 세우는 최대 건수 — 연재 100여 회를 페이지로 나눈다 */
 /** 한 면에 10개씩 노출 (회장 지시 2026-09) */
@@ -32,8 +33,11 @@ export type ArticleSummary = {
 };
 
 export type ArticleDetail = ArticleSummary & {
-  /** 문단으로 끊어 둔 본문 — 화면은 그대로 <p>로 그리기만 한다 */
-  paragraphs: string[];
+  /**
+   * 그릴 준비가 된 본문 HTML — 저장할 때 걸렀고, 여기서 한 번 더 거른다.
+   * 옛 글(평문)은 문단으로 감싸 준다.
+   */
+  html: string;
 };
 
 /**
@@ -79,7 +83,8 @@ export async function uniqueSlug(title: string, exceptId?: number): Promise<stri
 
 /** 본문 앞부분으로 만드는 대체 요약 — 검색 결과에 빈 설명이 나가지 않게 */
 function fallbackLede(body: string): string {
-  const flat = body.replace(/\s+/g, " ").trim();
+  // 서식 있는 글이면 태그를 벗기고 앞부분만 쓴다
+  const flat = htmlToText(bodyToHtml(body)).replace(/\s+/g, " ").trim();
   return flat.length > 150 ? `${flat.slice(0, 150)}…` : flat;
 }
 
@@ -170,12 +175,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
     if (!row) return null;
     return {
       ...toSummary(row),
-      // 빈 줄이 문단 구분이다. 태그는 해석하지 않으므로 화면에서 그대로 escape된다.
-      paragraphs: row.body
-        .replace(/\r\n/g, "\n")
-        .split(/\n{2,}/)
-        .map((p) => p.trim())
-        .filter(Boolean),
+      html: bodyToHtml(row.body),
     };
   } catch (err) {
     console.error("[articles] read failed:", err);
