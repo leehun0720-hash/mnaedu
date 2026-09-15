@@ -180,7 +180,10 @@ export default function AdminClient({
   // 회원
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [memberTotal, setMemberTotal] = useState(0);
+  /** 입력칸에 보이는 글자 */
   const [memberQuery, setMemberQuery] = useState("");
+  /** 실제로 서버에 물어본 말 — 손을 뗀 뒤에야 따라온다 */
+  const [memberSearch, setMemberSearch] = useState("");
   const [memberPage, setMemberPage] = useState(1);
   const [memberPageSize, setMemberPageSize] = useState(20);
   /** 지금 손보고 있는 회원 한 명 — 이름과 메모만 고친다 */
@@ -192,11 +195,18 @@ export default function AdminClient({
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwInfo, setPwInfo] = useState<{ changedAt: string | null; usingEnv: boolean } | null>(null);
 
+  /**
+   * 목록 불러오기.
+   *
+   * 기다림에 끝을 두되, 얼마나 기다렸는지를 문장에 적는다. "서버가 응답하지
+   * 않습니다"만으로는 무엇이 막혔는지 알 수 없어, 회장님도 저도 짐작만 하게 된다.
+   */
   const readJson = useCallback(async <T,>(url: string): Promise<T | FetchFailure> => {
     const abort = new AbortController();
+    const started = Date.now();
     const timer = window.setTimeout(() => abort.abort(), 30000);
     try {
-      const res = await fetch(url, { signal: abort.signal });
+      const res = await fetch(url, { signal: abort.signal, cache: "no-store" });
       if (res.status === 401) {
         setLoggedIn(false);
         return { failed: true, expired: true, message: "로그인이 만료되었습니다. 다시 로그인해 주십시오." };
@@ -207,13 +217,14 @@ export default function AdminClient({
       }
       return (await res.json()) as T;
     } catch (err) {
+      const waited = Math.round((Date.now() - started) / 1000);
       return {
         failed: true,
         expired: false,
         message:
           err instanceof DOMException && err.name === "AbortError"
-            ? "서버가 응답하지 않아 목록을 불러오지 못했습니다."
-            : "연결에 실패했습니다.",
+            ? `서버가 ${waited}초 동안 답하지 않아 중단했습니다. 잠시 후 다시 시도해 주시고, 같은 일이 반복되면 이 문장을 그대로 알려 주십시오.`
+            : "연결에 실패했습니다. 인터넷 상태를 확인하고 다시 시도해 주십시오.",
       };
     } finally {
       window.clearTimeout(timer);
@@ -247,7 +258,7 @@ export default function AdminClient({
 
   const loadMembers = useCallback(async () => {
     const params = new URLSearchParams({ page: String(memberPage) });
-    if (memberQuery.trim()) params.set("q", memberQuery.trim());
+    if (memberSearch.trim()) params.set("q", memberSearch.trim());
     const data = await readJson<MembersResponse>(`/api/admin/members?${params}`);
     if (isFailure(data)) {
       setError(data.message);
@@ -256,7 +267,7 @@ export default function AdminClient({
     setMembers(data.members);
     setMemberTotal(data.total);
     setMemberPageSize(data.pageSize || 20);
-  }, [readJson, memberPage, memberQuery]);
+  }, [readJson, memberPage, memberSearch]);
 
   async function saveMember(e: React.FormEvent) {
     e.preventDefault();
@@ -379,17 +390,36 @@ export default function AdminClient({
               ? loadPasswordInfo
               : loadMembers;
     Promise.resolve()
-      .then(() => (alive ? load() : undefined))
+      .then(() => {
+        if (!alive) return undefined;
+        // 지난 실패 문구를 지우고 다시 묻는다. 지우지 않으면 다른 탭에서 한 번
+        // 실패한 문장이 화면에 눌러앉아, 멀쩡한 탭까지 고장 난 것처럼 보인다.
+        setError(null);
+        return load();
+      })
       .catch(() => undefined);
     return () => {
       alive = false;
     };
   }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers, loadPasswordInfo]);
 
-  /** 검색어를 지우거나 새로 치면 첫 쪽부터 다시 본다 */
-  function searchMembers(next: string) {
-    setMemberQuery(next);
-    setMemberPage(1);
+  /**
+   * 타자 한 자마다 서버를 두드리면 요청이 줄줄이 겹친다. 손을 멈추신 뒤
+   * 한 번만 묻는다.
+   */
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setMemberSearch(memberQuery);
+      setMemberPage(1);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [memberQuery]);
+
+  /** 탭을 옮기면 앞 탭에서 뜬 문구는 두고 간다 — 그 탭의 사연일 뿐이다 */
+  function goTab(next: Tab) {
+    setTab(next);
+    setError(null);
+    setNotice(null);
   }
 
   async function login(e: React.FormEvent) {
@@ -870,19 +900,19 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         )}
 
         <nav className="admin-tabs">
-          <button data-on={tab === "questions"} onClick={() => setTab("questions")}>
+          <button data-on={tab === "questions"} onClick={() => goTab("questions")}>
             문제 출제
           </button>
-          <button data-on={tab === "articles"} onClick={() => setTab("articles")}>
+          <button data-on={tab === "articles"} onClick={() => goTab("articles")}>
             칼럼
           </button>
-          <button data-on={tab === "documents"} onClick={() => setTab("documents")}>
+          <button data-on={tab === "documents"} onClick={() => goTab("documents")}>
             자료실
           </button>
-          <button data-on={tab === "members"} onClick={() => setTab("members")}>
+          <button data-on={tab === "members"} onClick={() => goTab("members")}>
             회원
           </button>
-          <button data-on={tab === "settings"} onClick={() => setTab("settings")}>
+          <button data-on={tab === "settings"} onClick={() => goTab("settings")}>
             비밀번호
           </button>
         </nav>
@@ -1543,23 +1573,33 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 <input
                   placeholder="성함 · 이메일 · 메모로 찾기"
                   value={memberQuery}
-                  onChange={(e) => searchMembers(e.target.value)}
+                  onChange={(e) => setMemberQuery(e.target.value)}
                 />
                 {memberQuery && (
                   <button
                     type="button"
                     className="admin-btn admin-btn--quiet"
-                    onClick={() => searchMembers("")}
+                    onClick={() => setMemberQuery("")}
                   >
                     검색 지우기
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="admin-btn admin-btn--quiet"
+                  onClick={() => {
+                    setError(null);
+                    void loadMembers();
+                  }}
+                >
+                  다시 불러오기
+                </button>
               </div>
 
               {members.length === 0 ? (
                 <div className="admin-note">
-                  {memberQuery ? (
-                    <p>「{memberQuery}」로 찾은 회원이 없습니다.</p>
+                  {memberSearch ? (
+                    <p>「{memberSearch}」로 찾은 회원이 없습니다.</p>
                   ) : (
                     <>
                       <p>아직 명단에 오른 회원이 없습니다.</p>

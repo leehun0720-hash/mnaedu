@@ -5,7 +5,7 @@ import { getDb, isDbConfigured } from "@/db";
 import { members } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
-import { readJsonBody, storageFailure } from "@/lib/admin-api";
+import { readJsonBody, runQuery } from "@/lib/admin-api";
 
 export const dynamic = "force-dynamic";
 
@@ -46,8 +46,8 @@ export async function GET(request: Request) {
   const where = filters.length ? and(...filters) : undefined;
 
   const db = getDb();
-  try {
-    const [rows, [totals]] = await Promise.all([
+  const out = await runQuery(
+    Promise.all([
       db
         .select({
           id: members.id,
@@ -62,17 +62,18 @@ export async function GET(request: Request) {
         .limit(PAGE_SIZE)
         .offset((page - 1) * PAGE_SIZE),
       db.select({ value: count() }).from(members).where(where),
-    ]);
+    ]),
+    "회원 목록"
+  );
+  if (!out.ok) return out.response;
+  const [rows, [totals]] = out.value;
 
-    return NextResponse.json({
-      members: rows,
-      total: totals?.value ?? 0,
-      page,
-      pageSize: PAGE_SIZE,
-    });
-  } catch (err) {
-    return storageFailure(err, "members list");
-  }
+  return NextResponse.json({
+    members: rows,
+    total: totals?.value ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  });
 }
 
 type Payload = { id?: number; name?: string; note?: string };
@@ -92,8 +93,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
   }
 
-  try {
-    const [row] = await getDb()
+  const out = await runQuery(
+    getDb()
       .update(members)
       .set({
         name: (body.name ?? "").trim().slice(0, 100) || null,
@@ -101,13 +102,13 @@ export async function PUT(request: Request) {
         updatedAt: new Date(),
       })
       .where(eq(members.id, id))
-      .returning({ id: members.id });
+      .returning({ id: members.id }),
+    "회원 수정"
+  );
+  if (!out.ok) return out.response;
 
-    if (!row) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    return storageFailure(err, "member update");
-  }
+  if (!out.value[0]) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+  return NextResponse.json({ ok: true });
 }
 
 /**
@@ -128,10 +129,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id가 없습니다." }, { status: 400 });
   }
 
-  try {
-    await getDb().delete(members).where(eq(members.id, id));
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    return storageFailure(err, "member delete");
-  }
+  const out = await runQuery(getDb().delete(members).where(eq(members.id, id)), "회원 삭제");
+  if (!out.ok) return out.response;
+  return NextResponse.json({ ok: true });
 }

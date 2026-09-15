@@ -6,7 +6,7 @@ import { questions } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
 import { COURSES, FORMATS, normalizeStage, normalizeTrack } from "@/lib/questions";
-import { readJsonBody, storageFailure } from "@/lib/admin-api";
+import { readJsonBody, runQuery, storageFailure } from "@/lib/admin-api";
 
 /** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */
 export const PAGE_SIZE = 20;
@@ -109,9 +109,8 @@ export async function GET(request: Request) {
   const where = filters.length ? and(...filters) : undefined;
 
   const db = getDb();
-  let result;
-  try {
-    result = await Promise.all([
+  const listed = await runQuery(
+    Promise.all([
       db
         .select()
         .from(questions)
@@ -129,11 +128,11 @@ export async function GET(request: Request) {
         })
         .from(questions)
         .groupBy(questions.track),
-    ]);
-  } catch (err) {
-    return storageFailure(err, "questions list");
-  }
-  const [rows, [totals], coverageRows] = result;
+    ]),
+    "문제 목록"
+  );
+  if (!listed.ok) return listed.response;
+  const [rows, [totals], coverageRows] = listed.value;
 
   // 개편 전 슬러그로 저장된 행도 현행 분야의 칸에 얹는다
   const coverage: Record<string, { total: number; published: number }> = {};

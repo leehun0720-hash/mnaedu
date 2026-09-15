@@ -34,6 +34,57 @@ export function storageFailure(err: unknown, what: string): NextResponse {
   );
 }
 
+/**
+ * 데이터베이스 일 하나에 허락하는 시간.
+ *
+ * 화면은 30초를 기다리다 스스로 끊는다. 그보다 먼저 서버가 답해야, 회장님이
+ * "서버가 응답하지 않습니다"라는 막연한 말 대신 무엇이 막혔는지를 보신다.
+ */
+const QUERY_DEADLINE_MS = 12_000;
+
+const TIMED_OUT = Symbol("timed-out");
+
+/**
+ * 조회 하나를 시한 안에서 돌린다.
+ *
+ * 돌아오는 값은 둘 중 하나다 — 결과이거나, 그대로 돌려보낼 응답이거나.
+ * 시한을 넘긴 것과 실패한 것을 다른 문장으로 구분한다. 둘을 뭉뚱그리면
+ * "데이터베이스가 느린 것"과 "표가 없는 것"을 화면에서 가려낼 수 없다.
+ */
+export async function runQuery<T>(
+  work: Promise<T>,
+  label: string,
+  ms: number = QUERY_DEADLINE_MS
+): Promise<{ ok: true; value: T } | { ok: false; response: NextResponse }> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const bell = new Promise<typeof TIMED_OUT>((resolve) => {
+    timer = setTimeout(() => resolve(TIMED_OUT), ms);
+  });
+
+  try {
+    const out = await Promise.race([work, bell]);
+    if (out === TIMED_OUT) {
+      console.error(`[admin] ${label} exceeded ${ms}ms`);
+      // 시한 뒤에 실패하더라도 그 거절이 떠돌지 않게 받아 둔다
+      void work.catch(() => undefined);
+      return {
+        ok: false,
+        response: NextResponse.json(
+          {
+            error: `데이터베이스가 ${Math.round(ms / 1000)}초 안에 답하지 않았습니다 (${label}). 잠시 후 다시 시도해 주시고, 반복되면 알려 주십시오.`,
+          },
+          { status: 504 }
+        ),
+      };
+    }
+    return { ok: true, value: out as T };
+  } catch (err) {
+    return { ok: false, response: storageFailure(err, label) };
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 /** 본문이 JSON이 아닐 때 500 대신 400으로 끝낸다 */
 export async function readJsonBody<T>(request: Request): Promise<T | null> {
   try {

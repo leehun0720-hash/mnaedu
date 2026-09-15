@@ -14,7 +14,7 @@ import {
   mimeFor,
   safeFileName,
 } from "@/lib/documents";
-import { storageFailure } from "@/lib/admin-api";
+import { runQuery, storageFailure } from "@/lib/admin-api";
 
 export const dynamic = "force-dynamic";
 // 파일이 붙는 요청이라 기본 시간으로는 모자랄 수 있다
@@ -39,8 +39,8 @@ export async function GET() {
   const blocked = guardStorage();
   if (blocked) return blocked;
 
-  try {
-    const rows = await getDb()
+  const out = await runQuery(
+    getDb()
       .select({
         id: documents.id,
         title: documents.title,
@@ -54,12 +54,11 @@ export async function GET() {
         createdAt: documents.createdAt,
       })
       .from(documents)
-      .orderBy(desc(documents.createdAt));
-
-    return NextResponse.json({ documents: rows });
-  } catch (err) {
-    return storageFailure(err, "documents list");
-  }
+      .orderBy(desc(documents.createdAt)),
+    "자료 목록"
+  );
+  if (!out.ok) return out.response;
+  return NextResponse.json({ documents: out.value });
 }
 
 /** 새 자료 올리기 — multipart/form-data */

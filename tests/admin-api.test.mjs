@@ -57,3 +57,37 @@ test("실패 문구에 데이터베이스 속사정을 싣지 않는다", async 
   ).json();
   assert.doesNotMatch(body.error, /postgres:|hunter2|db\.internal/);
 });
+
+const { runQuery } = await import(url);
+
+// 회장님 화면이 "서버가 응답하지 않습니다"에 갇혔다. 서버가 먼저 말해야
+// 무엇이 막혔는지 알 수 있다 — 시한을 넘긴 것과 실패한 것을 갈라 말한다.
+
+test("제때 끝난 조회는 값을 그대로 준다", async () => {
+  const out = await runQuery(Promise.resolve([1, 2]), "회원 목록");
+  assert.equal(out.ok, true);
+  assert.deepEqual(out.value, [1, 2]);
+});
+
+test("시한을 넘기면 무엇이 얼마나 걸렸는지 말한다", async () => {
+  const out = await runQuery(new Promise(() => {}), "회원 목록", 40);
+  assert.equal(out.ok, false);
+  assert.equal(out.response.status, 504);
+  const body = await out.response.json();
+  assert.match(body.error, /회원 목록/);
+  assert.match(body.error, /초 안에 답하지 않았습니다/);
+});
+
+test("실패는 시한 초과와 다른 문장으로 돌아온다", async () => {
+  const out = await runQuery(Promise.reject(new Error('column "note" does not exist')), "회원 목록");
+  assert.equal(out.ok, false);
+  assert.equal(out.response.status, 500);
+  assert.match((await out.response.json()).error, /setup\.sql/);
+});
+
+test("시한을 넘긴 뒤에 실패해도 떠도는 거절을 남기지 않는다", async () => {
+  const late = new Promise((_, reject) => setTimeout(() => reject(new Error("late")), 60));
+  const out = await runQuery(late, "회원 목록", 15);
+  assert.equal(out.ok, false);
+  await new Promise((r) => setTimeout(r, 140));
+});
