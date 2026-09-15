@@ -143,7 +143,6 @@ export default async function BusinessDetailPage({
               <span className="co-mastertip-badge">MASTER TIP</span>
               <span className="co-mastertip-title">{area.masterTip}</span>
               <span className="co-topic-tags">
-                <i className="co-tag co-tag--soon">업무자료 준비 중</i>
                 <Link className="co-tag co-tag--quiz" href="#questions">
                   평가문제 ↓
                 </Link>
@@ -159,7 +158,6 @@ export default async function BusinessDetailPage({
                 </span>
                 <span className="co-topic-title">{topic.label}</span>
                 <span className="co-topic-tags">
-                  <i className="co-tag co-tag--soon">업무자료 준비 중</i>
                   <Link className="co-tag co-tag--quiz" href="#questions">
                     평가문제 ↓
                   </Link>
