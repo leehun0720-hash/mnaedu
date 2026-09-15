@@ -83,7 +83,6 @@ export default async function LibraryDocumentPage({ params }: { params: Promise<
           <header className="ins-head">
             <div className="ins-meta">
               <span className="ins-source">{doc.kind}</span>
-              {doc.stage && <span className="ins-track">{doc.stage}</span>}
               {doc.trackLabel && <span className="ins-track">{doc.trackLabel}</span>}
               <time className="ins-date" dateTime={doc.date}>
                 {doc.date}

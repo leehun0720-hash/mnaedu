@@ -92,7 +92,6 @@ export default function QuestionsSection({
                 <div className="qa-meta">
                   <span className="qa-no">{String(q.no).padStart(2, "0")}</span>
                   <span className="qa-track">{q.trackLabel}</span>
-                  {q.stage && <span className="qa-stage">{q.stage}</span>}
                   <span className="qa-type">{q.type}</span>
                 </div>
 

@@ -46,7 +46,6 @@ export default function LibrarySection({
             <li key={e.key} className="lib-item">
               <div className="lib-meta">
                 <span className="lib-kind">{e.kind}</span>
-                {e.stage && <span className="lib-stage">{e.stage}</span>}
                 {e.trackLabel && <span className="lib-track">{e.trackLabel}</span>}
                 <time className="lib-date">{e.createdAt}</time>
               </div>

@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { COURSES, FORMATS, STAGES, normalizeStage, normalizeTrack } from "@/lib/questions";
+import { COURSES, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { bodyToHtml, textLength } from "@/lib/rich-text";
 import RichEditor from "./rich-editor";
-import { parseQuestion } from "@/lib/parse-question";
 
 /**
  * 관리자 화면 — 회장이 혼자 쓰는 곳.
@@ -170,10 +169,8 @@ export default function AdminClient({
   const [page, setPage] = useState(1);
   const [coverage, setCoverage] = useState<Coverage>({});
   const [draft, setDraft] = useState<Draft>(EMPTY);
-  const [paste, setPaste] = useState("");
   const [query, setQuery] = useState("");
   const [filterTrack, setFilterTrack] = useState("");
-  const [filterStage, setFilterStage] = useState("");
   const [filterState, setFilterState] = useState("");
 
   // 자료실
@@ -258,7 +255,6 @@ export default function AdminClient({
     const params = new URLSearchParams({ page: String(page) });
     if (query.trim()) params.set("q", query.trim());
     if (filterTrack) params.set("track", filterTrack);
-    if (filterStage) params.set("stage", filterStage);
     if (filterState) params.set("state", filterState);
     const data = await readJson<QuestionsResponse>(`/api/admin/questions?${params}`);
     if (isFailure(data)) {
@@ -268,7 +264,7 @@ export default function AdminClient({
     setRows(data.questions);
     setTotal(data.total);
     setCoverage(data.coverage ?? {});
-  }, [page, query, filterTrack, filterStage, filterState, readJson]);
+  }, [page, query, filterTrack, filterState, readJson]);
 
   const loadDocuments = useCallback(async () => {
     const data = await readJson<DocumentsResponse>("/api/admin/documents");
@@ -516,19 +512,7 @@ export default function AdminClient({
   }
 
   // ── 문제 ────────────────────────────────────────────────────────────
-  function applyPaste() {
-    const d = parseQuestion(paste);
-    setDraft((prev) => ({
-      ...prev,
-      track: d.track || prev.track,
-      format: d.format,
-      prompt: d.prompt || prev.prompt,
-      choices: d.choices.length ? [...d.choices, "", ""].slice(0, Math.max(4, d.choices.length)) : prev.choices,
-      answer: d.answer || prev.answer,
-      explanation: d.explanation || prev.explanation,
-    }));
-    setNotice("초안을 채웠습니다. 저장 전에 확인해 주십시오.");
-  }
+
 
   /**
    * 응답을 JSON 으로 읽되, 본문이 JSON 이 아니면 던지지 않는다.
@@ -603,7 +587,6 @@ export default function AdminClient({
         return;
       }
       setDraft(EMPTY);
-      setPaste("");
       setNotice(draft.id ? "수정했습니다." : "저장했습니다.");
       await loadQuestions();
     } finally {
@@ -1000,28 +983,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         {/* ── 문제 출제 ── */}
         {tab === "questions" && (
           <>
-            <section className="admin-card">
-              <h2>붙여넣기로 초안 만들기</h2>
-              <p className="admin-note">
-                문제를 그대로 붙여넣으면 분야·유형·보기·정답을 추정해 아래 항목을 채웁니다. 추정이므로 반드시 확인하십시오.
-              </p>
-              <textarea
-                className="admin-paste"
-                rows={7}
-                value={paste}
-                onChange={(e) => setPaste(e.target.value)}
-                placeholder={"예)\n경영권 분쟁\n대상회사가 방어수단을 발동한 상황에서…\n① 첫 번째 보기\n② 두 번째 보기\n정답: ②\n해설: 왜 그 논거가 성립하는지"}
-              />
-              <button
-                type="button"
-                className="admin-btn admin-btn--quiet"
-                onClick={applyPaste}
-                disabled={!paste.trim()}
-              >
-                초안 채우기
-              </button>
-            </section>
-
             <form className="admin-card" onSubmit={saveQuestion}>
               <h2>{draft.id ? `문제 수정 (#${draft.id})` : "새 문제"}</h2>
 
@@ -1041,33 +1002,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     ))}
                   </select>
                 </label>
-                <label>
-                  단계 <small>같은 분야 안에서 기초·심화로 나눕니다</small>
-                  <select
-                    value={draft.stage}
-                    onChange={(e) => setDraft({ ...draft, stage: e.target.value })}
-                  >
-                    <option value="">나누지 않음</option>
-                    {STAGES.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  유형
-                  <select
-                    value={draft.format}
-                    onChange={(e) => setDraft({ ...draft, format: e.target.value })}
-                  >
-                    {FORMATS.map((f) => (
-                      <option key={f} value={f}>
-                        {f}
-                      </option>
-                    ))}
-                  </select>
-                </label>
               </div>
 
               <label className="admin-field">
@@ -1080,30 +1014,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 />
               </label>
 
-              {draft.format === "객관식" && (
-                <div className="admin-choices">
-                  {draft.choices.map((c, i) => (
-                    <label key={i} className="admin-field">
-                      보기 {"①②③④⑤"[i] ?? i + 1}
-                      <input
-                        value={c}
-                        onChange={(e) => {
-                          const next = [...draft.choices];
-                          next[i] = e.target.value;
-                          setDraft({ ...draft, choices: next });
-                        }}
-                      />
-                    </label>
-                  ))}
-                  <button
-                    type="button"
-                    className="admin-btn admin-btn--quiet"
-                    onClick={() => setDraft({ ...draft, choices: [...draft.choices, ""] })}
-                  >
-                    보기 추가
-                  </button>
-                </div>
-              )}
 
               <label className="admin-field">
                 정답 <small>로그인한 회원에게 공개됩니다</small>
@@ -1184,21 +1094,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   }}
                 />
                 <select
-                  value={filterStage}
-                  onChange={(e) => {
-                    setFilterStage(e.target.value);
-                    setPage(1);
-                  }}
-                >
-                  <option value="">전체 단계</option>
-                  {STAGES.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                  <option value="none">나누지 않은 것</option>
-                </select>
-                <select
                   value={filterState}
                   onChange={(e) => {
                     setFilterState(e.target.value);
@@ -1223,8 +1118,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                           {r.published ? "발행" : "임시"}
                         </span>
                         <span>{COURSES.find((c) => c.slug === normalizeTrack(r.track))?.label ?? r.track}</span>
-                        {r.stage && <span>{r.stage}</span>}
-                        <span>{r.format}</span>
                         {!r.answer && <span className="admin-tag admin-tag--warn">정답 없음</span>}
                         {!r.explanation && <span className="admin-tag admin-tag--warn">해설 없음</span>}
                       </div>
@@ -1314,25 +1207,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
               <div className="admin-row">
                 <label>
-                  게재처 <small>다른 매체에 실렸던 글일 때만</small>
-                  <input
-                    value={articleDraft.source}
-                    onChange={(e) => setArticleDraft({ ...articleDraft, source: e.target.value })}
-                    placeholder="비워 두면 매체 이름이 붙지 않습니다"
-                    maxLength={60}
-                  />
-                </label>
-                <label>
-                  게재일 <small>원문이 실린 날</small>
-                  <input
-                    type="date"
-                    value={articleDraft.publishedOn}
-                    onChange={(e) =>
-                      setArticleDraft({ ...articleDraft, publishedOn: e.target.value })
-                    }
-                  />
-                </label>
-                <label>
                   분야 <small>그 분야 자료실에도 함께</small>
                   <select
                     value={articleDraft.track}
@@ -1342,20 +1216,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     {COURSES.map((c) => (
                       <option key={c.slug} value={c.slug}>
                         {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  단계 <small>선택</small>
-                  <select
-                    value={articleDraft.stage}
-                    onChange={(e) => setArticleDraft({ ...articleDraft, stage: e.target.value })}
-                  >
-                    <option value="">나누지 않음</option>
-                    {STAGES.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
                       </option>
                     ))}
                   </select>
@@ -1486,17 +1346,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   </select>
                 </label>
                 <label>
-                  단계 <small>선택</small>
-                  <select value={docStage} onChange={(e) => setDocStage(e.target.value)}>
-                    <option value="">나누지 않음</option>
-                    {STAGES.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
                   구분
                   <select value={docKind} onChange={(e) => setDocKind(e.target.value)}>
                     <option value="자료">자료</option>
@@ -1544,7 +1393,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                           {d.published ? "발행" : "임시"}
                         </span>
                         <span>{d.kind}</span>
-                        {d.stage && <span>{d.stage}</span>}
                         {d.track && (
                           <span>{COURSES.find((c) => c.slug === normalizeTrack(d.track!))?.label ?? d.track}</span>
                         )}

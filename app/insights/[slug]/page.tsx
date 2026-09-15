@@ -53,7 +53,6 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
     datePublished: article.date,
     author: { "@type": "Person", name: "성보경" },
     publisher: { "@type": "Organization", name: "㈜프론티어 M&A" },
-    ...(article.source ? { isBasedOn: article.source } : {}),
   };
 
   return (
@@ -89,7 +88,6 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
 
           <header className="ins-head">
             <div className="ins-meta">
-              {article.source && <span className="ins-source">{article.source}</span>}
               {article.trackLabel && <span className="ins-track">{article.trackLabel}</span>}
               <time className="ins-date" dateTime={article.date}>
                 {article.date}
@@ -110,7 +108,6 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
             </p>
             <p className="ins-byline">
               글 · 성보경 ㈜프론티어 M&amp;A 회장
-              {article.source && <> · {article.source} 게재</>}
             </p>
             {/* 회장 지시 — 메일 창이 아니라 홈페이지의 문의 양식으로 보낸다.
                 메일 프로그램이 잡혀 있지 않은 기기에서는 mailto가 아무 일도

@@ -109,7 +109,8 @@ function toSummary(row: {
     track: row.track ? normalizeTrack(row.track) : null,
     trackLabel: row.track ? courseLabel(normalizeTrack(row.track)) : null,
     stage: normalizeStage(row.stage),
-    date: (row.publishedOn ?? row.createdAt).toISOString().slice(0, 10),
+    // 회장 지시(2026-09-15): 게재처·게재일은 두지 않는다. 남는 것은 작성한 날뿐이다.
+    date: row.createdAt.toISOString().slice(0, 10),
   };
 }
 
@@ -140,7 +141,7 @@ export async function getPublishedArticles(
       .select(LIST_COLUMNS)
       .from(articles)
       .where(eq(articles.published, true))
-      .orderBy(desc(articles.publishedOn), desc(articles.createdAt))
+      .orderBy(desc(articles.createdAt))
       .limit(limit)
       .offset(offset);
     return rows.map(toSummary);
@@ -206,7 +207,7 @@ export async function getArticlesByTrack(
       .select(LIST_COLUMNS)
       .from(articles)
       .where(and(...where))
-      .orderBy(desc(articles.publishedOn), desc(articles.createdAt))
+      .orderBy(desc(articles.createdAt))
       .limit(limit);
     return rows.map(toSummary);
   } catch (err) {

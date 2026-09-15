@@ -81,7 +81,6 @@ export default async function InsightsPage({
                   <li key={a.id} className="ins-item">
                     <Link href={`/insights/${encodeURIComponent(a.slug)}`}>
                       <div className="ins-meta">
-                        {a.source && <span className="ins-source">{a.source}</span>}
                         {a.trackLabel && <span className="ins-track">{a.trackLabel}</span>}
                         <time className="ins-date" dateTime={a.date}>
                           {a.date}

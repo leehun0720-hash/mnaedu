@@ -188,24 +188,13 @@ test("the five areas are presented under the two offices", async () => {
   assert.match(mna, /M&(amp;)?A 오피스/);
 });
 
-test("업무 화면에서 기초·심화를 고를 수 있다", async () => {
-  // 회장 지시(2026-09) — "M&A중개" 안에서 기초와 심화로 나뉘어야 한다
-  const html = await renderHtml("/business/brokerage");
-  assert.match(html, /단계 고르기/);
-  // 한글 값은 주소에서 퍼센트 부호로 실린다 — 눈에 보이는 그대로 확인한다
-  const 기초 = encodeURIComponent("기초");
-  const 심화 = encodeURIComponent("심화");
-  assert.ok(html.includes(`href="/business/brokerage?ds=${기초}#library"`), "자료 기초 링크");
-  assert.ok(html.includes(`href="/business/brokerage?qs=${심화}#questions"`), "문제 심화 링크");
-});
-
-test("단계를 고른 채로도 화면이 선다", async () => {
+test("업무 화면에 단계 고르기는 없다 — 옛 주소의 단계 값은 조용히 무시한다", async () => {
+  // 2026-09-15 회장 지시 — 단계(기초·심화)를 화면에서 걷었다. 예전에 공유된
+  // ?qs=기초 같은 주소로 들어와도 화면은 그대로 선다.
   const html = await renderHtml("/business/brokerage?qs=%EA%B8%B0%EC%B4%88&ds=%EC%8B%AC%ED%99%94");
+  assert.doesNotMatch(html, /단계 고르기/);
   assert.match(html, /M&(amp;)?A 중개 평가문제/);
-  // 정답·해설은 어떤 조건에서도 공개 화면에 실리지 않는다
-  for (const leak of [/"answer":/, /"explanation":/, /"intent":/]) {
-    assert.doesNotMatch(html, leak);
-  }
+  for (const leak of [/"answer":/, /"explanation":/, /"intent":/]) assert.doesNotMatch(html, leak);
 });
 
 test("출제자 입장은 새 창으로 열린다", async () => {
