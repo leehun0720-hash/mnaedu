@@ -183,7 +183,6 @@ export default function AdminClient({
   /** 고치는 중인 것이 예전에 올린 파일 자료면 본문 칸을 잠근다 */
   const [docIsFile, setDocIsFile] = useState(false);
   const [docTitle, setDocTitle] = useState("");
-  const [docSummary, setDocSummary] = useState("");
   const [docTrack, setDocTrack] = useState("");
   const [docStage, setDocStage] = useState("");
   const [docKind, setDocKind] = useState("자료");
@@ -761,7 +760,6 @@ export default function AdminClient({
     setDocBody("");
     setDocIsFile(false);
     setDocTitle("");
-    setDocSummary("");
     setDocTrack("");
     setDocStage("");
     setDocKind("자료");
@@ -787,7 +785,6 @@ export default function AdminClient({
       setDocBody(data.document.body ?? "");
     }
     setDocTitle(d.title);
-    setDocSummary(d.summary ?? "");
     setDocTrack(d.track ? normalizeTrack(d.track) : "");
     setDocStage(normalizeStage(d.stage) ?? "");
     setDocKind(d.kind);
@@ -810,7 +807,6 @@ export default function AdminClient({
         title: docTitle,
         // 파일 자료를 고칠 때는 본문을 보내지 않는다 — 그 파일은 그대로 둔다
         body: docIsFile ? "" : docBody,
-        summary: docSummary,
         track: docTrack,
         stage: docStage,
         kind: docKind,
@@ -1463,11 +1459,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   />
                 </label>
               )}
-
-              <label className="admin-field">
-                한 줄 설명 <small>목록에 제목 아래로 보입니다</small>
-                <input value={docSummary} onChange={(e) => setDocSummary(e.target.value)} />
-              </label>
 
               <div className="admin-row">
                 <label>
