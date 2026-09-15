@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ARTICLES_PER_PAGE, countPublishedArticles, getPublishedArticles } from "@/lib/articles";
+import AdminLink from "../admin-link";
 import CopyGuard from "../copy-guard";
 import ThemeToggle from "../theme-toggle";
 import SiteRail from "../site-rail";
@@ -125,6 +126,7 @@ export default async function InsightsPage({
         <div className="co-footer-base">
           <small>© 2026 ㈜프론티어 M&amp;A. ALL RIGHTS RESERVED.</small>
           <Link href="/">홈으로</Link>
+          <AdminLink variant="footer" />
         </div>
       </footer>
     </div>

@@ -12,6 +12,7 @@ import {
   businessArea,
   officeOf,
 } from "@/lib/company";
+import AdminLink from "../../admin-link";
 import CopyGuard from "../../copy-guard";
 import ThemeToggle from "../../theme-toggle";
 import SiteRail from "../../site-rail";
@@ -90,6 +91,7 @@ export default async function BusinessDetailPage({
           <Link href="/#careers">직원채용</Link>
           <Link href="/#faq">Q&amp;A</Link>
           <Link href="/#contact">문의사항</Link>
+          <AdminLink variant="nav" />
         </nav>
         <div className="co-header-actions">
           <a className="co-cta-link" href="#contact">
@@ -241,6 +243,7 @@ export default async function BusinessDetailPage({
             <span aria-hidden="true"> · </span>
             <Link href="/">메인</Link>
           </small>
+          <AdminLink variant="footer" />
         </div>
       </footer>
     </div>

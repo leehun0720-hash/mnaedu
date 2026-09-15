@@ -20,6 +20,7 @@ import Reveal from "./reveal";
 import UpdatesSection from "./updates-section";
 import { getPublicQuestions } from "@/lib/questions-db";
 import { getPublicDocuments } from "@/lib/documents";
+import AdminLink from "./admin-link";
 import { getCurrentMember } from "@/lib/members";
 import { countPublishedArticles, getPublishedArticles } from "@/lib/articles";
 
@@ -75,6 +76,7 @@ export default async function HomePage() {
               {n.label}
             </a>
           ))}
+          <AdminLink variant="nav" />
         </nav>
         <div className="co-header-actions">
           <a className="co-cta-link" href="#contact">
@@ -378,20 +380,7 @@ export default async function HomePage() {
             <small>
               SITE BY <a href="https://tenai.kr" target="_blank" rel="noopener noreferrer">TEN AI</a>
             </small>
-            {/* 회장 전용 출제 화면. 공개 페이지에서 눈에 띌 필요는 없지만,
-                주소를 직접 입력하게 두지는 않는다. /admin은 자체 noindex.
-
-                회장 지시 — 새 창으로 연다. 출제 도중에 홈페이지를 확인하실 때
-                쓰시던 화면이 사라지지 않게 하려는 것이다. Link 대신 <a>를 쓰는
-                이유는, 새 창은 클라이언트 전환이 아니라 새 문서이기 때문이다. */}
-            <a
-              className="footer-admin"
-              href="/admin"
-              target="_blank"
-              rel="nofollow noopener noreferrer"
-            >
-              관리자 <i aria-hidden="true">↗</i>
-            </a>
+            <AdminLink variant="footer" />
           </div>
         </div>
       </footer>

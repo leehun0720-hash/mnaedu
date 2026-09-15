@@ -2950,6 +2950,10 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .co-nav { display: flex; align-items: center; gap: clamp(16px, 2.2vw, 30px); font: 600 13.5px var(--font-sans); }
 .co-nav a { color: var(--co-ink); padding: 6px 2px; border-bottom: 2px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; }
 .co-nav a:hover { color: var(--co-navy); border-bottom-color: var(--co-navy); }
+/* 메뉴 끝의 「관리자」 — 손님 메뉴와 섞이지 않게 한 톤 낮추고, 새 창 표시는 금색 */
+.co-nav .co-nav-admin { color: var(--co-muted); margin-left: clamp(4px, 1vw, 12px); }
+.co-nav .co-nav-admin i { font-style: normal; color: var(--co-gold); font-size: 11px; }
+.co-nav .co-nav-admin:hover { color: var(--co-ink-strong); border-bottom-color: var(--co-gold); }
 .co-header-actions { display: flex; align-items: center; gap: 10px; }
 .co-academy-link {
   display: inline-flex;

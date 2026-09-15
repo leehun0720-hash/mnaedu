@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CONTACT, businessArea } from "@/lib/company";
 import { getDocumentForReading } from "@/lib/documents";
 import { getCurrentMember } from "@/lib/members";
+import AdminLink from "../../admin-link";
 import CopyGuard from "../../copy-guard";
 import ThemeToggle from "../../theme-toggle";
 import SiteRail from "../../site-rail";
@@ -123,6 +124,7 @@ export default async function LibraryDocumentPage({ params }: { params: Promise<
             <span aria-hidden="true"> · </span>
             <Link href="/privacy">개인정보처리방침</Link>
           </small>
+          <AdminLink variant="footer" />
         </div>
       </footer>
     </div>

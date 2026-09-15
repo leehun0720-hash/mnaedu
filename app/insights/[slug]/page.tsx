@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getArticleBySlug, getPublishedArticles } from "@/lib/articles";
 import { CONTACT } from "@/lib/company";
+import AdminLink from "../../admin-link";
 import CopyGuard from "../../copy-guard";
 import ThemeToggle from "../../theme-toggle";
 import SiteRail from "../../site-rail";
@@ -152,6 +153,7 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
         <div className="co-footer-base">
           <small>© 2026 ㈜프론티어 M&amp;A. ALL RIGHTS RESERVED.</small>
           <Link href="/insights">목록으로</Link>
+          <AdminLink variant="footer" />
         </div>
       </footer>
 

@@ -232,3 +232,15 @@ test("첫 화면 회사소개에는 설립·업무 영역 칸이 없고, 기사�
   assert.match(html, /기사 · 칼럼/);
   assert.match(html, /co-board-wrap/);
 });
+
+test("관리자 링크는 네비게이션 바와 모든 화면의 하단에 있다", async () => {
+  // 회장 지시(2026-09-15) — 하단과 네비게이션 바 양쪽. 새 창으로 열리고 검색은 따라오지 않는다.
+  const home = await renderHtml("/");
+  assert.match(home, /class="co-nav-admin"[^>]*href="\/admin"[^>]*target="_blank"/);
+  for (const path of ["/", "/business/brokerage", "/insights"]) {
+    const html = await renderHtml(path);
+    const m = html.match(/<a[^>]*class="footer-admin"[^>]*>/)?.[0] ?? "";
+    assert.ok(m, `${path}: 하단에 관리자 링크가 있어야 한다`);
+    assert.match(m, /target="_blank"/); assert.match(m, /nofollow/); assert.match(m, /noopener/);
+  }
+});
