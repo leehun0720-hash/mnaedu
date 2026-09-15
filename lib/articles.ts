@@ -16,6 +16,12 @@ import { bodyToHtml, htmlToText } from "@/lib/rich-text";
 /** 한 면에 10개씩 노출 (회장 지시 2026-09) */
 export const ARTICLES_PER_PAGE = 10;
 
+/**
+ * 「NEW」를 붙이는 기간. 회장 지시(2026-09-15): 새로 작성한 글은 new 표시가 나와야 한다.
+ * 게시판 관례대로 이레 동안 붙인다 — 한 주에 한 번 들르는 분에게도 새 글로 보이게.
+ */
+export const NEW_DAYS = 7;
+
 /** 화면이 쓰는 칼럼 한 편 (목록용 — 본문 없음) */
 export type ArticleSummary = {
   id: number;
@@ -30,6 +36,8 @@ export type ArticleSummary = {
   stage: Stage | null;
   /** YYYY-MM-DD */
   date: string;
+  /** 작성한 지 이레 안 — 목록에 NEW 를 붙인다 */
+  isNew: boolean;
 };
 
 export type ArticleDetail = ArticleSummary & {
@@ -111,6 +119,7 @@ function toSummary(row: {
     stage: normalizeStage(row.stage),
     // 회장 지시(2026-09-15): 게재처·게재일은 두지 않는다. 남는 것은 작성한 날뿐이다.
     date: row.createdAt.toISOString().slice(0, 10),
+    isNew: Date.now() - row.createdAt.getTime() < NEW_DAYS * 24 * 60 * 60 * 1000,
   };
 }
 

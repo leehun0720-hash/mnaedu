@@ -2928,7 +2928,11 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 0 clamp(20px, 4vw, 48px);
+  /* 회장 지시 — 로고를 본문 왼쪽 선에 맞춘다. 본문은 1160px 상자를 가운데 세우고
+     그 안에 여백을 두므로, 머리글도 같은 계산으로 여백을 잡는다. 화면이 좁으면
+     본문과 같은 최소 여백으로 내려간다. */
+  --co-gutter: max(clamp(20px, 4vw, 48px), calc((100% - 1160px) / 2 + clamp(20px, 4vw, 48px)));
+  padding: 0 var(--co-gutter);
   height: 76px;
   background: rgba(251, 250, 247, 0.92);
   backdrop-filter: blur(10px);
@@ -3115,13 +3119,9 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 }
 
 /* — about — */
-.co-about {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  gap: clamp(28px, 4vw, 64px);
-  align-items: start;
-}
-.co-about-body { margin: 0; font-size: 15.5px; line-height: 2; color: var(--co-ink); }
+/* 회장 지시(2026-09-15) — 오른쪽의 설립·업무 영역 칸을 걷었다. 소개문 한 단이다. */
+.co-about { display: block; }
+.co-about-body { margin: 0; max-width: 78ch; font-size: 15.5px; line-height: 2; color: var(--co-ink); }
 .co-about-facts { margin: 0; display: flex; flex-direction: column; }
 .co-about-facts > div {
   display: flex;
@@ -3194,36 +3194,33 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 }
 
 /* — insight — */
-.co-insight {
+/* 기사·칼럼 게시판 (첫 화면) — 번호 · 제목 · 날짜 한 줄, 새 글엔 NEW */
+.co-board-wrap { margin-top: clamp(36px, 5vh, 56px); }
+.co-board-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.co-board-head strong { font: 700 21px var(--font-sans); color: var(--co-ink-strong); }
+.co-board-count { font: 600 12.5px var(--font-sans); color: var(--co-muted); }
+.co-board-more { margin-left: auto; font: 700 13px var(--font-sans); color: var(--co-navy); text-decoration: underline; text-underline-offset: 4px; }
+.co-board { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--co-ink-strong); }
+.co-board-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: clamp(24px, 4vw, 56px);
-  align-items: start;
-}
-.co-insight-main strong { font: 700 21px var(--font-sans); color: var(--co-ink-strong); }
-.co-insight-main p { margin: 12px 0 0; font-size: 14.5px; line-height: 1.9; color: var(--co-muted); max-width: 52ch; }
-.co-insight-list { list-style: none; margin: 0; padding: 0; }
-.co-insight-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   gap: 14px;
-  padding: 15px 2px;
-  border-top: 1px solid var(--co-line);
-  font: 600 14.5px var(--font-sans);
-  color: var(--co-ink-strong);
+  align-items: center;
+  padding: 14px 6px;
+  border-bottom: 1px solid var(--co-line);
 }
-.co-insight-list li:last-child { border-bottom: 1px solid var(--co-line); }
-.co-insight-list i {
-  flex: 0 0 auto;
-  font: 600 11px var(--font-label);
-  font-style: normal;
-  letter-spacing: 0.1em;
-  color: var(--co-muted);
-  background: var(--co-tint);
-  border: 1px solid var(--co-line);
-  padding: 4px 10px;
-  border-radius: 999px;
+.co-board-no { font: 700 12px var(--font-label); letter-spacing: 0.08em; color: var(--co-muted); }
+.co-board-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font: 600 15px var(--font-sans); color: var(--co-ink-strong); text-decoration: none; }
+.co-board-title:hover { color: var(--co-navy); text-decoration: underline; text-underline-offset: 4px; }
+.co-board-date { flex: 0 0 auto; font: 500 12.5px var(--font-label); letter-spacing: 0.04em; color: var(--co-muted); }
+.co-board-empty { margin: 0; padding: 22px 6px; border-top: 2px solid var(--co-ink-strong); border-bottom: 1px solid var(--co-line); font-size: 14.5px; color: var(--co-muted); }
+.co-new {
+  display: inline-block; font: 800 9.5px var(--font-label); letter-spacing: 0.12em; font-style: normal;
+  color: #fff; background: #c8102e; padding: 3px 6px 2px; border-radius: 3px; line-height: 1; vertical-align: middle;
+}
+@media (max-width: 640px) {
+  .co-board-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .co-board-no { display: none; }
 }
 
 /* — faq — */
@@ -3397,19 +3394,6 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
    INSIGHTS — 칼럼. 자료실이 내려받는 파일이라면 이쪽은 읽히는 글이다.
    본문은 읽는 것이 목적이므로 폭을 좁게 잡고 행간을 넉넉히 준다.
    ========================================================================== */
-.co-insight-main .co-insight-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 16px;
-  font: 600 13px var(--font-sans);
-  color: var(--co-navy);
-  border-bottom: 1px solid currentColor;
-  padding-bottom: 2px;
-}
-.co-insight-main .co-insight-more:hover { color: var(--co-ink-strong); }
-.co-insight-list a { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; }
-.co-insight-list a:hover span { color: var(--co-navy); }
 
 .ins-list { list-style: none; margin: 0; padding: 0; }
 .ins-item { border-top: 1px solid var(--co-line); }
@@ -3984,7 +3968,9 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
    아카데미는 헤더가 fixed라 본문 여백과 따로 잡아 준다. */
 @media (min-width: 900px) {
   .co-page, .gate { padding-right: var(--rail-w, 74px); }
-  .co-page .co-header { padding-right: calc(clamp(20px, 4vw, 48px) + var(--rail-w, 74px)); }
+  /* 오른쪽 세로 바가 있을 때 .co-page 가 그만큼 오른쪽 여백을 두므로, 머리글의 100% 는
+     이미 (화면 − 바) 다. 위 공식이 그대로 본문 선과 맞는다 — 바를 다시 빼면 두 번 뺀다. */
+  .co-page .co-header { padding-right: var(--co-gutter); }
   /* 아카데미(단일 main 레이아웃) */
   main.has-rail { padding-right: var(--rail-w, 74px); }
   main.has-rail .site-header,

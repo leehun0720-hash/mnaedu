@@ -41,12 +41,15 @@ const NAV = [
 
 export const dynamic = "force-dynamic";
 
+/** 첫 화면 기사·칼럼 게시판에 세우는 글 수 (회장 지시: 20개) */
+const HOME_BOARD_SIZE = 20;
+
 export default async function HomePage() {
   const [questions, documents, member, latestArticles, articleCount] = await Promise.all([
     getPublicQuestions(5),
     getPublicDocuments(5),
     getCurrentMember(),
-    getPublishedArticles(3),
+    getPublishedArticles(HOME_BOARD_SIZE),
     countPublishedArticles(),
   ]);
   const signedIn = member !== null;
@@ -125,49 +128,40 @@ export default async function HomePage() {
           </div>
           <div className="co-about co-reveal">
             <p className="co-about-body">{ABOUT}</p>
-            <dl className="co-about-facts">
-              <div>
-                <dt>설립</dt>
-                <dd>1993년 · 국내 최초 M&amp;A 전문회사</dd>
-              </div>
-              <div>
-                <dt>업무 영역</dt>
-                <dd>중개 · 경영권 분쟁 · 자금조달 · 패밀리오피스 · 투자가 클럽</dd>
-              </div>
-            </dl>
           </div>
 
-          {/* 기사·칼럼 — 실제 발행된 글에서 온다. 없으면 준비 중으로 안내한다. */}
-          <div className="co-insight co-reveal">
-            <div className="co-insight-main">
+          {/* 기사·칼럼 게시판 — 회장 지시(2026-09-15): 전체를 게시판으로, 20개, 새 글은 NEW. */}
+          <div className="co-board-wrap co-reveal">
+            <div className="co-board-head">
               <strong>기사 · 칼럼</strong>
-              <p>
-                {articleCount > 0
-                  ? `회사와 업무에 관한 기사와 칼럼입니다. 현재 ${articleCount}편.`
-                  : "회사와 업무에 관한 기사와 칼럼을 이곳에 모으고 있습니다."}
-              </p>
-              <Link className="co-insight-more" href="/insights">
-                전체 보기 <i aria-hidden="true">→</i>
-              </Link>
+              <span className="co-board-count">
+                {articleCount > 0 ? `전체 ${articleCount}편` : "준비 중"}
+              </span>
+              {articleCount > HOME_BOARD_SIZE && (
+                <Link className="co-board-more" href="/insights">
+                  전체 보기 <i aria-hidden="true">→</i>
+                </Link>
+              )}
             </div>
             {latestArticles.length > 0 ? (
-              <ul className="co-insight-list" aria-label="최근 기사·칼럼">
-                {latestArticles.map((a) => (
-                  <li key={a.id}>
-                    <Link href={`/insights/${encodeURIComponent(a.slug)}`}>
-                      <span>{a.title}</span>
-                      <i>{a.source ? `${a.source} · ${a.date}` : a.date}</i>
+              <ol className="co-board" aria-label="기사·칼럼 목록">
+                {latestArticles.map((a, i) => (
+                  <li key={a.id} className="co-board-row">
+                    <span className="co-board-no" aria-hidden="true">
+                      {String(articleCount - i).padStart(2, "0")}
+                    </span>
+                    <Link className="co-board-title" href={`/insights/${encodeURIComponent(a.slug)}`}>
+                      {a.title}
+                      {a.isNew && <em className="co-new">NEW</em>}
                     </Link>
+                    <time className="co-board-date" dateTime={a.date}>
+                      {a.date}
+                    </time>
                   </li>
                 ))}
-              </ul>
+              </ol>
             ) : (
-              <ul className="co-insight-list" aria-label="기사·칼럼 준비 현황">
-                <li>
-                  <span>아주경제 칼럼 연재 (100회 이상)</span>
-                  <i>아카이브 이관 중</i>
-                </li>
-              </ul>
+              <p className="co-board-empty">회사와 업무에 관한 기사와 칼럼을 이곳에 모으고 있습니다.</p>
             )}
           </div>
 

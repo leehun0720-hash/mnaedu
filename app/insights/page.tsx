@@ -86,7 +86,10 @@ export default async function InsightsPage({
                           {a.date}
                         </time>
                       </div>
-                      <strong className="ins-title">{a.title}</strong>
+                      <strong className="ins-title">
+                        {a.title}
+                        {a.isNew && <em className="co-new">NEW</em>}
+                      </strong>
                       {a.lede && <p className="ins-lede">{a.lede}</p>}
                       <span className="ins-more">
                         읽기 <i aria-hidden="true">→</i>

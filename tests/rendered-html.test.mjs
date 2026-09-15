@@ -223,3 +223,12 @@ test("자료 읽기 화면은 없는 자료에 404로 답한다", async () => {
     assert.equal(res.status, 404, `${path} should 404`);
   }
 });
+
+test("첫 화면 회사소개에는 설립·업무 영역 칸이 없고, 기사·칼럼 게시판이 선다", async () => {
+  // 회장 지시(2026-09-15) — 오른쪽 사실 칸을 걷고, 기사·칼럼은 게시판으로 전체를 보인다
+  const html = await renderHtml("/");
+  assert.doesNotMatch(html, /<dt>설립<\/dt>/);
+  assert.doesNotMatch(html, /<dt>업무 영역<\/dt>/);
+  assert.match(html, /기사 · 칼럼/);
+  assert.match(html, /co-board-wrap/);
+});
