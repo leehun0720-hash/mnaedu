@@ -29,7 +29,7 @@ export default function SiteRail({ signedIn = false }: { signedIn?: boolean }) {
           ▤
         </i>
         <span className="rail-label">
-          자료실
+          업무정보실
         </span>
       </a>
 

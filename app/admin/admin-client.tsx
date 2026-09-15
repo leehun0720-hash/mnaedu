@@ -967,7 +967,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             칼럼
           </button>
           <button data-on={tab === "documents"} onClick={() => goTab("documents")}>
-            자료실
+            업무정보실
           </button>
           <button data-on={tab === "members"} onClick={() => goTab("members")}>
             회원
@@ -1207,7 +1207,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
 
               <div className="admin-row">
                 <label>
-                  분야 <small>그 분야 자료실에도 함께</small>
+                  분야 <small>그 분야 업무정보실에도 함께</small>
                   <select
                     value={articleDraft.track}
                     onChange={(e) => setArticleDraft({ ...articleDraft, track: e.target.value })}
@@ -1307,7 +1307,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         {tab === "documents" && (
           <>
             <form className="admin-card" onSubmit={saveDocument}>
-              <h2>{docId === null ? "자료 올리기" : "자료 수정"}</h2>
+              <h2>{docId === null ? "업무정보 올리기" : "업무정보 수정"}</h2>
               <p className="admin-note">
                 {docId === null
                   ? "칼럼처럼 제목과 본문을 붙여넣으면 됩니다. 분야를 고르시면 그 분야 화면의 업무자료에 올라가고, 누르면 그 자리에서 읽힙니다."
@@ -1360,7 +1360,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   checked={docPublished}
                   onChange={(e) => setDocPublished(e.target.checked)}
                 />
-                발행 — 체크해야 홈페이지 자료실에 나타납니다
+                발행 — 체크해야 홈페이지 업무정보실에 나타납니다
               </label>
 
               <div className="admin-actions">
@@ -1381,7 +1381,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             </form>
 
             <section className="admin-card">
-              <h2>올린 자료 ({docs.length}건)</h2>
+              <h2>올린 업무정보 ({docs.length}건)</h2>
               {docs.length === 0 ? (
                 <p className="admin-note">아직 올린 자료가 없습니다.</p>
               ) : (

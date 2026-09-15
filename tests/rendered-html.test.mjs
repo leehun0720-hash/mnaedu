@@ -34,7 +34,7 @@ test("server-renders the brand page at /", async () => {
   assert.match(html, /FRONTIER/i);
   assert.match(html, /주요 업무/);
   assert.match(html, /실무 문제/);
-  assert.match(html, /자료실/);
+  assert.match(html, /업무정보실/);
   // 아카데미는 이름부터 사라졌다 — 회장이 "이건 학원"이라고 물린 지점이다
   assert.doesNotMatch(html, /아카데미/);
   assert.doesNotMatch(html, /href="\/academy/);
