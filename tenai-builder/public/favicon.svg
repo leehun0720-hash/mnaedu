@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TEN AI 홈페이지 빌더">
+  <rect width="64" height="64" rx="14" fill="#0A2540"/>
+  <!-- 구역을 쌓아 만든다는 것을 그대로 — 세 층이 위로 쌓인다 -->
+  <rect x="14" y="14" width="36" height="9" rx="2.5" fill="#00D4FF"/>
+  <rect x="14" y="27.5" width="36" height="9" rx="2.5" fill="#0570DE"/>
+  <rect x="14" y="41" width="22" height="9" rx="2.5" fill="#FFFFFF" opacity="0.85"/>
+</svg>

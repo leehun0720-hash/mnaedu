@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 별도 앱 — 자기 설정으로 따로 검사한다 (tenai-builder/eslint.config.mjs)
+    "tenai-builder/**",
   ]),
 ]);
 

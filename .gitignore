@@ -44,3 +44,8 @@ next-env.d.ts
 
 # Confidential business planning material — keep out of the public repo
 /docs/
+
+# TEN AI 홈페이지 빌더 — 별도 앱이라 자기 설치본과 빌드물을 따로 가진다
+/tenai-builder/node_modules/
+/tenai-builder/.next/
+/tenai-builder/out/

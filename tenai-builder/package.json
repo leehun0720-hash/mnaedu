@@ -1,0 +1,31 @@
+{
+  "name": "tenai-site-builder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TEN AI 홈페이지 빌더 — 구역을 쌓아 사이트를 만들고 HTML 한 장으로 내보내는 제작 도구",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "node --import tsx --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.6",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  },
+  "type": "module"
+}
