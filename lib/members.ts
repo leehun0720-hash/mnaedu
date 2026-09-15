@@ -4,6 +4,17 @@ import { and, eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { members, questions } from "@/db/schema";
 import { getAuthUser } from "@/lib/supabase/server";
+import { withDeadline } from "@/lib/deadline";
+
+/**
+ * 회원 표를 읽고 쓰는 데 허락하는 시간.
+ *
+ * 이 표가 잠기면(다른 접속이 ALTER 로 붙들고 있으면) 로그인한 분의 모든
+ * 페이지가 여기서 멈춘다 — 공개 화면은 멀쩡한데 회원에게만 사이트가 죽은
+ * 것처럼 보이는 상태다. 그래서 시한을 넘기면 '회원 아님'으로 물러난다.
+ * 페이지는 뜨고, 정답 열람만 잠시 닫힌다. 멈추는 것보다 낫다.
+ */
+const MEMBER_DEADLINE_MS = 3_000;
 
 /**
  * 회원 저장소.
@@ -36,6 +47,14 @@ export async function recordMember(user: {
   user_metadata?: Record<string, unknown>;
 }): Promise<MemberProfile | null> {
   if (!isDbConfigured()) return null;
+  return withDeadline(recordNow(user), MEMBER_DEADLINE_MS, null, "member record");
+}
+
+async function recordNow(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}): Promise<MemberProfile | null> {
   try {
     const db = getDb();
     // 필요한 열만 고른다. select() 로 전부 긁으면, 나중에 더한 열이 아직
