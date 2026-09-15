@@ -172,8 +172,29 @@ where datname = current_database()
 끊고 나면 멈춰 있던 `ALTER TABLE`이 곧바로 끝나고 화면도 돌아옵니다. 앱의 정상
 요청은 1초 안에 끝나므로 위 조건에 걸리지 않습니다.
 
-예방: SQL을 실행하실 때는 **탭을 하나만** 쓰시고, Table Editor로 같은 표를 열어
-둔 채 DDL을 돌리지 마십시오.
+### 그래도 안 풀리면 — 프로젝트를 다시 시작하십시오
+
+멈춘 `ALTER TABLE` 자체가 줄의 앞을 막고 있으면, 위 SQL을 돌릴 탭조차 늦어질 수
+있습니다. 그때는 **Settings → General → Restart project** 가 가장 확실합니다.
+모든 접속과 잠금이 한 번에 정리됩니다. 30초쯤 걸리고, 그동안만 홈페이지가
+잠시 느려집니다.
+
+다시 시작한 **직후에**, Table Editor를 열기 전에 SQL부터 실행하십시오.
+
+### 예방 — `SET lock_timeout`
+
+`setup.sql` 맨 위에 `SET lock_timeout = '5s';` 가 들어 있습니다. 5초 안에 자리를
+못 잡으면 줄을 서는 대신 분명히 실패하므로, 표가 통째로 어는 일이 없습니다.
+낱개 문장을 직접 실행하실 때도 앞에 그 줄을 함께 붙이십시오.
+
+```sql
+SET lock_timeout = '5s';
+ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "note" text;
+```
+
+그리고 SQL을 실행하실 때는 **탭을 하나만** 쓰시고, Table Editor로 같은 표를 열어
+둔 채 DDL을 돌리지 마십시오. 쓰지 않는 SQL 탭은 닫아 주십시오 — 열린 탭이
+표를 붙들고 있을 수 있습니다.
 
 ## 동작 방식 요약
 
