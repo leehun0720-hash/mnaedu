@@ -1290,15 +1290,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 />
               </label>
 
-              <label className="admin-field">
-                요약 <small>비우면 본문 앞부분을 씁니다 — 검색 결과에 보이는 설명입니다.</small>
-                <input
-                  value={articleDraft.lede}
-                  onChange={(e) => setArticleDraft({ ...articleDraft, lede: e.target.value })}
-                  maxLength={300}
-                />
-              </label>
-
               <div className="admin-row">
                 <label>
                   게재처 <small>다른 매체에 실렸던 글일 때만</small>
