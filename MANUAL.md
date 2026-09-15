@@ -197,7 +197,12 @@ Vercel Domains 화면의 표시가 **Valid Configuration** 이면 끝난 것입�
 `76.76.21.21`)으로 잡혀 있어 "새 값으로 바꾸길 권한다"는 뜻일 뿐, 사이트는 그대로
 열립니다. 시간이 날 때 화면에 보이는 새 값으로 바꾸시면 표시가 사라집니다.
 
-### 3. Supabase — 회원 로그인 주소
+### 3. Supabase — 회원 로그인 주소 (지금은 필요 없음)
+
+가입 메일 인증을 껐으므로(2026-09-15, Authentication → Providers → Email →
+Confirm email 끔) 지금은 Supabase 에 주소를 넣을 일이 없습니다. 가입하면 메일 없이
+바로 로그인됩니다. 나중에 **메일 인증을 다시 켜거나 비밀번호 찾기 메일**을 쓰게 되면
+그때 아래를 넣으십시오.
 
 Supabase → **Authentication → URL Configuration**
 
@@ -207,7 +212,7 @@ Supabase → **Authentication → URL Configuration**
 | Redirect URLs (추가) | `https://www.frontierexpert.com/auth/callback` |
 
 `mnaedu.vercel.app` 쪽 값은 지우지 말고 함께 두십시오 — 예비 주소로 계속 씁니다.
-이 단계를 빼먹으면 새 주소에서 가입 인증 메일의 링크가 옛 주소로 돌아갑니다.
+이 단계를 빼먹으면 메일 속 링크가 옛 주소로 돌아갑니다.
 
 ### 확인
 
@@ -224,7 +229,8 @@ https 는 따로 켤 것이 없습니다. DNS 가 맞으면 Vercel 이 인증서
 `frontierexpert.com` 으로만 보여도 정상입니다.
 
 2026-09-15 연결 완료 — 1·2번은 끝났고 위 두 줄은 확인했습니다. 인증서는 두 주소
-모두 이날 13시 13분(한국 시각)에 발급되었습니다. 3번(Supabase 주소)은
+모두 이날 13시 13분(한국 시각)에 발급되었습니다. 3번은 메일 인증을 껐으므로 넣지
+않아도 됩니다. 3번(Supabase 주소)은
 회장이 직접 넣으셔야 하고, 넣기 전까지는 새 주소에서 보낸 가입 인증 메일이 옛 주소로
 돌아갑니다.
 

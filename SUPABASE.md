@@ -8,6 +8,10 @@
 > 적용했다 — 테이블 + RLS 잠금, 이메일 인증(가입 확인 메일 켬), 콜백 주소,
 > Vercel 환경변수 4종(새 `sb_publishable_` 키 사용). 이 문서는 프로젝트를
 > 다시 만들거나 도메인을 바꿀 때의 재설정 절차로 남겨 둔다.
+>
+> **2026-09-15 가입 확인 메일 끔.** 회장 지시로 `Confirm email` 을 껐다 — 가입하면
+> 메일 없이 바로 로그인된다(코드도 세션이 오면 곧장 첫 화면으로 보낸다). 같은 날
+> 도메인이 `www.frontierexpert.com` 으로 옮겨 갔다.
 
 호스팅은 Vercel을 유지합니다. Supabase는 어느 호스팅에서든 동일하게 동작하므로
 플랫폼을 바꿀 이유가 없습니다.
@@ -86,11 +90,15 @@ POSTGRES_URL="<직결 문자열>" npx drizzle-kit migrate
 
 Supabase 대시보드 → **Authentication**
 
-- **Providers → Email**: 활성화, `Confirm email` 켜기
-- **URL Configuration → Site URL**: `https://www.frontierexpert.com`
-- **Redirect URLs**에 추가:
-  - `https://<배포주소>/auth/callback`
-  - `http://localhost:3000/auth/callback` (로컬 개발용)
+- **Providers → Email**: 활성화. `Confirm email` 은 **끈다**(2026-09-15 회장 결정) —
+  켜면 가입자가 메일 링크를 눌러야 로그인되고, 끄면 가입 즉시 로그인된다.
+- **URL Configuration** — `Confirm email` 을 끈 지금은 넣지 않아도 된다. 메일 인증을
+  다시 켜거나 비밀번호 찾기 메일을 쓰게 되면 그때 넣는다:
+  - **Site URL**: `https://www.frontierexpert.com`
+  - **Redirect URLs**에 추가:
+    - `https://www.frontierexpert.com/auth/callback`
+    - `https://<배포주소>/auth/callback` (예비 주소)
+    - `http://localhost:3000/auth/callback` (로컬 개발용)
 
 ## 4. Vercel 환경변수
 
@@ -213,7 +221,8 @@ ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "note" text;
 | --- | --- |
 | 가입 화면에 "준비가 끝나면" 안내만 보임 | `NEXT_PUBLIC_SUPABASE_*` 두 개가 없음 |
 | 로그인은 되는데 내 학습 현황이 비어 있음 | `POSTGRES_URL` 없음, 또는 2단계 미실행 |
-| 인증 메일 링크가 로그인 화면으로 되돌아옴 | Redirect URLs에 `/auth/callback` 누락 |
+| 가입했는데 "메일을 확인하라"는 화면이 뜸 | Providers → Email → `Confirm email` 이 켜져 있음 |
+| (메일 인증을 켠 경우) 인증 메일 링크가 로그인 화면으로 되돌아옴 | Redirect URLs에 `/auth/callback` 누락 |
 | `prepared statement` 오류 | 풀러(6543) 문자열이 아니라 직결을 넣었거나 그 반대 |
 
 ## Supabase MCP (선택)
