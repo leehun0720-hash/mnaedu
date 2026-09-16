@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Noto_Sans_KR, Noto_Serif_KR, Inter, Big_Shoulders } from "next/font/google";
+import Reveal from "./reveal";
 import "./globals.css";
 
 // Typeface roles follow both BI/CI guidelines:
@@ -48,6 +49,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko">
       <body className={`${sans.variable} ${serif.variable} ${label.variable} ${display.variable}`}>
         <script dangerouslySetInnerHTML={{ __html: BOOT }} />
+        {/*
+          .co-reveal 은 CSS 에서 opacity:0 으로 시작한다. 이것을 여기 한 곳에
+          두어야 어느 화면에서도 글이 투명한 채로 남지 않는다 — 화면마다 따로
+          달던 때에 업무자료가 통째로 보이지 않는 일이 있었다.
+        */}
+        <Reveal />
         {children}
       </body>
     </html>

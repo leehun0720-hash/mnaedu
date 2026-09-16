@@ -16,7 +16,6 @@ import CopyGuard from "./copy-guard";
 import ThemeToggle from "./theme-toggle";
 import SiteRail from "./site-rail";
 import ContactForm from "./contact-form";
-import Reveal from "./reveal";
 import UpdatesSection from "./updates-section";
 import { getPublicQuestions } from "@/lib/questions-db";
 import { getPublicDocuments } from "@/lib/documents";
@@ -387,7 +386,6 @@ export default async function HomePage() {
         </div>
       </footer>
 
-      <Reveal />
     </div>
   );
 }
