@@ -80,6 +80,17 @@ export default async function QnaPage({ searchParams }: { searchParams: Promise<
               이 게시판에 올립니다. 거래나 회사 이름이 들어가는 질문은 비밀글로 보내 주십시오.
             </p>
           </div>
+
+          {/*
+            작성란은 화면 맨 아래에 있다. 자주 묻는 질문과 게시판을 지나야 닿으므로,
+            바로 쓰러 오신 분이 찾지 못한다 — 처음부터 그리로 가는 단추를 위에 둔다.
+          */}
+          <div className="qa-jump">
+            <Link className="co-btn co-btn--primary" href="#ask">
+              질문 남기기 <i aria-hidden="true">↓</i>
+            </Link>
+            <p>아래로 내려가면 작성란이 있습니다.</p>
+          </div>
         </section>
 
         {/* ── 자주 묻는 질문 ── */}

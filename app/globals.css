@@ -5786,3 +5786,5 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   white-space: pre-wrap;
 }
 .admin-note--tight { margin: 0 0 10px; padding: 11px 14px; background: var(--paper-deep); border-left: 3px solid #8A6A1F; }
+.qa-jump { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 22px; }
+.qa-jump p { margin: 0; font-size: 13px; color: var(--co-muted); }
