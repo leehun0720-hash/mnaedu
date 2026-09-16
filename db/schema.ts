@@ -250,3 +250,42 @@ export const applications = pgTable(
 
 export type Application = typeof applications.$inferSelect;
 export type NewApplication = typeof applications.$inferInsert;
+
+/**
+ * Q&A 게시판 — 방문자가 묻고 회장이 답한다.
+ *
+ * 접수와 게시를 나눈다. 질문은 누구나 보낼 수 있지만, 게시판에 서는 것은
+ * published 를 켠 것뿐이다 — 기업 홈페이지의 공개 게시판은 그렇게 하지 않으면
+ * 광고와 비방이 먼저 자리를 잡는다.
+ *
+ * secret 은 비밀글이다. 켜져 있으면 공개 목록에 아예 오르지 않는다.
+ * '비밀글입니다'라는 줄만 세우는 흔한 방식은 누가 언제 물었는지를 드러내는데,
+ * M&A 를 다루는 회사에서는 그 사실 자체가 정보이기 때문이다.
+ *
+ * 이메일은 회신을 위해서만 받는다. 어떤 공개 화면에도 실리지 않는다.
+ */
+export const qna = pgTable(
+  "qna",
+  {
+    id: serial("id").primaryKey(),
+    /** 게시판에 보일 이름 */
+    name: text("name").notNull(),
+    /** 회신용 — 공개되지 않는다 */
+    email: text("email"),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    /** 회장의 답변. 비어 있으면 답변대기다. */
+    answer: text("answer"),
+    answeredAt: timestamp("answered_at", { withTimezone: true }),
+    /** 참이면 게시판에 오르지 않고 회장만 본다 */
+    secret: boolean("secret").notNull().default(false),
+    /** 회장이 켜야 게시판에 선다 */
+    published: boolean("published").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("qna_published_idx").on(t.published, t.createdAt)]
+);
+
+export type Qna = typeof qna.$inferSelect;
+export type NewQna = typeof qna.$inferInsert;

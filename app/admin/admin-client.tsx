@@ -95,6 +95,28 @@ type ApplicantsResponse = {
 /** 채점 화면 한 칸 — 응시자의 답 옆에 회장이 등록해 둔 정답이 선다 */
 type GradedAnswer = { questionId: number; prompt: string; answer: string; official: string | null };
 
+/** Q&A — 방문자가 보낸 질문과 회장의 답 */
+type QnaRow = {
+  id: number;
+  name: string;
+  email: string | null;
+  title: string;
+  body: string;
+  answer: string | null;
+  secret: boolean;
+  published: boolean;
+  createdAt: string;
+};
+
+type QnaResponse = {
+  rows: QnaRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  waiting: number;
+  hidden: number;
+};
+
 type ApplicantDetail = {
   id: number;
   name: string;
@@ -143,7 +165,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-type Tab = "questions" | "articles" | "documents" | "members" | "applicants" | "settings";
+type Tab = "questions" | "articles" | "documents" | "members" | "applicants" | "qna" | "settings";
 
 type ArticleRow = {
   id: number;
@@ -262,6 +284,19 @@ export default function AdminClient({
   const [gradeScore, setGradeScore] = useState("");
   const [gradeStatus, setGradeStatus] = useState("");
   const [gradeMemo, setGradeMemo] = useState("");
+
+  // Q&A
+  const [qnaRows, setQnaRows] = useState<QnaRow[]>([]);
+  const [qnaTotal, setQnaTotal] = useState(0);
+  const [qnaPageSize, setQnaPageSize] = useState(20);
+  const [qnaWaiting, setQnaWaiting] = useState(0);
+  const [qnaHidden, setQnaHidden] = useState(0);
+  const [qnaQuery, setQnaQuery] = useState("");
+  const [qnaSearch, setQnaSearch] = useState("");
+  const [qnaState, setQnaState] = useState("");
+  const [qnaPage, setQnaPage] = useState(1);
+  /** 지금 답을 쓰고 있는 질문 — id 와 그 칸의 글 */
+  const [qnaEdit, setQnaEdit] = useState<{ id: number; answer: string } | null>(null);
 
   // 비밀번호 변경
   const [pwCurrent, setPwCurrent] = useState("");
@@ -404,6 +439,55 @@ export default function AdminClient({
     setNotice("지원서를 지웠습니다.");
     if (openApplicant?.id === id) setOpenApplicant(null);
     await loadApplicants();
+  }
+
+  const loadQna = useCallback(async () => {
+    const params = new URLSearchParams({ page: String(qnaPage) });
+    if (qnaSearch.trim()) params.set("q", qnaSearch.trim());
+    if (qnaState) params.set("state", qnaState);
+    const data = await readJson<QnaResponse>(`/api/admin/qna?${params}`);
+    if (isFailure(data)) {
+      setError(data.message);
+      return;
+    }
+    setQnaRows(data.rows);
+    setQnaTotal(data.total);
+    setQnaPageSize(data.pageSize || 20);
+    setQnaWaiting(data.waiting ?? 0);
+    setQnaHidden(data.hidden ?? 0);
+  }, [readJson, qnaPage, qnaSearch, qnaState]);
+
+  /** 답을 저장한다. 답을 다는 순간 게시판에 세울지도 함께 정한다. */
+  async function saveQnaAnswer(id: number, answer: string, publish: boolean) {
+    const data = await send("/api/admin/qna", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, answer, ...(publish ? { published: true } : {}) }),
+    });
+    if (!data) return;
+    setNotice(publish ? "답변을 저장하고 게시판에 세웠습니다." : "답변을 저장했습니다.");
+    setQnaEdit(null);
+    await loadQna();
+  }
+
+  /** 게시판에 세우거나 내린다 */
+  async function toggleQna(id: number, field: "published" | "secret", value: boolean) {
+    const data = await send("/api/admin/qna", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, [field]: value }),
+    });
+    if (!data) return;
+    await loadQna();
+  }
+
+  async function removeQna(id: number) {
+    if (!confirm("이 질문을 지울까요? 답변과 함께 사라지며 되돌릴 수 없습니다.")) return;
+    const data = await send(`/api/admin/qna?id=${id}`, { method: "DELETE" });
+    if (!data) return;
+    setNotice("질문을 지웠습니다.");
+    if (qnaEdit?.id === id) setQnaEdit(null);
+    await loadQna();
   }
 
   /** 무엇이 막혔는지 데이터베이스에 직접 묻는다 — 짐작하지 않는다 */
@@ -570,7 +654,9 @@ export default function AdminClient({
               ? loadPasswordInfo
               : tab === "applicants"
                 ? loadApplicants
-                : loadMembers;
+                : tab === "qna"
+                  ? loadQna
+                  : loadMembers;
     Promise.resolve()
       .then(() => {
         if (!alive) return undefined;
@@ -583,7 +669,7 @@ export default function AdminClient({
     return () => {
       alive = false;
     };
-  }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers, loadApplicants, loadPasswordInfo]);
+  }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers, loadApplicants, loadQna, loadPasswordInfo]);
 
   /**
    * 타자 한 자마다 서버를 두드리면 요청이 줄줄이 겹친다. 손을 멈추신 뒤
@@ -605,6 +691,14 @@ export default function AdminClient({
     return () => window.clearTimeout(t);
   }, [applicantQuery]);
 
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setQnaSearch(qnaQuery);
+      setQnaPage(1);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [qnaQuery]);
+
   /** 탭을 옮기면 앞 탭에서 뜬 문구는 두고 간다 — 그 탭의 사연일 뿐이다 */
   function goTab(next: Tab) {
     setTab(next);
@@ -612,6 +706,7 @@ export default function AdminClient({
     setNotice(null);
     // 펼쳐 둔 지원서는 탭을 떠나면 닫는다 — 연락처가 화면에 남아 있지 않게
     if (next !== "applicants") setOpenApplicant(null);
+    if (next !== "qna") setQnaEdit(null);
   }
 
   async function login(e: React.FormEvent) {
@@ -1104,6 +1199,9 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           </button>
           <button data-on={tab === "applicants"} onClick={() => goTab("applicants")}>
             지원자
+          </button>
+          <button data-on={tab === "qna"} onClick={() => goTab("qna")}>
+            Q&amp;A
           </button>
           <button data-on={tab === "settings"} onClick={() => goTab("settings")}>
             비밀번호
@@ -2012,6 +2110,203 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 </div>
               </section>
             )}
+          </>
+        )}
+
+        {/* ── Q&A ── */}
+        {tab === "qna" && (
+          <>
+            <section className="admin-card">
+              <h2>Q&amp;A</h2>
+              <p className="admin-note">
+                방문자가 보낸 질문입니다. 답을 적고 「저장하고 게시」를 누르시면 질문과 답이
+                함께 게시판에 섭니다. 답을 적지 않고 게시하실 수도 있습니다 — 그때는
+                &lsquo;답변대기&rsquo;로 보입니다.
+              </p>
+
+              <div className="admin-counts">
+                {(
+                  [
+                    ["waiting", `답변대기 ${qnaWaiting}`],
+                    ["hidden", `미게시 ${qnaHidden}`],
+                    ["secret", "비밀글"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    data-on={qnaState === key}
+                    onClick={() => {
+                      setQnaState(qnaState === key ? "" : key);
+                      setQnaPage(1);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+                {qnaState && (
+                  <button type="button" onClick={() => setQnaState("")}>
+                    전체 보기
+                  </button>
+                )}
+              </div>
+
+              <div className="admin-row">
+                <label style={{ flex: 1 }}>
+                  찾기 <small>제목 · 내용 · 이름</small>
+                  <input
+                    value={qnaQuery}
+                    onChange={(e) => setQnaQuery(e.target.value)}
+                    placeholder="찾으실 말의 일부"
+                  />
+                </label>
+                <button type="button" className="admin-btn admin-btn--quiet" onClick={() => loadQna()}>
+                  다시 불러오기
+                </button>
+              </div>
+            </section>
+
+            <section className="admin-card">
+              <h2>
+                질문 <small>{qnaTotal}건</small>
+              </h2>
+              {qnaRows.length === 0 ? (
+                <div className="admin-note">
+                  {qnaSearch || qnaState ? (
+                    <p>조건에 맞는 질문이 없습니다.</p>
+                  ) : (
+                    <p>
+                      아직 들어온 질문이 없습니다. 홈페이지의 Q&amp;A 화면에서 누구나 질문을
+                      남길 수 있습니다.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <ul className="admin-list admin-list--qna">
+                  {qnaRows.map((row) => (
+                    <li key={row.id}>
+                      <div className="admin-qna-head">
+                        <b>{row.title}</b>
+                        {row.secret && <span className="admin-qna-tag admin-qna-tag--secret">비밀글</span>}
+                        <span className="admin-qna-tag" data-on={Boolean(row.answer)}>
+                          {row.answer ? "답변완료" : "답변대기"}
+                        </span>
+                        {!row.secret && (
+                          <span className="admin-qna-tag" data-on={row.published}>
+                            {row.published ? "게시중" : "미게시"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="admin-qna-by">
+                        {row.name}
+                        {row.email ? ` · ${row.email}` : ""} · {row.createdAt}
+                      </p>
+                      <p className="admin-qna-body">{row.body}</p>
+
+                      {qnaEdit?.id === row.id ? (
+                        <>
+                          <label className="admin-field">
+                            답변
+                            <textarea
+                              rows={6}
+                              value={qnaEdit.answer}
+                              onChange={(e) => setQnaEdit({ id: row.id, answer: e.target.value })}
+                              placeholder="질문에 답해 주십시오. 게시판에 그대로 올라갑니다."
+                            />
+                          </label>
+                          {row.secret && (
+                            <p className="admin-note admin-note--tight">
+                              비밀글입니다. 답을 저장해도 게시판에는 서지 않습니다 — 적어 주신
+                              이메일로 회장이 직접 보내셔야 합니다. 게시판에 세우시려면 먼저
+                              「비밀글 풀기」를 누르십시오.
+                            </p>
+                          )}
+                          <div className="admin-actions">
+                            {!row.secret && (
+                              <button
+                                type="button"
+                                className="admin-btn"
+                                onClick={() => saveQnaAnswer(row.id, qnaEdit.answer, true)}
+                              >
+                                저장하고 게시
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className={row.secret ? "admin-btn" : "admin-btn admin-btn--quiet"}
+                              onClick={() => saveQnaAnswer(row.id, qnaEdit.answer, false)}
+                            >
+                              {row.secret ? "답변 저장" : "저장만"}
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn--quiet"
+                              onClick={() => setQnaEdit(null)}
+                            >
+                              취소
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {row.answer && <p className="admin-qna-answer">{row.answer}</p>}
+                          <div className="admin-actions">
+                            <button
+                              type="button"
+                              className="admin-btn"
+                              onClick={() => setQnaEdit({ id: row.id, answer: row.answer ?? "" })}
+                            >
+                              {row.answer ? "답변 고치기" : "답변 쓰기"}
+                            </button>
+                            {!row.secret && (
+                              <button
+                                type="button"
+                                className="admin-btn admin-btn--quiet"
+                                onClick={() => toggleQna(row.id, "published", !row.published)}
+                              >
+                                {row.published ? "게시판에서 내리기" : "게시판에 세우기"}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn--quiet"
+                              onClick={() => toggleQna(row.id, "secret", !row.secret)}
+                            >
+                              {row.secret ? "비밀글 풀기" : "비밀글로"}
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn--danger"
+                              onClick={() => removeQna(row.id)}
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {qnaTotal > qnaPageSize && (
+                <div className="admin-pager">
+                  <button type="button" disabled={qnaPage <= 1} onClick={() => setQnaPage(qnaPage - 1)}>
+                    이전
+                  </button>
+                  <span>
+                    {qnaPage} / {Math.ceil(qnaTotal / qnaPageSize)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={qnaPage >= Math.ceil(qnaTotal / qnaPageSize)}
+                    onClick={() => setQnaPage(qnaPage + 1)}
+                  >
+                    다음
+                  </button>
+                </div>
+              )}
+            </section>
           </>
         )}
 

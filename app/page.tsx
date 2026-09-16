@@ -35,7 +35,7 @@ const NAV = [
   { href: "#business", label: "주요업무" },
   { href: "#updates", label: "새 소식" },
   { href: "#careers", label: "직원채용" },
-  { href: "#faq", label: "Q&A" },
+  { href: "/qna", label: "Q&A" },
   { href: "#contact", label: "문의사항" },
 ] as const;
 
@@ -291,7 +291,7 @@ export default async function HomePage() {
             <p className="co-section-index">05 · Q&amp;A</p>
             <h2>자주 묻는 질문</h2>
             <p className="co-section-note">
-              업무와 채용에 관한 질문을 계속 업데이트합니다. 게시는 관리자만 할 수 있습니다.
+              여기에 없는 것은 직접 물어보실 수 있습니다. 답변은 회장이 직접 드립니다.
             </p>
           </div>
           <div className="co-faq co-reveal">
@@ -304,6 +304,15 @@ export default async function HomePage() {
                 <p>{f.a}</p>
               </details>
             ))}
+          </div>
+          <div className="co-exam-board co-reveal">
+            <div>
+              <strong>묻고 답하기 게시판</strong>
+              <p>업무·절차·채용에 관해 직접 질문하시면 답변을 이 게시판에 올려 드립니다.</p>
+            </div>
+            <Link className="co-btn co-btn--primary co-btn--sm" href="/qna#ask">
+              질문 남기기 <i aria-hidden="true">→</i>
+            </Link>
           </div>
         </section>
 

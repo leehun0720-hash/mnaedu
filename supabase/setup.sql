@@ -147,6 +147,25 @@ CREATE TABLE IF NOT EXISTS "applications" (
 );
 CREATE INDEX IF NOT EXISTS "applications_status_idx" ON "applications" USING btree ("status","created_at");
 
+-- Q&A 게시판. 방문자가 묻고 회장이 답합니다.
+--   질문은 누구나 보낼 수 있지만, published 를 켠 것만 게시판에 섭니다.
+--   secret 이 켜진 비밀글은 공개 목록에 아예 오르지 않습니다.
+--   email 은 회신용이며 어떤 공개 화면에도 실리지 않습니다.
+CREATE TABLE IF NOT EXISTS "qna" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text,
+	"title" text NOT NULL,
+	"body" text NOT NULL,
+	"answer" text,
+	"answered_at" timestamp with time zone,
+	"secret" boolean DEFAULT false NOT NULL,
+	"published" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "qna_published_idx" ON "qna" USING btree ("published","created_at");
+
 -- ─────────────────────────────────────────────────────────────
 -- 1-2부. 예전에 만든 데이터베이스 손보기 — 반드시 함께 실행하십시오
 -- ─────────────────────────────────────────────────────────────
@@ -201,6 +220,8 @@ ALTER TABLE "admin_login_attempts" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "admin_credentials" ENABLE ROW LEVEL SECURITY;
 -- 지원자의 성함·이메일·연락처가 담기는 표입니다. 여기가 새면 개인정보 사고입니다.
 ALTER TABLE "applications" ENABLE ROW LEVEL SECURITY;
+-- 질문자의 이름과 이메일, 그리고 비밀글이 담깁니다.
+ALTER TABLE "qna" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
@@ -210,6 +231,7 @@ REVOKE ALL ON TABLE "members" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_login_attempts" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_credentials" FROM anon, authenticated;
 REVOKE ALL ON TABLE "applications" FROM anon, authenticated;
+REVOKE ALL ON TABLE "qna" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;

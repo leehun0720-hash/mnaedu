@@ -276,3 +276,24 @@ test("채용시험 화면에 정답이 실리지 않는다", async () => {
     assert.doesNotMatch(html, leak, `${leak} 가 응시 화면에 실렸다`);
   }
 });
+
+test("Q&A 는 묻고 답하는 게시판이다", async () => {
+  // 회장 지시(2026-09-16) — Q&A 를 실제 묻고 답하는 형태로
+  const home = await renderHtml("/");
+  assert.match(home, /href="\/qna"/, "첫 화면에서 게시판으로 가는 길이 없다");
+
+  const html = await renderHtml("/qna");
+  assert.match(html, /묻고 답하기/);
+  assert.match(html, /자주 묻는 질문/, "자주 묻는 질문을 없애지 않는다 — 같은 질문이 쌓이는 것을 막는다");
+  assert.match(html, /질문 남기기/);
+  // 누구나 물을 수 있어야 게시판이다
+  assert.match(html, /비밀글로 보내기/);
+  assert.match(html, /개인정보처리방침/);
+});
+
+test("Q&A 화면에 남의 이메일이 실리지 않는다", async () => {
+  // 질문자의 이메일은 회신을 위해 받을 뿐, 어떤 공개 화면에도 나가지 않는다
+  const html = await renderHtml("/qna");
+  assert.doesNotMatch(html, /"email"\s*:/);
+  assert.doesNotMatch(html, /\bsecret\s*:\s*true/);
+});
