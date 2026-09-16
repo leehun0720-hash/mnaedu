@@ -209,3 +209,44 @@ export const adminCredentials = pgTable("admin_credentials", {
   passwordHash: text("password_hash").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * 직원채용 지원서.
+ *
+ * 응시자가 채용 문제를 풀고 「직원채용」을 골라 보내면 한 건이 쌓인다.
+ * 회장은 관리자 화면에서 답안을 읽고 점수를 매기신다.
+ *
+ * 답안을 문제와 따로 표에 쪼개지 않고 jsonb 한 칸에 담는다. 지원서는 낸
+ * 순간의 사진이어야 하기 때문이다 — 나중에 회장이 문제를 고치거나 지우셔도
+ * 그때 무엇을 보고 무엇이라 답했는지가 그대로 남아야 한다.
+ *
+ * 개인정보가 들어 있는 유일한 표다. RLS로 잠그고 권한을 모두 회수한다
+ * (supabase/setup.sql 2부). 읽기는 관리자 세션을 거친 서버 코드만 한다.
+ */
+export const applications = pgTable(
+  "applications",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    /** 직원채용 | 인턴십 | 제휴·협업 */
+    kind: text("kind").notNull().default("직원채용"),
+    /** 지원 동기·경력 요약 — 응시자가 직접 적는다 */
+    note: text("note"),
+    /** [{questionId, prompt, answer}] — 낸 순간 그대로 */
+    answers: jsonb("answers").$type<{ questionId: number; prompt: string; answer: string }[]>(),
+    /** 0~100. 비어 있으면 아직 채점 전이다 — 0점과 구분해야 한다. */
+    score: integer("score"),
+    /** 접수 | 검토중 | 합격 | 불합격 */
+    status: text("status").notNull().default("접수"),
+    /** 회장 메모 — 응시자에게는 어느 경로로도 나가지 않는다 */
+    memo: text("memo"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("applications_status_idx").on(t.status, t.createdAt)]
+);
+
+export type Application = typeof applications.$inferSelect;
+export type NewApplication = typeof applications.$inferInsert;

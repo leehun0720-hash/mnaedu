@@ -5265,3 +5265,308 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .ins-body a { color: var(--co-navy); text-decoration: underline; text-underline-offset: 3px; }
 .ins-body hr { border: 0; border-top: 1px solid var(--co-line); margin: 1.6em 0; }
 .ins-body u { text-underline-offset: 3px; }
+
+/* ── 직원채용 — 채용시험 응시 화면 (/careers) ─────────────────
+   회장 지시(2026-09-16): 문제를 풀고 그 자리에서 지원한다.
+   시험지는 읽기가 전부다 — 장식을 넣지 않고 글자 크기와 여백만으로 세운다. */
+
+.rc-intro .co-section-head { margin-bottom: 26px; }
+.rc-intro h1 {
+  font: 700 clamp(26px, 3.4vw, 38px) / 1.25 var(--font-serif);
+  letter-spacing: -0.02em;
+  color: var(--co-ink-strong);
+  margin: 6px 0 10px;
+}
+.rc-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rc-rules li {
+  padding: 18px 20px;
+  background: var(--white);
+  border: 1px solid var(--co-line);
+  border-left: 3px solid var(--co-navy);
+}
+.rc-rules strong {
+  display: block;
+  margin-bottom: 6px;
+  font: 700 14.5px var(--font-sans);
+  color: var(--co-ink-strong);
+}
+.rc-rules p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--co-muted); }
+
+/* — 시험지 + 지원서 — */
+.rc-exam { padding-top: clamp(30px, 4vw, 48px); }
+.rc-form { display: flex; flex-direction: column; gap: 26px; }
+.rc-block {
+  padding: clamp(20px, 3vw, 30px);
+  background: var(--white);
+  border: 1px solid var(--co-line);
+}
+.rc-block h2 {
+  margin: 0 0 6px;
+  font: 700 17px var(--font-sans);
+  color: var(--co-ink-strong);
+}
+.rc-block h2 small {
+  margin-left: 8px;
+  font: 600 12px var(--font-label);
+  letter-spacing: 0.08em;
+  color: var(--co-muted);
+}
+.rc-block-note { margin: 0 0 18px; font-size: 13px; color: var(--co-muted); }
+.rc-empty {
+  margin: 10px 0 0;
+  padding: 16px 18px;
+  background: var(--paper-deep);
+  border-left: 3px solid var(--co-line);
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--co-muted);
+}
+
+.rc-questions { margin: 0; padding: 0; list-style: none; display: grid; gap: 22px; }
+.rc-questions li { padding-top: 18px; border-top: 1px solid var(--co-line); }
+.rc-questions li:first-child { padding-top: 0; border-top: 0; }
+.rc-q-no {
+  margin: 0 0 6px;
+  font: 700 11px var(--font-label);
+  letter-spacing: 0.14em;
+  color: var(--co-navy);
+}
+.rc-q-prompt {
+  margin: 0 0 10px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--co-ink-strong);
+  white-space: pre-wrap;
+}
+
+/* — 입력칸 — */
+.rc-form textarea,
+.rc-form input,
+.rc-form select {
+  width: 100%;
+  padding: 11px 13px;
+  font: 400 14px var(--font-sans);
+  color: var(--co-ink-strong);
+  background: var(--paper-bg);
+  border: 1px solid var(--co-line);
+  border-radius: 2px;
+}
+.rc-form textarea { line-height: 1.75; resize: vertical; }
+.rc-form textarea:focus,
+.rc-form input:focus,
+.rc-form select:focus {
+  outline: 2px solid var(--co-navy);
+  outline-offset: 1px;
+  background: var(--white);
+}
+
+.rc-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+.rc-field { display: flex; flex-direction: column; gap: 6px; }
+.rc-field--wide { margin-top: 14px; }
+.rc-field > span {
+  font: 700 11px var(--font-label);
+  letter-spacing: 0.12em;
+  color: var(--co-muted);
+}
+.rc-field > span i { font-style: normal; color: #B0341A; }
+
+.rc-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: var(--paper-deep);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--co-muted);
+}
+.rc-agree input { width: 18px; height: 18px; flex: none; margin-top: 2px; accent-color: var(--co-navy); }
+.rc-agree a { color: var(--co-navy); text-decoration: underline; }
+
+.rc-error {
+  margin: 0;
+  padding: 13px 16px;
+  background: #FBEAE5;
+  border-left: 3px solid #B0341A;
+  font-size: 13.5px;
+  color: #6B2216;
+}
+
+.rc-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.rc-submit p { margin: 0; font-size: 12.5px; color: var(--co-muted); }
+
+/* — 접수 완료 — */
+.rc-done {
+  padding: clamp(28px, 5vw, 46px);
+  background: var(--white);
+  border: 1px solid var(--co-line);
+  border-top: 3px solid var(--co-navy);
+  text-align: center;
+}
+.rc-done-mark {
+  margin: 0 auto 14px;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-content: center;
+  border-radius: 50%;
+  background: var(--co-navy);
+  color: var(--white);
+  font-size: 22px;
+}
+.rc-done h2 { margin: 0 0 8px; font: 700 21px var(--font-sans); color: var(--co-ink-strong); }
+.rc-done-no { margin: 0 0 16px; font: 600 14px var(--font-label); letter-spacing: 0.06em; color: var(--co-navy); }
+.rc-done p { margin: 0 auto 10px; max-width: 46ch; font-size: 14px; line-height: 1.8; color: var(--co-muted); }
+.rc-done-note { font-size: 12.5px !important; }
+.rc-done .co-btn { margin-top: 14px; }
+
+.rc-tail { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.rc-tail p { margin: 0; font-size: 13.5px; color: var(--co-muted); }
+.rc-tail a { color: var(--co-navy); }
+
+@media (max-width: 640px) {
+  .rc-rules { grid-template-columns: 1fr; }
+  .rc-fields { grid-template-columns: 1fr; }
+}
+
+/* ── 관리자 · 지원자 (직원채용) ───────────────────────────────
+   회장이 답안을 읽고 점수를 매기는 자리. 읽는 일이 전부이므로
+   글자 크기와 여백만 손보고 색은 상태 표시에만 쓴다. */
+
+.admin-warn--recruit { font-size: 13px; line-height: 1.7; }
+
+/* 상태별 건수 — 남은 일이 어디에 있는지 보는 지도 */
+.admin-counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+.admin-counts button {
+  min-height: 34px;
+  padding: 6px 14px;
+  font: 600 12.5px var(--font-sans);
+  color: var(--ink-strong);
+  background: transparent;
+  border: 1px solid var(--line-color);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.admin-counts button:hover { background: var(--paper-deep); }
+.admin-counts button[data-on="true"] { background: var(--ink-strong); border-color: var(--ink-strong); color: var(--white); }
+.admin-counts button b { margin-left: 6px; font-weight: 800; }
+
+/* 목록 한 줄 — 누르면 아래에 지원서가 펼쳐진다 */
+.admin-list--applicants li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.admin-appli {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.admin-appli:hover .admin-appli-head b { text-decoration: underline; }
+.admin-appli-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.admin-appli-head b { font: 700 15px var(--font-sans); color: var(--ink-strong); }
+.admin-appli-kind,
+.admin-appli-status,
+.admin-appli-score {
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border: 1px solid var(--line-color);
+  color: var(--muted);
+}
+.admin-appli-status[data-status="검토중"] { border-color: #8A6A1F; color: #8A6A1F; }
+.admin-appli-status[data-status="합격"] { border-color: #2F6B45; color: #2F6B45; }
+.admin-appli-status[data-status="불합격"] { border-color: var(--muted); color: var(--muted); }
+.admin-appli-score { border-color: var(--ink-strong); color: var(--ink-strong); }
+.admin-appli-sub { font-size: 12.5px; color: var(--muted); }
+
+/* 펼친 지원서 */
+.admin-appli-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  background: var(--paper-deep);
+}
+.admin-appli-meta dt {
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.admin-appli-meta dd { margin: 0; font-size: 14px; color: var(--ink-strong); word-break: break-all; }
+.admin-appli-note { margin-bottom: 22px; }
+.admin-appli-note h3,
+.admin-appli-h3 {
+  margin: 0 0 8px;
+  font: 700 13px var(--font-sans);
+  color: var(--ink-strong);
+}
+.admin-appli-note p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.admin-answers { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.admin-answers li { padding-top: 16px; border-top: 1px solid var(--line-color); }
+.admin-answers-q {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink-strong);
+  white-space: pre-wrap;
+}
+.admin-answers-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.admin-answers-body > div {
+  padding: 14px 16px;
+  background: var(--paper-bg);
+  border-left: 3px solid var(--line-color);
+}
+.admin-answers-official { background: var(--paper-deep) !important; border-left-color: var(--ink-strong) !important; }
+.admin-answers-body h4 {
+  margin: 0 0 6px;
+  font: 700 10.5px var(--font-label);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.admin-answers-body h4 small { font-weight: 600; letter-spacing: 0.04em; opacity: 0.75; }
+.admin-answers-body p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink-strong);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 560px) {
+  .admin-list--applicants li { flex-direction: column; align-items: stretch; }
+}

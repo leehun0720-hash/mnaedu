@@ -6,6 +6,7 @@ import { questions } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
 import { COURSES, FORMATS, normalizeStage, normalizeTrack } from "@/lib/questions";
+import { RECRUIT_TRACK } from "@/lib/recruit";
 import { readJsonBody, runQuery, storageFailure } from "@/lib/admin-api";
 
 /** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */
@@ -41,7 +42,14 @@ type Payload = {
 function validate(body: Payload) {
   const prompt = (body.prompt ?? "").trim();
   if (prompt.length < 10) return { error: "문제 본문이 너무 짧습니다." as const };
-  if (!COURSES.some((c) => c.slug === body.track)) return { error: "분야를 선택해 주십시오." as const };
+  /**
+   * 다섯 업무 분야에 더해 채용시험 자리를 받는다.
+   *
+   * 채용은 업무 분야가 아니므로 COURSES 에 넣지 않는다 — 넣으면 업무 메뉴와
+   * 첫 화면 목록에 그대로 서 버린다. 출제를 받는 이 문에서만 따로 허락한다.
+   */
+  const allowed = body.track === RECRUIT_TRACK || COURSES.some((c) => c.slug === body.track);
+  if (!allowed) return { error: "분야를 선택해 주십시오." as const };
   if (!FORMATS.includes(body.format as never)) return { error: "유형을 선택해 주십시오." as const };
 
   let choices: string[] | null = null;

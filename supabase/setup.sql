@@ -124,6 +124,29 @@ CREATE TABLE IF NOT EXISTS "admin_credentials" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 
+-- 직원채용 지원서. 응시자가 채용 문제를 풀고 「직원채용」을 골라 보내면 한 건이
+-- 쌓입니다. 개인정보(성함·이메일·연락처)가 담기는 유일한 표이므로 2부의
+-- 잠금을 반드시 함께 실행하십시오.
+--   answers 는 낸 순간의 사진입니다 — 나중에 문제를 고치거나 지워도
+--   그때 무엇을 보고 무엇이라 답했는지가 그대로 남습니다.
+--   score 가 비어 있으면 아직 채점 전입니다(0점과 다릅니다).
+--   memo 는 회장 메모로, 응시자에게는 어느 경로로도 나가지 않습니다.
+CREATE TABLE IF NOT EXISTS "applications" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"phone" text,
+	"kind" text DEFAULT '직원채용' NOT NULL,
+	"note" text,
+	"answers" jsonb,
+	"score" integer,
+	"status" text DEFAULT '접수' NOT NULL,
+	"memo" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "applications_status_idx" ON "applications" USING btree ("status","created_at");
+
 -- ─────────────────────────────────────────────────────────────
 -- 1-2부. 예전에 만든 데이터베이스 손보기 — 반드시 함께 실행하십시오
 -- ─────────────────────────────────────────────────────────────
@@ -176,6 +199,8 @@ ALTER TABLE "members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "admin_login_attempts" ENABLE ROW LEVEL SECURITY;
 -- 비밀번호 해시가 담기는 표입니다. 여기가 새면 관리자 화면이 통째로 열립니다.
 ALTER TABLE "admin_credentials" ENABLE ROW LEVEL SECURITY;
+-- 지원자의 성함·이메일·연락처가 담기는 표입니다. 여기가 새면 개인정보 사고입니다.
+ALTER TABLE "applications" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
@@ -184,6 +209,7 @@ REVOKE ALL ON TABLE "articles" FROM anon, authenticated;
 REVOKE ALL ON TABLE "members" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_login_attempts" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_credentials" FROM anon, authenticated;
+REVOKE ALL ON TABLE "applications" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;

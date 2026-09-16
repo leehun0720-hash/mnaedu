@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { questions } from "@/db/schema";
 import {
@@ -12,6 +12,7 @@ import {
   type PublicQuestion,
   type Stage,
 } from "@/lib/questions";
+import { RECRUIT_TRACK } from "@/lib/recruit";
 
 /**
  * 서버 전용 — postgres 드라이버는 Node 소켓을 쓰므로 클라이언트 번들에
@@ -29,7 +30,8 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
     const rows = await getDb()
       .select()
       .from(questions)
-      .where(eq(questions.published, true))
+      // 채용 문제는 업무 목록에 서지 않는다 — 다른 자리에서 다른 목적으로 쓴다
+      .where(and(eq(questions.published, true), ne(questions.track, RECRUIT_TRACK)))
       .orderBy(desc(questions.createdAt))
       .limit(limit);
 
@@ -70,8 +72,9 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
       .from(questions)
       .where(eq(questions.id, id))
       .limit(1);
-    // 발행하지 않은 문제는 직접 링크로도 열리지 않는다
-    if (!r || !r.published) return null;
+    // 발행하지 않은 문제는 직접 링크로도 열리지 않는다.
+    // 채용 문제도 이 길로는 열지 않는다 — 응시는 /careers 한 곳에서만 한다.
+    if (!r || !r.published || r.track === RECRUIT_TRACK) return null;
     return {
       id: r.id,
       track: r.track,

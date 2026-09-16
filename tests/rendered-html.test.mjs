@@ -73,7 +73,10 @@ test("첫 화면은 새 소식만 세우고, 자료·문제 본문은 업무 화
   assert.match(html, /id="updates"/);
   assert.doesNotMatch(html, /id="questions"/);
   assert.doesNotMatch(html, /id="library"/);
-  // 폐지된 것들이 문구로도 남아 있지 않다
+  // 폐지된 것들이 문구로도 남아 있지 않다.
+  // 「채점」은 옛 퀴즈 아카데미가 점수를 매기던 말이다. 채용시험 답안을 회장이
+  // 읽고 매기는 일은 /careers 와 관리자 화면에서만 그 말을 쓴다 — 첫 화면에
+  // 되살아나면 폐지한 등급 체계가 돌아온 것처럼 읽힌다.
   for (const gone of [/레벨/, /포인트/, /유료회원/, /무료회원/, /승급/, /채점/]) {
     assert.doesNotMatch(html, gone, `${gone} should be gone from the page`);
   }
@@ -242,5 +245,34 @@ test("관리자 링크는 네비게이션 바와 모든 화면의 하단에 있�
     const m = html.match(/<a[^>]*class="footer-admin"[^>]*>/)?.[0] ?? "";
     assert.ok(m, `${path}: 하단에 관리자 링크가 있어야 한다`);
     assert.match(m, /target="_blank"/); assert.match(m, /nofollow/); assert.match(m, /noopener/);
+  }
+});
+
+test("직원채용은 응시 화면으로 이어지고, 그 화면이 실제로 선다", async () => {
+  // 회장 지시(2026-09-16) — 문제를 풀고 그 자리에서 「직원채용」을 골라 지원한다
+  const home = await renderHtml("/");
+  assert.match(home, /href="\/careers"/, "첫 화면에서 응시 화면으로 가는 길이 없다");
+  // 옛 「준비 중」 표시는 걷어냈다
+  assert.doesNotMatch(home, /임직원 채용시험문제 게시판/);
+
+  const html = await renderHtml("/careers");
+  assert.match(html, /임직원 채용시험/);
+  assert.match(html, /지원 의사/);
+  // 지원 구분을 고르는 자리가 있어야 "직원채용을 선택해 보낸다"가 성립한다
+  assert.match(html, /직원채용/);
+  assert.match(html, /인턴십/);
+  // 합격선은 회사 소개 문구와 같은 값을 쓴다
+  assert.match(html, /80점/);
+  // 개인정보를 받는 화면이므로 동의 없이 보낼 수 없다
+  assert.match(html, /개인정보처리방침/);
+});
+
+test("채용시험 화면에 정답이 실리지 않는다", async () => {
+  // 시험지에 답이 인쇄되어 나가는 것과 같은 사고를 막는다.
+  // 데이터베이스가 없는 검사 환경에서는 문제 자체가 비지만, 정답을 담는
+  // 자리 이름이 화면에 나타나는 것만으로도 경로가 열렸다는 뜻이다.
+  const html = await renderHtml("/careers");
+  for (const leak of [/"answer"/, /"explanation"/, /"intent"/, /정답:/]) {
+    assert.doesNotMatch(html, leak, `${leak} 가 응시 화면에 실렸다`);
   }
 });

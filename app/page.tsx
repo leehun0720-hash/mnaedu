@@ -269,17 +269,19 @@ export default async function HomePage() {
               <li>
                 <strong>지원 방법</strong>
                 <p>
-                  채용시험문제 게시판에서 출제 범위를 확인하신 뒤, 아래 문의 양식에서 &lsquo;직원채용&rsquo;을
-                  선택해 지원 의사를 보내주시면 절차를 개별 안내드립니다.
+                  채용시험 화면에서 문제를 푸신 뒤, 같은 자리에서 &lsquo;직원채용&rsquo;을 선택해 지원
+                  의사를 보내주시면 절차를 개별 안내드립니다.
                 </p>
               </li>
             </ul>
             <div className="co-exam-board">
               <div>
-                <strong>임직원 채용시험문제 게시판</strong>
-                <p>출제 범위는 실무 문제 게시판에서 확인하실 수 있습니다. 지원과 전형 절차는 문의 주시면 개별 안내드립니다.</p>
+                <strong>임직원 채용시험</strong>
+                <p>문제를 푸시고 그 자리에서 지원하실 수 있습니다. 답안은 회장이 직접 읽고 판단합니다.</p>
               </div>
-              <span className="co-tag co-tag--soon">준비 중</span>
+              <Link className="co-btn co-btn--primary co-btn--sm" href="/careers">
+                채용시험 응시하기 <i aria-hidden="true">→</i>
+              </Link>
             </div>
           </div>
         </section>

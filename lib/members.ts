@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { members, questions } from "@/db/schema";
+import { isRecruitTrack } from "@/lib/recruit";
 import { getAuthUser } from "@/lib/supabase/server";
 import { withDeadline } from "@/lib/deadline";
 
@@ -133,6 +134,14 @@ export async function revealAnswer(questionId: number): Promise<RevealResult> {
 
   // 발행하지 않은 문제는 위 조건에서 이미 걸러진다
   if (!question) return { ok: false, reason: "not-found" };
+  /**
+   * 채용 문제의 정답은 회원에게도 열지 않는다.
+   *
+   * 업무 문제의 정답은 회원에게 여는 것이 목적이지만, 채용 문제는 그 자체가
+   * 시험이다. 정답이 먼저 도는 순간 시험이 아니게 된다 — 로그인만 하면
+   * 답을 받아 가는 길을 열어 두면 채용 전형이 통째로 무의미해진다.
+   */
+  if (isRecruitTrack(question.track)) return { ok: false, reason: "not-found" };
   if (!question.answer && !question.explanation) return { ok: false, reason: "not-found" };
 
   return {

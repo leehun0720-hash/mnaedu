@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { COURSES, normalizeStage, normalizeTrack } from "@/lib/questions";
+import { APPLY_STATUSES, RECRUIT_LABEL, RECRUIT_TRACK } from "@/lib/recruit";
 import { bodyToHtml, textLength } from "@/lib/rich-text";
 import RichEditor from "./rich-editor";
 
@@ -70,6 +71,44 @@ type QuestionsResponse = { questions: Row[]; total: number; page: number; covera
 type DocumentsResponse = { documents: DocRow[] };
 type MembersResponse = { members: MemberRow[]; total: number; page: number; pageSize: number };
 
+/** 지원자 — 채용시험을 치르고 지원 의사를 보낸 사람 */
+type ApplicantRow = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  kind: string;
+  status: string;
+  score: number | null;
+  answerCount: number;
+  createdAt: string;
+};
+
+type ApplicantsResponse = {
+  rows: ApplicantRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  counts: Record<string, number>;
+};
+
+/** 채점 화면 한 칸 — 응시자의 답 옆에 회장이 등록해 둔 정답이 선다 */
+type GradedAnswer = { questionId: number; prompt: string; answer: string; official: string | null };
+
+type ApplicantDetail = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  kind: string;
+  note: string | null;
+  status: string;
+  score: number | null;
+  memo: string | null;
+  createdAt: string;
+  answers: GradedAnswer[];
+};
+
 /** /api/admin/diagnose 가 돌려주는 것 */
 type Diagnosis = {
   healthy: boolean;
@@ -104,7 +143,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-type Tab = "questions" | "articles" | "documents" | "members" | "settings";
+type Tab = "questions" | "articles" | "documents" | "members" | "applicants" | "settings";
 
 type ArticleRow = {
   id: number;
@@ -209,6 +248,21 @@ export default function AdminClient({
   const [diag, setDiag] = useState<Diagnosis | null>(null);
   const [diagBusy, setDiagBusy] = useState(false);
 
+  // 지원자 (직원채용)
+  const [applicants, setApplicants] = useState<ApplicantRow[]>([]);
+  const [applicantTotal, setApplicantTotal] = useState(0);
+  const [applicantPageSize, setApplicantPageSize] = useState(20);
+  const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
+  const [applicantQuery, setApplicantQuery] = useState("");
+  const [applicantSearch, setApplicantSearch] = useState("");
+  const [applicantStatus, setApplicantStatus] = useState("");
+  const [applicantPage, setApplicantPage] = useState(1);
+  /** 지금 펼쳐 읽고 있는 지원서 한 건 */
+  const [openApplicant, setOpenApplicant] = useState<ApplicantDetail | null>(null);
+  const [gradeScore, setGradeScore] = useState("");
+  const [gradeStatus, setGradeStatus] = useState("");
+  const [gradeMemo, setGradeMemo] = useState("");
+
   // 비밀번호 변경
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNext, setPwNext] = useState("");
@@ -287,6 +341,70 @@ export default function AdminClient({
     setMemberTotal(data.total);
     setMemberPageSize(data.pageSize || 20);
   }, [readJson, memberPage, memberSearch]);
+
+  const loadApplicants = useCallback(async () => {
+    const params = new URLSearchParams({ page: String(applicantPage) });
+    if (applicantSearch.trim()) params.set("q", applicantSearch.trim());
+    if (applicantStatus) params.set("status", applicantStatus);
+    const data = await readJson<ApplicantsResponse>(`/api/admin/applications?${params}`);
+    if (isFailure(data)) {
+      setError(data.message);
+      return;
+    }
+    setApplicants(data.rows);
+    setApplicantTotal(data.total);
+    setApplicantPageSize(data.pageSize || 20);
+    setApplicantCounts(data.counts ?? {});
+  }, [readJson, applicantPage, applicantSearch, applicantStatus]);
+
+  /** 지원서 한 건을 펼친다 — 답안과 정답이 나란히 선다 */
+  async function openApplication(id: number) {
+    setError(null);
+    const data = await readJson<{ application: ApplicantDetail }>(
+      `/api/admin/applications?id=${id}`
+    );
+    if (isFailure(data)) {
+      setError(data.message);
+      return;
+    }
+    setOpenApplicant(data.application);
+    setGradeScore(data.application.score === null ? "" : String(data.application.score));
+    setGradeStatus(data.application.status);
+    setGradeMemo(data.application.memo ?? "");
+  }
+
+  /** 채점 결과를 적는다 — 점수 칸을 비우면 '채점 전'으로 돌아간다 */
+  async function saveGrade() {
+    if (!openApplicant) return;
+    const trimmed = gradeScore.trim();
+    if (trimmed && !/^\d{1,3}$/.test(trimmed)) {
+      setError("점수는 0에서 100 사이의 숫자로 적어 주십시오.");
+      return;
+    }
+    const data = await send("/api/admin/applications", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: openApplicant.id,
+        score: trimmed === "" ? null : Number(trimmed),
+        status: gradeStatus,
+        memo: gradeMemo,
+      }),
+    });
+    if (!data) return;
+    setNotice("채점 결과를 저장했습니다.");
+    await openApplication(openApplicant.id);
+    await loadApplicants();
+  }
+
+  async function removeApplication(id: number) {
+    if (!confirm("이 지원서를 지울까요? 답안과 연락처가 함께 사라지며 되돌릴 수 없습니다.")) return;
+    const data = await send(`/api/admin/applications?id=${id}`, { method: "DELETE" });
+    if (!data) return;
+    setNotice("지원서를 지웠습니다.");
+    if (openApplicant?.id === id) setOpenApplicant(null);
+    await loadApplicants();
+  }
 
   /** 무엇이 막혔는지 데이터베이스에 직접 묻는다 — 짐작하지 않는다 */
   async function runDiagnosis() {
@@ -450,7 +568,9 @@ export default function AdminClient({
             ? loadDocuments
             : tab === "settings"
               ? loadPasswordInfo
-              : loadMembers;
+              : tab === "applicants"
+                ? loadApplicants
+                : loadMembers;
     Promise.resolve()
       .then(() => {
         if (!alive) return undefined;
@@ -463,7 +583,7 @@ export default function AdminClient({
     return () => {
       alive = false;
     };
-  }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers, loadPasswordInfo]);
+  }, [loggedIn, dbConfigured, tab, loadQuestions, loadArticles, loadDocuments, loadMembers, loadApplicants, loadPasswordInfo]);
 
   /**
    * 타자 한 자마다 서버를 두드리면 요청이 줄줄이 겹친다. 손을 멈추신 뒤
@@ -477,11 +597,21 @@ export default function AdminClient({
     return () => window.clearTimeout(t);
   }, [memberQuery]);
 
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setApplicantSearch(applicantQuery);
+      setApplicantPage(1);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [applicantQuery]);
+
   /** 탭을 옮기면 앞 탭에서 뜬 문구는 두고 간다 — 그 탭의 사연일 뿐이다 */
   function goTab(next: Tab) {
     setTab(next);
     setError(null);
     setNotice(null);
+    // 펼쳐 둔 지원서는 탭을 떠나면 닫는다 — 연락처가 화면에 남아 있지 않게
+    if (next !== "applicants") setOpenApplicant(null);
   }
 
   async function login(e: React.FormEvent) {
@@ -972,6 +1102,9 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           <button data-on={tab === "members"} onClick={() => goTab("members")}>
             회원
           </button>
+          <button data-on={tab === "applicants"} onClick={() => goTab("applicants")}>
+            지원자
+          </button>
           <button data-on={tab === "settings"} onClick={() => goTab("settings")}>
             비밀번호
           </button>
@@ -1000,9 +1133,19 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                         {c.label}
                       </option>
                     ))}
+                    {/* 업무 분야가 아니다 — 채용시험 화면에만 서는 자리다 */}
+                    <option value={RECRUIT_TRACK}>{RECRUIT_LABEL} (채용시험)</option>
                   </select>
                 </label>
               </div>
+
+              {draft.track === RECRUIT_TRACK && (
+                <p className="admin-warn admin-warn--recruit">
+                  채용시험 문제입니다. 업무 화면과 첫 화면 목록에는 서지 않고,{" "}
+                  <b>/careers</b> 응시 화면에만 올라갑니다. 정답은 응시자에게 어느 경로로도
+                  나가지 않으며, 회원이 정답을 여는 길에서도 막힙니다.
+                </p>
+              )}
 
               <label className="admin-field">
                 문제 <small>누구나 볼 수 있습니다</small>
@@ -1656,6 +1799,219 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 </div>
               )}
             </section>
+          </>
+        )}
+
+        {/* ── 지원자 (직원채용) ── */}
+        {tab === "applicants" && (
+          <>
+            <section className="admin-card">
+              <h2>지원자</h2>
+              <p className="admin-note">
+                채용시험을 치르고 지원 의사를 보낸 분들입니다. 답안을 읽고 점수를 매기시면
+                그대로 남습니다. 응시자에게는 점수도 정답도 화면에 보이지 않습니다 — 전형
+                결과는 회장이 따로 알리십니다.
+              </p>
+
+              <div className="admin-counts">
+                {APPLY_STATUSES.map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    data-on={applicantStatus === st}
+                    onClick={() => {
+                      setApplicantStatus(applicantStatus === st ? "" : st);
+                      setApplicantPage(1);
+                    }}
+                  >
+                    {st} <b>{applicantCounts[st] ?? 0}</b>
+                  </button>
+                ))}
+                {applicantStatus && (
+                  <button type="button" onClick={() => setApplicantStatus("")}>
+                    전체 보기
+                  </button>
+                )}
+              </div>
+
+              <div className="admin-row">
+                <label style={{ flex: 1 }}>
+                  찾기 <small>성함 · 이메일 · 연락처</small>
+                  <input
+                    value={applicantQuery}
+                    onChange={(e) => setApplicantQuery(e.target.value)}
+                    placeholder="이름이나 이메일의 일부"
+                  />
+                </label>
+                <button type="button" className="admin-btn admin-btn--quiet" onClick={() => loadApplicants()}>
+                  다시 불러오기
+                </button>
+              </div>
+            </section>
+
+            <section className="admin-card">
+              <h2>
+                지원서 <small>{applicantTotal}건</small>
+              </h2>
+              {applicants.length === 0 ? (
+                <div className="admin-note">
+                  {applicantSearch || applicantStatus ? (
+                    <p>조건에 맞는 지원서가 없습니다.</p>
+                  ) : (
+                    <p>
+                      아직 들어온 지원서가 없습니다. 「문제 출제」에서 분야를 {RECRUIT_LABEL}
+                      으로 두고 문제를 발행하시면 응시 화면이 열립니다.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <ul className="admin-list admin-list--applicants">
+                  {applicants.map((a) => (
+                    <li key={a.id}>
+                      <button type="button" className="admin-appli" onClick={() => openApplication(a.id)}>
+                        <span className="admin-appli-head">
+                          <b>{a.name}</b>
+                          <span className="admin-appli-kind">{a.kind}</span>
+                          <span className="admin-appli-status" data-status={a.status}>
+                            {a.status}
+                          </span>
+                          {a.score !== null && <span className="admin-appli-score">{a.score}점</span>}
+                        </span>
+                        <span className="admin-appli-sub">
+                          {a.email}
+                          {a.phone ? ` · ${a.phone}` : ""} · 답안 {a.answerCount}문항 · {a.createdAt}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn--danger"
+                        onClick={() => removeApplication(a.id)}
+                      >
+                        삭제
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {applicantTotal > applicantPageSize && (
+                <div className="admin-pager">
+                  <button
+                    type="button"
+                    disabled={applicantPage <= 1}
+                    onClick={() => setApplicantPage(applicantPage - 1)}
+                  >
+                    이전
+                  </button>
+                  <span>
+                    {applicantPage} / {Math.ceil(applicantTotal / applicantPageSize)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={applicantPage >= Math.ceil(applicantTotal / applicantPageSize)}
+                    onClick={() => setApplicantPage(applicantPage + 1)}
+                  >
+                    다음
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {openApplicant && (
+              <section className="admin-card">
+                <h2>
+                  지원서 #{openApplicant.id} <small>{openApplicant.createdAt}</small>
+                </h2>
+
+                <dl className="admin-appli-meta">
+                  <div>
+                    <dt>성함</dt>
+                    <dd>{openApplicant.name}</dd>
+                  </div>
+                  <div>
+                    <dt>지원 구분</dt>
+                    <dd>{openApplicant.kind}</dd>
+                  </div>
+                  <div>
+                    <dt>이메일</dt>
+                    <dd>
+                      <a href={`mailto:${openApplicant.email}`}>{openApplicant.email}</a>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>연락처</dt>
+                    <dd>{openApplicant.phone ?? "—"}</dd>
+                  </div>
+                </dl>
+
+                {openApplicant.note && (
+                  <div className="admin-appli-note">
+                    <h3>지원 동기 · 경력</h3>
+                    <p>{openApplicant.note}</p>
+                  </div>
+                )}
+
+                <h3 className="admin-appli-h3">답안 {openApplicant.answers.length}문항</h3>
+                <ol className="admin-answers">
+                  {openApplicant.answers.map((a, i) => (
+                    <li key={`${a.questionId}-${i}`}>
+                      <p className="admin-answers-q">{a.prompt}</p>
+                      <div className="admin-answers-body">
+                        <div>
+                          <h4>지원자 답안</h4>
+                          <p>{a.answer}</p>
+                        </div>
+                        <div className="admin-answers-official">
+                          <h4>등록된 정답 <small>관리자만</small></h4>
+                          <p>{a.official ?? "(이 문제에 정답이 등록되어 있지 않습니다)"}</p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+
+                <div className="admin-row">
+                  <label>
+                    점수 <small>비우면 채점 전</small>
+                    <input
+                      value={gradeScore}
+                      onChange={(e) => setGradeScore(e.target.value)}
+                      inputMode="numeric"
+                      placeholder="0~100"
+                    />
+                  </label>
+                  <label>
+                    전형 상태
+                    <select value={gradeStatus} onChange={(e) => setGradeStatus(e.target.value)}>
+                      {APPLY_STATUSES.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <label className="admin-field">
+                  메모 <small>회장만 봅니다</small>
+                  <textarea
+                    rows={3}
+                    value={gradeMemo}
+                    onChange={(e) => setGradeMemo(e.target.value)}
+                    placeholder="면접 일정, 판단 근거 등"
+                  />
+                </label>
+
+                <div className="admin-actions">
+                  <button type="button" className="admin-btn" onClick={saveGrade}>
+                    채점 저장
+                  </button>
+                  <button type="button" className="admin-btn admin-btn--quiet" onClick={() => setOpenApplicant(null)}>
+                    닫기
+                  </button>
+                </div>
+              </section>
+            )}
           </>
         )}
 
