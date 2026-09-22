@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { plainToHtml, sanitizeHtml } from "@/lib/rich-text";
 
 /**
@@ -59,6 +59,30 @@ export default function RichEditor({
   minRows?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  /**
+   * 넓게 보기.
+   *
+   * 회장 지시(2026-09-22): 쓰는 글이 길면 고정된 칸 안에서 고치기가 어렵다.
+   * 칸을 끌어 키우는 것만으로는 화면 높이에 걸리므로, 아예 화면을 채우는
+   * 자리를 하나 둔다. 글을 정리하실 때만 켜고 끄시면 된다.
+   */
+  const [full, setFull] = useState(false);
+
+  // 넓게 보기는 Esc 로 닫는다 — 들어가는 길이 있으면 나오는 길도 있어야 한다
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFull(false);
+    };
+    window.addEventListener("keydown", onKey);
+    // 뒤쪽 화면이 함께 구르면 어디를 보고 있는지 알 수 없게 된다
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [full]);
 
   useEffect(() => {
     const el = ref.current;
@@ -103,7 +127,7 @@ export default function RichEditor({
   }
 
   return (
-    <div className="rte">
+    <div className={full ? "rte rte--full" : "rte"}>
       <div className="rte-bar" role="toolbar" aria-label="서식">
         {TOOLS.map((t, i) =>
           t === "|" ? (
@@ -123,6 +147,17 @@ export default function RichEditor({
             </button>
           )
         )}
+        <span className="rte-sep" />
+        <button
+          type="button"
+          className="rte-btn rte-btn--wide"
+          title={full ? "좁게 보기 (Esc)" : "넓게 보기 — 화면을 채워 고칩니다"}
+          aria-pressed={full}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setFull((v) => !v)}
+        >
+          {full ? "⤡ 좁게" : "⤢ 넓게"}
+        </button>
       </div>
       <div
         ref={ref}
@@ -132,7 +167,7 @@ export default function RichEditor({
         role="textbox"
         aria-multiline="true"
         data-placeholder={placeholder ?? ""}
-        style={{ minHeight: `${minRows * 1.8}em` }}
+        style={full ? undefined : { minHeight: `${minRows * 1.8}em` }}
         onInput={emit}
         onBlur={emit}
         onPaste={onPaste}

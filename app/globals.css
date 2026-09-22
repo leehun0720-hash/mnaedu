@@ -5216,7 +5216,18 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .rte-sep { width: 1px; height: 18px; background: #d9d4c7; margin: 0 4px; }
 .rte-body {
   padding: 14px 16px; outline: none; font-size: 15px; line-height: 1.85; color: #1d1d1b;
-  overflow-y: auto; max-height: 70vh; user-select: text; -webkit-user-select: text;
+  user-select: text; -webkit-user-select: text;
+  /*
+   * 높이를 묶지 않는다 (회장 지시 2026-09-22).
+   *
+   * 전에는 70vh 에서 잘리고 안쪽에서만 굴렀다. 글이 길면 좁은 창으로 들여다보며
+   * 고쳐야 했고, 모서리를 끌어도 max-height 에 걸려 커지지 않았다.
+   *
+   * 이제 내용만큼 늘어난다 — 화면은 문서가 구르듯 구른다. overflow 를 auto 로
+   * 두는 것은 모서리를 끌어 줄일 수 있게 하기 위해서다(resize 는 overflow 가
+   * visible 이면 듣지 않는다). 줄이시면 그때 안쪽 스크롤이 생긴다.
+   */
+  overflow-y: auto;
 }
 .rte-body:focus { box-shadow: inset 0 0 0 2px rgba(20, 45, 80, 0.15); }
 .rte-body:empty::before { content: attr(data-placeholder); color: #9a958a; pointer-events: none; }
@@ -5807,3 +5818,50 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .rc-q-prompt ol { padding-left: 20px; }
 .rc-q-prompt li { font-size: 15px; line-height: 1.8; color: var(--co-ink-strong); margin-bottom: 4px; }
 .rc-q-prompt a { color: var(--co-navy); text-decoration: underline; }
+
+/* ── 편집기를 키워 쓰기 (회장 지시 2026-09-22) ────────────────
+   글이 길면 고정된 칸 안에서는 고치기가 어렵다. 두 길을 연다 —
+   모서리를 끌어 키우거나, 아예 화면을 채워 놓고 고치거나. */
+
+/* 오른쪽 아래 모서리를 끌면 세로로 늘어난다 */
+.rte-body { resize: vertical; }
+
+.rte-btn--wide { font-weight: 700; white-space: nowrap; }
+.rte-btn[aria-pressed="true"] { background: var(--ink-strong); border-color: var(--ink-strong); color: #fff; }
+
+/* 넓게 보기 — 화면을 채운다 */
+.rte--full {
+  position: fixed;
+  inset: 16px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.rte--full .rte-body {
+  flex: 1;
+  /* 화면을 채울 때는 끌어 키울 것도, 높이를 묶을 것도 없다 */
+  resize: none;
+  max-height: none;
+  min-height: 0;
+  font-size: 16px;
+  /*
+   * 글줄이 지나치게 길어지지 않게 가운데로 모은다.
+   *
+   * 자식마다 max-width 를 주고 auto 로 가운데 놓는 방법은 쓰지 않는다 —
+   * 편집기 안에는 <p> 로 감싸이지 않은 맨 글자가 섞일 수 있고, 그것만 규칙을
+   * 비켜가 첫 줄이 왼쪽으로 튀어나온다. 안쪽 여백으로 기둥을 만들면 무엇이
+   * 들어오든 같은 자리에서 시작한다.
+   */
+  padding: 26px max(20px, calc((100% - 82ch) / 2));
+}
+
+@media (max-width: 720px) {
+  .rte--full { inset: 8px; }
+}
+
+/* 편집기 아닌 입력칸(메모·답변)도 넉넉히 — 끌어 키우는 것은 이미 된다 */
+.admin textarea { min-height: 7em; }
+.admin-field textarea { min-height: 8em; }
