@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ABOUT,
-  BUSINESS_AREAS,
   OFFICES,
   areasInOffice,
   CAREERS,
@@ -10,7 +9,6 @@ import {
   FAQS,
   PRINCIPLES,
   SLOGAN,
-  TOTAL_TOPICS,
 } from "@/lib/company";
 import CopyGuard from "./copy-guard";
 import ThemeToggle from "./theme-toggle";
@@ -113,11 +111,6 @@ export default async function HomePage() {
               주요 업무 보기 <i aria-hidden="true">↓</i>
             </a>
           </div>
-          <ul className="co-hero-strip" aria-label="주요 업무">
-            {BUSINESS_AREAS.map((b) => (
-              <li key={b.slug}>{b.name}</li>
-            ))}
-          </ul>
         </section>
 
         
@@ -197,10 +190,6 @@ export default async function HomePage() {
           <div className="co-section-head co-reveal">
             <p className="co-section-index">02 · BUSINESS</p>
             <h2>주요 업무</h2>
-            <p className="co-section-note">
-              M&amp;A 오피스 3개 분야와 시크릿 오피스 2개 분야, 합계 {TOTAL_TOPICS}개 주제를
-              다룹니다. 각 분야의 업무자료와 평가문제는 해당 업무 화면에 올려 둡니다.
-            </p>
           </div>
           {OFFICES.map((office) => (
             <div key={office.id} className="co-office co-reveal">
@@ -209,7 +198,6 @@ export default async function HomePage() {
                 <h3>
                   {office.name} <small>{areasInOffice(office.id).length}개 분야</small>
                 </h3>
-                <p className="co-office-line">{office.line}</p>
               </div>
               <div className="co-biz-grid">
                 {areasInOffice(office.id).map((b) => (

@@ -122,22 +122,12 @@ export type Office = {
   id: OfficeId;
   name: string;
   en: string;
-  line: string;
 };
 
 export const OFFICES: Office[] = [
-  {
-    id: "mna",
-    name: "M&A 오피스",
-    en: "M&A OFFICE",
-    line: "실전 거래를 다루는 전문 3개 분야 — M&A 중개 · 경영권 분쟁 · M&A 자금조달",
-  },
-  {
-    id: "secret",
-    name: "시크릿 오피스",
-    en: "SECRET OFFICE",
-    line: "상담 후 오프라인으로 진행하는 2개 분야 — 패밀리오피스 · 투자가 클럽",
-  },
+  // 회장 지시(2026-09-22)로 오피스마다 붙던 한 줄 설명을 걷었다. 이름만 세운다.
+  { id: "mna", name: "M&A 오피스", en: "M&A OFFICE" },
+  { id: "secret", name: "시크릿 오피스", en: "SECRET OFFICE" },
 ];
 
 export function areasInOffice(id: OfficeId): BusinessArea[] {

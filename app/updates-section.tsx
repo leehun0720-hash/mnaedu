@@ -30,10 +30,6 @@ export default function UpdatesSection({
       <div className="co-section-head co-reveal">
         <p className="co-section-index">03 · UPDATES</p>
         <h2>새로 올라온 자료와 문제</h2>
-        <p className="co-section-note">
-          업무자료와 평가문제는 각 주요업무 화면에 올립니다. 이곳에는 가장 최근에 올라온 다섯
-          건씩만 세워 둡니다.
-        </p>
       </div>
 
       <div className="co-updates co-reveal">
