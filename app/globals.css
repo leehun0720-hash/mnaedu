@@ -5343,7 +5343,6 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   font-size: 15px;
   line-height: 1.8;
   color: var(--co-ink-strong);
-  white-space: pre-wrap;
 }
 
 /* — 입력칸 — */
@@ -5788,3 +5787,46 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .admin-note--tight { margin: 0 0 10px; padding: 11px 14px; background: var(--paper-deep); border-left: 3px solid #8A6A1F; }
 .qa-jump { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 22px; }
 .qa-jump p { margin: 0; font-size: 13px; color: var(--co-muted); }
+
+/* ── 문제·정답·해설이 서식을 갖게 되면서 (회장 지시 2026-09-22) ──────
+   전에는 글 한 덩이였으므로 <p> 하나로 충분했다. 이제 편집기로 쓰시므로
+   문단·목록·강조가 섞여 들어온다 — 그 속의 요소들에 같은 결을 입힌다. */
+
+.qa-prompt > * { margin: 0 0 10px; }
+.qa-prompt > *:last-child { margin-bottom: 0; }
+.qa-prompt p { font: 500 15.5px/1.9 var(--font-sans); color: var(--co-ink-strong); }
+.qa-prompt ul,
+.qa-prompt ol { padding-left: 20px; }
+.qa-prompt li { font: 500 15.5px/1.9 var(--font-sans); color: var(--co-ink-strong); margin-bottom: 4px; }
+.qa-prompt h2,
+.qa-prompt h3 { font: 700 15.5px/1.7 var(--font-sans); color: var(--co-ink-strong); }
+.qa-prompt blockquote {
+  margin-left: 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--co-line);
+  color: var(--co-muted);
+}
+.qa-prompt a { color: var(--co-navy); text-decoration: underline; }
+
+.qa-answer > div > * { margin: 0 0 10px; }
+.qa-answer > div > *:last-child { margin-bottom: 0; }
+.qa-answer ul,
+.qa-answer ol { padding-left: 20px; }
+.qa-answer li { font: 400 14.5px/1.92 var(--font-sans); color: var(--co-ink-strong); margin-bottom: 4px; }
+.qa-answer h2,
+.qa-answer h3:not(:first-child) { margin-top: 20px; }
+.qa-answer blockquote {
+  margin-left: 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--co-navy);
+  color: var(--co-muted);
+}
+.qa-answer a { color: var(--co-navy); text-decoration: underline; }
+.qa-answer div + h3 { margin-top: 20px; }
+
+.rc-q-prompt > * { margin: 0 0 10px; }
+.rc-q-prompt > *:last-child { margin-bottom: 0; }
+.rc-q-prompt ul,
+.rc-q-prompt ol { padding-left: 20px; }
+.rc-q-prompt li { font-size: 15px; line-height: 1.8; color: var(--co-ink-strong); margin-bottom: 4px; }
+.rc-q-prompt a { color: var(--co-navy); text-decoration: underline; }

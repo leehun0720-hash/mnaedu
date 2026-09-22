@@ -95,7 +95,11 @@ export default function QuestionsSection({
                   <span className="qa-type">{q.type}</span>
                 </div>
 
-                <p className="qa-prompt">{q.prompt}</p>
+                {/* 저장할 때 걸렀고 내보낼 때 한 번 더 걸렀다 — 그래서 그대로 그린다 */}
+                <div
+                  className="qa-prompt"
+                  dangerouslySetInnerHTML={{ __html: q.promptHtml ?? q.prompt }}
+                />
 
                 {q.choices && q.choices.length > 0 && (
                   <ul className="qa-choices">
@@ -122,13 +126,13 @@ export default function QuestionsSection({
                     {shown.answer && (
                       <>
                         <h3>정답</h3>
-                        <p>{shown.answer}</p>
+                        <div dangerouslySetInnerHTML={{ __html: shown.answer }} />
                       </>
                     )}
                     {shown.explanation && (
                       <>
                         <h3>해설</h3>
-                        <p>{shown.explanation}</p>
+                        <div dangerouslySetInnerHTML={{ __html: shown.explanation }} />
                       </>
                     )}
                   </div>

@@ -13,6 +13,7 @@ import {
   type Stage,
 } from "@/lib/questions";
 import { RECRUIT_TRACK } from "@/lib/recruit";
+import { bodyToHtml, htmlToText } from "@/lib/rich-text";
 
 /**
  * 서버 전용 — postgres 드라이버는 Node 소켓을 쓰므로 클라이언트 번들에
@@ -43,7 +44,8 @@ export async function getPublicQuestions(limit = 3): Promise<PublicQuestion[]> {
       track: normalizeTrack(r.track),
       trackLabel: courseLabel(r.track),
       type: r.format,
-      prompt: r.prompt,
+      prompt: htmlToText(r.prompt),
+      promptHtml: bodyToHtml(r.prompt),
       choices: r.choices ?? undefined,
     }));
   } catch (err) {
@@ -58,7 +60,10 @@ export type QuizQuestion = {
   track: string;
   trackLabel: string;
   format: string;
+  /** 태그를 벗긴 글자 — 제목 자리에 쓴다 */
   prompt: string;
+  /** 그릴 준비가 된 본문 */
+  promptHtml: string;
   choices: string[] | null;
   /** 해설이 등록되어 있는지만 알려준다 — 본문은 /api/explanation으로만 나간다 */
   hasExplanation: boolean;
@@ -80,7 +85,8 @@ export async function getQuizQuestion(id: number): Promise<QuizQuestion | null> 
       track: r.track,
       trackLabel: courseLabel(r.track),
       format: r.format,
-      prompt: r.prompt,
+      prompt: htmlToText(r.prompt),
+      promptHtml: bodyToHtml(r.prompt),
       choices: r.choices ?? null,
       hasExplanation: Boolean(r.explanation),
     };
@@ -124,7 +130,8 @@ export async function getQuestionsByTrack(
       trackLabel: courseLabel(r.track),
       stage: normalizeStage(r.stage) ?? undefined,
       type: r.format,
-      prompt: r.prompt,
+      prompt: htmlToText(r.prompt),
+      promptHtml: bodyToHtml(r.prompt),
       choices: r.choices ?? undefined,
     }));
   } catch (err) {

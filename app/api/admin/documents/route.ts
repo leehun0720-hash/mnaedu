@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { documents } from "@/db/schema";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
-import { COURSES, normalizeStage } from "@/lib/questions";
+import { COURSES, normalizeStage, normalizeTrack } from "@/lib/questions";
 import {
   DOCUMENT_KINDS,
   MAX_FILE_BYTES,
@@ -17,7 +17,7 @@ import {
   safeFileName,
 } from "@/lib/documents";
 import { readJsonBody, runQuery } from "@/lib/admin-api";
-import { sanitizeHtml, textLength } from "@/lib/rich-text";
+import { editorHtml, textLength } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
 // 파일이 붙는 요청이라 기본 시간으로는 모자랄 수 있다
@@ -35,6 +35,9 @@ function guardStorage() {
     { status: 503 }
   );
 }
+
+/** 한 면에 올리는 자료 수 — 회장 지시(2026-09-22) */
+export const DOCUMENTS_PAGE_SIZE = 20;
 
 const LIST = {
   id: documents.id,
@@ -73,9 +76,65 @@ export async function GET(request: Request) {
     return NextResponse.json({ document: { ...rest, body: isTextDocument(row.mimeType) ? content : "" } });
   }
 
-  const out = await runQuery(getDb().select(LIST).from(documents).orderBy(desc(documents.createdAt)), "자료 목록");
+  /**
+   * 목록은 한 면씩 잘라서 준다.
+   *
+   * 회장 지시(2026-09-22): 한 면에 20개만 보이고 나머지는 검색으로 찾게 한다.
+   * 전에는 전부 한꺼번에 내려보냈다 — 자료가 쌓일수록 화면이 길어지고, 찾으려면
+   * 끝까지 굴려 내려가야 했다. 쌓이는 자료는 목록이 아니라 검색으로 찾는 것이
+   * 맞다.
+   */
+  const params = new URL(request.url).searchParams;
+  const q = (params.get("q") ?? "").trim();
+  const track = (params.get("track") ?? "").trim();
+  const state = (params.get("state") ?? "").trim();
+  const page = Math.max(1, Number(params.get("page")) || 1);
+
+  const filters: SQL[] = [];
+  if (q) {
+    const like = `%${q}%`;
+    // 제목과 파일 이름 둘 다 본다 — 예전에 파일로 올린 자료는 제목이 파일명이다
+    const match = or(ilike(documents.title, like), ilike(documents.fileName, like));
+    if (match) filters.push(match);
+  }
+  if (track) filters.push(eq(documents.track, track));
+  if (state === "published") filters.push(eq(documents.published, true));
+  if (state === "draft") filters.push(eq(documents.published, false));
+  const where = filters.length ? and(...filters) : undefined;
+
+  const db = getDb();
+  const out = await runQuery(
+    Promise.all([
+      db
+        .select(LIST)
+        .from(documents)
+        .where(where)
+        .orderBy(desc(documents.createdAt))
+        .limit(DOCUMENTS_PAGE_SIZE)
+        .offset((page - 1) * DOCUMENTS_PAGE_SIZE),
+      db.select({ value: count() }).from(documents).where(where),
+      // 분야 고르개에 건수를 함께 띄운다 — 어디에 무엇이 쌓였는지 보인다
+      db.select({ track: documents.track, value: count() }).from(documents).groupBy(documents.track),
+    ]),
+    "자료 목록"
+  );
   if (!out.ok) return out.response;
-  return NextResponse.json({ documents: out.value });
+  const [rows, [totals], trackRows] = out.value;
+
+  const byTrack: Record<string, number> = {};
+  for (const r of trackRows) {
+    const key = normalizeTrack(r.track ?? "");
+    if (!key) continue;
+    byTrack[key] = (byTrack[key] ?? 0) + Number(r.value);
+  }
+
+  return NextResponse.json({
+    documents: rows,
+    total: totals?.value ?? 0,
+    page,
+    pageSize: DOCUMENTS_PAGE_SIZE,
+    byTrack,
+  });
 }
 
 type TextPayload = {
@@ -106,7 +165,7 @@ function validateText(input: TextPayload, { requireBody }: { requireBody: boolea
   }
 
   // 편집기가 내놓는 HTML 은 여기서 거른다 — 허락한 서식만 남는다
-  const body = sanitizeHtml((input.body ?? "").replace(/\r\n/g, "\n").trim());
+  const body = editorHtml((input.body ?? "").replace(/\r\n/g, "\n").trim());
   if (requireBody && textLength(body) < 20) {
     return { error: "본문이 너무 짧습니다. 자료 전문을 붙여넣어 주십시오." as const };
   }

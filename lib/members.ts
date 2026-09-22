@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/db";
 import { members, questions } from "@/db/schema";
 import { isRecruitTrack } from "@/lib/recruit";
+import { bodyToHtml } from "@/lib/rich-text";
 import { getAuthUser } from "@/lib/supabase/server";
 import { withDeadline } from "@/lib/deadline";
 
@@ -144,9 +145,15 @@ export async function revealAnswer(questionId: number): Promise<RevealResult> {
   if (isRecruitTrack(question.track)) return { ok: false, reason: "not-found" };
   if (!question.answer && !question.explanation) return { ok: false, reason: "not-found" };
 
+  /**
+   * 그릴 준비가 된 HTML 로 내보낸다.
+   *
+   * 회장이 편집기로 쓰신 서식이 회원 화면에서도 그대로 서야 한다. 예전에
+   * 평문으로 저장한 것은 bodyToHtml 이 문단으로 만들어 주므로 함께 산다.
+   */
   return {
     ok: true,
-    answer: question.answer ?? "",
-    explanation: question.explanation ?? "",
+    answer: bodyToHtml(question.answer ?? ""),
+    explanation: bodyToHtml(question.explanation ?? ""),
   };
 }

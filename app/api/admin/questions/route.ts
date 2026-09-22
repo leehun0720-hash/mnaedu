@@ -8,6 +8,7 @@ import { verifySession } from "@/lib/admin-auth";
 import { COURSES, FORMATS, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { RECRUIT_TRACK } from "@/lib/recruit";
 import { readJsonBody, runQuery, storageFailure } from "@/lib/admin-api";
+import { editorHtml, textLength } from "@/lib/rich-text";
 
 /** 한 화면에 올리는 문제 수. 문제은행이 커져도 목록은 이 크기로 유지된다. */
 export const PAGE_SIZE = 20;
@@ -38,10 +39,19 @@ type Payload = {
   published?: boolean;
 };
 
-/** Rejects rather than coerces: a silently mangled question is worse than an error. */
+/**
+ * 저장할 글을 걸러 낸다.
+ *
+ * 회장 지시(2026-09-22): 문제 출제에도 편집기를 쓴다. 그래서 세 칸이 모두
+ * 서식 있는 글로 들어온다 — 칼럼·업무정보실과 같은 체로 거른다. 허용한
+ * 태그만 남기고 워드가 끼워 넣는 잡동사니는 버린다.
+ *
+ * 길이는 태그를 뺀 글자 수로 센다. 그러지 않으면 빈 문단 하나가 열 글자로
+ * 세어져, 아무것도 안 적은 문제가 통과한다.
+ */
 function validate(body: Payload) {
-  const prompt = (body.prompt ?? "").trim();
-  if (prompt.length < 10) return { error: "문제 본문이 너무 짧습니다." as const };
+  const prompt = editorHtml(body.prompt ?? "");
+  if (textLength(prompt) < 10) return { error: "문제 본문이 너무 짧습니다." as const };
   /**
    * 다섯 업무 분야에 더해 채용시험 자리를 받는다.
    *
@@ -69,9 +79,10 @@ function validate(body: Payload) {
       format: body.format as string,
       prompt,
       choices,
-      answer: (body.answer ?? "").trim() || null,
+      // 빈 편집기는 sanitizeHtml 이 빈 문자열로 돌려준다 — 그때는 '없음'으로 담는다
+      answer: editorHtml(body.answer ?? "") || null,
       intent: (body.intent ?? "").trim() || null,
-      explanation: (body.explanation ?? "").trim() || null,
+      explanation: editorHtml(body.explanation ?? "") || null,
       published: Boolean(body.published),
     },
   };

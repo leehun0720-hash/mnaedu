@@ -10,6 +10,7 @@ import {
   type ApplyStatus,
   type ApplyValid,
 } from "@/lib/recruit";
+import { bodyToHtml, htmlToText } from "@/lib/rich-text";
 
 /**
  * 직원채용 — 시험 문제 조회와 지원서 보관.
@@ -23,7 +24,10 @@ import {
 export type ExamQuestion = {
   id: number;
   no: number;
+  /** 태그를 벗긴 글자 — 답안에 함께 담아 두는 사진이다 */
   prompt: string;
+  /** 그릴 준비가 된 본문 */
+  promptHtml: string;
 };
 
 /**
@@ -42,7 +46,12 @@ export async function getExamQuestions(limit = MAX_EXAM_QUESTIONS): Promise<Exam
       .where(and(eq(questions.published, true), eq(questions.track, RECRUIT_TRACK)))
       .orderBy(asc(questions.createdAt))
       .limit(limit);
-    return rows.map((r, i) => ({ id: r.id, no: i + 1, prompt: r.prompt }));
+    return rows.map((r, i) => ({
+      id: r.id,
+      no: i + 1,
+      prompt: r.prompt,
+      promptHtml: bodyToHtml(r.prompt),
+    }));
   } catch (err) {
     console.error("[recruit] exam questions failed:", err);
     return [];
@@ -242,7 +251,11 @@ export async function getApplicationDetail(id: number): Promise<ApplicationDetai
       questionId: e.questionId,
       prompt: e.prompt,
       answer: e.answer,
-      official: official.get(e.questionId) ?? null,
+      // 회장은 읽고 견주기만 하시므로 태그를 벗긴 글자로 드린다
+      official: (() => {
+        const raw = official.get(e.questionId);
+        return raw ? htmlToText(raw) : null;
+      })(),
     })),
   };
 }

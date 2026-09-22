@@ -174,6 +174,26 @@ export function bodyToHtml(body: string): string {
   return looksLikeHtml(body) ? sanitizeHtml(body) : plainToHtml(body);
 }
 
+/**
+ * 편집기가 낸 글을 '저장할 모양'으로 만든다.
+ *
+ * 편집기는 한 줄만 쓰고 엔터를 누르지 않으면 문단 태그 없이 낱개 태그만
+ * 남긴다 — 예를 들어 `방어 수단을 <strong>세 가지</strong> 드십시오`.
+ * 그 상태로 저장하면 bodyToHtml 이 덩어리 태그를 못 찾아 '옛 평문'으로 보고
+ * 통째로 escape 한다. 그러면 화면에 태그가 글자로 드러난다.
+ *
+ * 실제로 그랬다(2026-09-22, 문제 출제에 편집기를 넣으며 발견). 짧은 칼럼과
+ * 짧은 업무자료에도 같은 일이 일어날 자리였다.
+ *
+ * 그래서 걸러 낸 뒤 덩어리 태그가 없으면 문단으로 감싼다. 이 한 줄이 '편집기가
+ * 낸 글'과 '옛 평문'을 가르는 표시가 되어, 낱개 서식만 쓴 글도 살아남는다.
+ */
+export function editorHtml(input: string): string {
+  const clean = sanitizeHtml(input);
+  if (!clean) return "";
+  return looksLikeHtml(clean) ? clean : `<p>${clean}</p>`;
+}
+
 /** 태그를 벗긴 글자만 — 요약·길이 검사·검색 설명에 쓴다 */
 export function htmlToText(html: string): string {
   return (html ?? "")

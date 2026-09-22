@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { COURSES, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { APPLY_STATUSES, RECRUIT_LABEL, RECRUIT_TRACK } from "@/lib/recruit";
-import { bodyToHtml, textLength } from "@/lib/rich-text";
+import { bodyToHtml, htmlToText, textLength } from "@/lib/rich-text";
 import RichEditor from "./rich-editor";
 
 /**
@@ -68,7 +68,13 @@ type MemberRow = {
 type Coverage = Record<string, { total: number; published: number }>;
 
 type QuestionsResponse = { questions: Row[]; total: number; page: number; coverage: Coverage };
-type DocumentsResponse = { documents: DocRow[] };
+type DocumentsResponse = {
+  documents: DocRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  byTrack: Record<string, number>;
+};
 type MembersResponse = { members: MemberRow[]; total: number; page: number; pageSize: number };
 
 /** 지원자 — 채용시험을 치르고 지원 의사를 보낸 사람 */
@@ -255,6 +261,25 @@ export default function AdminClient({
   /** 편집기의 시작 본문. key 가 바뀔 때만 편집기가 다시 읽는다 */
   const [articleEditor, setArticleEditor] = useState({ html: "", key: 0 });
 
+  // 업무정보실 목록 — 한 면에 20건, 나머지는 검색으로 찾는다
+  const [docTotal, setDocTotal] = useState(0);
+  const [docPageSize, setDocPageSize] = useState(20);
+  const [docByTrack, setDocByTrack] = useState<Record<string, number>>({});
+  const [docQuery, setDocQuery] = useState("");
+  const [docSearch, setDocSearch] = useState("");
+  /** 목록을 거르는 조건 — 올릴 때 고르는 docTrack 과 다른 것이다 */
+  const [docFilterTrack, setDocFilterTrack] = useState("");
+  const [docFilterState, setDocFilterState] = useState("");
+  const [docPage, setDocPage] = useState(1);
+
+  /**
+   * 문제·정답·해설 편집기의 시작 본문.
+   *
+   * 셋이 key 를 함께 쓴다 — 새 문제로 돌리거나 다른 문제를 불러올 때 셋이
+   * 같이 갈리기 때문이다. 따로 두면 정답만 옛 글이 남는 일이 생긴다.
+   */
+  const [qEditor, setQEditor] = useState({ prompt: "", answer: "", explanation: "", key: 0 });
+
   // 회원
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [memberTotal, setMemberTotal] = useState(0);
@@ -356,13 +381,20 @@ export default function AdminClient({
   }, [page, query, filterTrack, filterState, readJson]);
 
   const loadDocuments = useCallback(async () => {
-    const data = await readJson<DocumentsResponse>("/api/admin/documents");
+    const params = new URLSearchParams({ page: String(docPage) });
+    if (docSearch.trim()) params.set("q", docSearch.trim());
+    if (docFilterTrack) params.set("track", docFilterTrack);
+    if (docFilterState) params.set("state", docFilterState);
+    const data = await readJson<DocumentsResponse>(`/api/admin/documents?${params}`);
     if (isFailure(data)) {
       setError(data.message);
       return;
     }
     setDocs(data.documents);
-  }, [readJson]);
+    setDocTotal(data.total ?? data.documents.length);
+    setDocPageSize(data.pageSize || 20);
+    setDocByTrack(data.byTrack ?? {});
+  }, [readJson, docPage, docSearch, docFilterTrack, docFilterState]);
 
   const loadMembers = useCallback(async () => {
     const params = new URLSearchParams({ page: String(memberPage) });
@@ -699,6 +731,14 @@ export default function AdminClient({
     return () => window.clearTimeout(t);
   }, [qnaQuery]);
 
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setDocSearch(docQuery);
+      setDocPage(1);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [docQuery]);
+
   /** 탭을 옮기면 앞 탭에서 뜬 문구는 두고 간다 — 그 탭의 사연일 뿐이다 */
   function goTab(next: Tab) {
     setTab(next);
@@ -831,6 +871,13 @@ export default function AdminClient({
       explanation: r.explanation ?? "",
       published: r.published,
     });
+    // 예전에 평문으로 저장한 문제도 그대로 열린다 — bodyToHtml 이 문단을 만들어 준다
+    setQEditor((e) => ({
+      prompt: bodyToHtml(r.prompt),
+      answer: bodyToHtml(r.answer ?? ""),
+      explanation: bodyToHtml(r.explanation ?? ""),
+      key: e.key + 1,
+    }));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -1245,34 +1292,38 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 </p>
               )}
 
-              <label className="admin-field">
-                문제 <small>누구나 볼 수 있습니다</small>
-                <textarea
-                  rows={5}
-                  value={draft.prompt}
-                  onChange={(e) => setDraft({ ...draft, prompt: e.target.value })}
-                  required
+              <div className="admin-field">
+                문제 <small>누구나 볼 수 있습니다 — 워드에서 그대로 붙여넣으셔도 됩니다</small>
+                <RichEditor
+                  initialHtml={qEditor.prompt}
+                  resetKey={`q-prompt-${qEditor.key}`}
+                  minRows={6}
+                  placeholder="문제를 쓰거나 붙여넣으십시오."
+                  onChange={(html) => setDraft((d) => ({ ...d, prompt: html }))}
                 />
-              </label>
+              </div>
 
-
-              <label className="admin-field">
+              <div className="admin-field">
                 정답 <small>로그인한 회원에게 공개됩니다</small>
-                <textarea
-                  rows={4}
-                  value={draft.answer}
-                  onChange={(e) => setDraft({ ...draft, answer: e.target.value })}
+                <RichEditor
+                  initialHtml={qEditor.answer}
+                  resetKey={`q-answer-${qEditor.key}`}
+                  minRows={5}
+                  placeholder="정답을 쓰십시오."
+                  onChange={(html) => setDraft((d) => ({ ...d, answer: html }))}
                 />
-              </label>
+              </div>
 
-              <label className="admin-field">
+              <div className="admin-field">
                 해설 <small>로그인한 회원에게 공개됩니다 — 실무에서 갈리는 지점</small>
-                <textarea
-                  rows={5}
-                  value={draft.explanation}
-                  onChange={(e) => setDraft({ ...draft, explanation: e.target.value })}
+                <RichEditor
+                  initialHtml={qEditor.explanation}
+                  resetKey={`q-explanation-${qEditor.key}`}
+                  minRows={6}
+                  placeholder="왜 그것이 답인지, 실무에서 무엇이 갈리는지 적으십시오."
+                  onChange={(html) => setDraft((d) => ({ ...d, explanation: html }))}
                 />
-              </label>
+              </div>
 
               <label className="admin-check">
                 <input
@@ -1291,7 +1342,10 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   <button
                     type="button"
                     className="admin-btn admin-btn--quiet"
-                    onClick={() => setDraft(EMPTY)}
+                    onClick={() => {
+                      setDraft(EMPTY);
+                      setQEditor((e) => ({ prompt: "", answer: "", explanation: "", key: e.key + 1 }));
+                    }}
                   >
                     새 문제로
                   </button>
@@ -1362,7 +1416,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                         {!r.answer && <span className="admin-tag admin-tag--warn">정답 없음</span>}
                         {!r.explanation && <span className="admin-tag admin-tag--warn">해설 없음</span>}
                       </div>
-                      <p className="admin-list-prompt">{r.prompt}</p>
+                      <p className="admin-list-prompt">{htmlToText(r.prompt)}</p>
                       {r.intent && (
                         <p className="admin-legacy">
                           <strong>옛 출제 의도(비공개 보관):</strong> {r.intent}
@@ -1622,9 +1676,79 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             </form>
 
             <section className="admin-card">
-              <h2>올린 업무정보 ({docs.length}건)</h2>
+              <h2>
+                올린 업무정보 <small>{docTotal}건</small>
+              </h2>
+              <p className="admin-note">
+                한 면에 {docPageSize}건씩 보입니다. 예전에 올리신 자료는 아래에서 찾으십시오.
+              </p>
+
+              <div className="admin-counts">
+                {COURSES.map((c) => (
+                  <button
+                    key={c.slug}
+                    type="button"
+                    data-on={docFilterTrack === c.slug}
+                    onClick={() => {
+                      setDocFilterTrack(docFilterTrack === c.slug ? "" : c.slug);
+                      setDocPage(1);
+                    }}
+                  >
+                    {c.label} <b>{docByTrack[c.slug] ?? 0}</b>
+                  </button>
+                ))}
+                {(
+                  [
+                    ["published", "발행"],
+                    ["draft", "임시"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    data-on={docFilterState === key}
+                    onClick={() => {
+                      setDocFilterState(docFilterState === key ? "" : key);
+                      setDocPage(1);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+                {(docFilterTrack || docFilterState) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocFilterTrack("");
+                      setDocFilterState("");
+                      setDocPage(1);
+                    }}
+                  >
+                    전체 보기
+                  </button>
+                )}
+              </div>
+
+              <div className="admin-row">
+                <label style={{ flex: 1 }}>
+                  찾기 <small>제목 · 파일 이름</small>
+                  <input
+                    value={docQuery}
+                    onChange={(e) => setDocQuery(e.target.value)}
+                    placeholder="찾으실 제목의 일부"
+                  />
+                </label>
+                <button type="button" className="admin-btn admin-btn--quiet" onClick={() => loadDocuments()}>
+                  다시 불러오기
+                </button>
+              </div>
+
               {docs.length === 0 ? (
-                <p className="admin-note">아직 올린 자료가 없습니다.</p>
+                <p className="admin-note">
+                  {docSearch || docFilterTrack || docFilterState
+                    ? "조건에 맞는 자료가 없습니다."
+                    : "아직 올린 자료가 없습니다."}
+                </p>
               ) : (
                 <ul className="admin-list">
                   {docs.map((d) => (
@@ -1673,6 +1797,24 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {docTotal > docPageSize && (
+                <div className="admin-pager">
+                  <button type="button" disabled={docPage <= 1} onClick={() => setDocPage(docPage - 1)}>
+                    이전
+                  </button>
+                  <span>
+                    {docPage} / {Math.ceil(docTotal / docPageSize)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={docPage >= Math.ceil(docTotal / docPageSize)}
+                    onClick={() => setDocPage(docPage + 1)}
+                  >
+                    다음
+                  </button>
+                </div>
               )}
             </section>
           </>
@@ -2053,7 +2195,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 <ol className="admin-answers">
                   {openApplicant.answers.map((a, i) => (
                     <li key={`${a.questionId}-${i}`}>
-                      <p className="admin-answers-q">{a.prompt}</p>
+                      <p className="admin-answers-q">{htmlToText(a.prompt)}</p>
                       <div className="admin-answers-body">
                         <div>
                           <h4>지원자 답안</h4>

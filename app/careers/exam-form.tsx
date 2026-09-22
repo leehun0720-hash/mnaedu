@@ -108,7 +108,11 @@ export default function ExamForm({ questions }: { questions: ExamQuestion[] }) {
               {questions.map((q) => (
                 <li key={q.id}>
                   <p className="rc-q-no">문제 {q.no}</p>
-                  <p className="rc-q-prompt">{q.prompt}</p>
+                  {/* 저장할 때 거른 글이다 — 그대로 그린다 */}
+                  <div
+                    className="rc-q-prompt"
+                    dangerouslySetInnerHTML={{ __html: q.promptHtml }}
+                  />
                   <textarea
                     value={answers[q.id] ?? ""}
                     onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
