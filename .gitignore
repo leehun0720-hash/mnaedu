@@ -49,3 +49,10 @@ next-env.d.ts
 /tenai-builder/node_modules/
 /tenai-builder/.next/
 /tenai-builder/out/
+
+# 바깥에서 받은 스킬 (npx skills add). 이 저장소는 공개이므로 남의 저작물을
+# 여기에 얹지 않는다. 작업하는 컴퓨터에서는 그대로 쓰이고, 다른 컴퓨터에서는
+# 같은 명령을 한 번 더 실행하면 된다.
+/.agents/
+/.claude/skills/
+/skills-lock.json
