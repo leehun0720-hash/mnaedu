@@ -2117,7 +2117,18 @@ textarea:focus-visible {
 .admin-form { display: flex; flex-direction: column; gap: 12px; }
 .admin-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
 .admin-row > label { flex: 1 1 180px; }
-.admin-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+/*
+ * 칸 이름은 어디서나 같은 크기여야 한다.
+ *
+ * .admin label 이 13px/600 을 주는데, 편집기를 쓰는 칸은 <label> 이 아니라
+ * <div> 다(안에 편집 영역이 들어가므로 label 로 감싸면 눌렀을 때 초점이 엉킨다).
+ * 그래서 그 칸의 이름만 바탕 글자 크기인 15px 로 떠 있었다 — 회장이 "소제목을
+ * 고른 정도로 크다"고 하신 자리다. 편집기 본문은 제 크기(15px)를 따로 갖는다.
+ */
+.admin-field {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;
+  font-size: 13px; font-weight: 600; color: var(--ink-strong);
+}
 .admin label { font-size: 13px; font-weight: 600; color: var(--ink-strong); display: block; }
 .admin label small { font-weight: 400; color: var(--muted); margin-left: 6px; }
 .admin input, .admin select, .admin textarea {

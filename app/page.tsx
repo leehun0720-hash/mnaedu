@@ -16,6 +16,7 @@ import SiteRail from "./site-rail";
 import ContactForm from "./contact-form";
 import UpdatesSection from "./updates-section";
 import { getPublicQuestions } from "@/lib/questions-db";
+import { getPublicFaqs } from "@/lib/qna-db";
 import { getPublicDocuments } from "@/lib/documents";
 import AdminLink from "./admin-link";
 import { getCurrentMember } from "@/lib/members";
@@ -43,14 +44,19 @@ export const dynamic = "force-dynamic";
 const HOME_BOARD_SIZE = 20;
 
 export default async function HomePage() {
-  const [questions, documents, member, latestArticles, articleCount] = await Promise.all([
+  const [questions, documents, member, latestArticles, articleCount, faqRows] = await Promise.all([
     getPublicQuestions(5),
     getPublicDocuments(5),
     getCurrentMember(),
     getPublishedArticles(HOME_BOARD_SIZE),
     countPublishedArticles(),
+    getPublicFaqs(),
   ]);
   const signedIn = member !== null;
+  // 자주 묻는 질문은 회장이 올리신 것을 세우고, 아직 없으면 처음의 여섯을 쓴다
+  const faqs = faqRows.length
+    ? faqRows.map((f) => ({ q: f.question, a: f.answer }))
+    : FAQS.map((f) => ({ q: f.q, a: f.a }));
 
   return (
     <div className="co-page">
@@ -283,7 +289,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="co-faq co-reveal">
-            {FAQS.map((f) => (
+            {faqs.map((f) => (
               <details key={f.q} className="co-faq-item">
                 <summary>
                   <span>{f.q}</span>

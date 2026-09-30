@@ -62,13 +62,23 @@ function validate(body: Payload) {
   if (!allowed) return { error: "분야를 선택해 주십시오." as const };
   if (!FORMATS.includes(body.format as never)) return { error: "유형을 선택해 주십시오." as const };
 
+  /**
+   * 보기(choices)는 선택이다.
+   *
+   * 전에는 객관식이면 보기를 두 개 이상 따로 넣어야 저장되었다. 그런데 회장은
+   * ①②③ 을 문제 본문에 함께 적으신다 — 그 편이 읽기에도 자연스럽다. 그래서
+   * 보기 칸을 비워 두고도 객관식으로 낼 수 있게 한다.
+   *
+   * 보기를 적으셨다면 한 개만 남는 일은 막는다. 보기가 하나뿐인 객관식은
+   * 문제가 아니라 오타이기 때문이다.
+   */
   let choices: string[] | null = null;
   if (body.format === "객관식") {
     const list = Array.isArray(body.choices)
       ? body.choices.map((c) => String(c).trim()).filter(Boolean)
       : [];
-    if (list.length < 2) return { error: "객관식은 보기가 2개 이상이어야 합니다." as const };
-    choices = list;
+    if (list.length === 1) return { error: "보기를 적으시려면 두 개 이상 적어 주십시오." as const };
+    choices = list.length ? list : null;
   }
 
   return {

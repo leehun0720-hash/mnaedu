@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS "qna" (
 	"answer" text,
 	"answered_at" timestamp with time zone,
 	"secret" boolean DEFAULT false NOT NULL,
+	"faq" boolean DEFAULT false NOT NULL,
 	"published" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -197,6 +198,8 @@ ALTER TABLE "documents" ADD COLUMN IF NOT EXISTS "stage" text;
 ALTER TABLE "articles" ADD COLUMN IF NOT EXISTS "stage" text;
 -- 회원 메모. 회장이 관리자 화면에서 적어 두시는 자리로, 회원에게는 보이지 않습니다.
 ALTER TABLE "members" ADD COLUMN IF NOT EXISTS "note" text;
+-- 자주 묻는 질문 표시. 켜진 Q&A 는 게시판이 아니라 「자주 묻는 질문」 자리에 섭니다.
+ALTER TABLE "qna" ADD COLUMN IF NOT EXISTS "faq" boolean DEFAULT false NOT NULL;
 
 -- ─────────────────────────────────────────────────────────────
 -- 2부. 접근 차단 — 이 부분을 건너뛰면 안 됩니다

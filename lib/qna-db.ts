@@ -24,9 +24,39 @@ export type PublicQna = {
   createdAt: string;
 };
 
-/** 공개 조건 — 발행했고, 비밀글이 아닌 것 */
+/**
+ * 공개 조건 — 발행했고, 비밀글이 아닌 것.
+ *
+ * 「자주 묻는 질문」으로 세운 것은 게시판에서 뺀다. 같은 글이 위아래에
+ * 두 번 서면 읽는 사람이 어느 쪽을 봐야 할지 모른다.
+ */
 function openFilter() {
-  return and(eq(qna.published, true), eq(qna.secret, false));
+  return and(eq(qna.published, true), eq(qna.secret, false), eq(qna.faq, false));
+}
+
+/** 자주 묻는 질문 — 회장이 직접 올리고 세운 것 */
+export type PublicFaq = { id: number; question: string; answer: string };
+
+export async function getPublicFaqs(limit = 30): Promise<PublicFaq[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const rows = await getDb()
+      .select({ id: qna.id, title: qna.title, answer: qna.answer, body: qna.body })
+      .from(qna)
+      .where(and(eq(qna.published, true), eq(qna.faq, true)))
+      // 올린 차례대로 — 자주 묻는 질문은 최신 글 목록이 아니라 읽어 내려가는 차례다
+      .orderBy(qna.createdAt)
+      .limit(limit);
+    return rows.map((r) => ({
+      id: r.id,
+      question: r.title,
+      // 답을 아직 안 적으셨으면 질문에 적어 두신 내용을 대신 세운다
+      answer: (r.answer ?? "").trim() || r.body,
+    }));
+  } catch (err) {
+    console.error("[qna] faq list failed:", err);
+    return [];
+  }
 }
 
 export async function getPublicQna(limit = 10, offset = 0): Promise<PublicQna[]> {
@@ -111,6 +141,76 @@ export async function createQuestion(value: QnaValid): Promise<number | null> {
   return row?.id ?? null;
 }
 
+/**
+ * 회장이 직접 올리는 Q&A.
+ *
+ * 회장 지시(2026-09-30): 자주 묻는 질문을 관리자 화면에서 직접 올릴 수 있게.
+ * 방문자가 보낸 질문과 같은 표에 담되, 이름을 회사 이름으로 두고 처음부터
+ * 발행 상태로 세운다 — 회장이 스스로 묻고 답하는 글을 검토 대기에 둘 이유가 없다.
+ */
+export async function createAdminQna(input: {
+  title: string;
+  body: string;
+  answer: string | null;
+  faq: boolean;
+}): Promise<number | null> {
+  if (!isDbConfigured()) return null;
+  const [row] = await getDb()
+    .insert(qna)
+    .values({
+      name: "㈜프론티어 M&A",
+      email: null,
+      title: input.title,
+      body: input.body,
+      answer: input.answer,
+      answeredAt: input.answer ? new Date() : null,
+      secret: false,
+      faq: input.faq,
+      published: true,
+    })
+    .returning({ id: qna.id });
+  return row?.id ?? null;
+}
+
+/**
+ * 코드에 박혀 있던 자주 묻는 질문을 표로 옮긴다.
+ *
+ * 옮겨 두어야 회장이 고치고 지우실 수 있다. 이미 자주 묻는 질문이 하나라도
+ * 있으면 아무 일도 하지 않는다 — 누르실 때마다 같은 글이 쌓이면 안 된다.
+ */
+export async function importDefaultFaqs(
+  defaults: readonly { q: string; a: string }[]
+): Promise<number> {
+  if (!isDbConfigured()) return 0;
+
+  /**
+   * 이미 들어와 있는 질문은 건너뛴다.
+   *
+   * 전에는 자주 묻는 질문이 하나라도 있으면 통째로 멈췄다. 그러면 회장이
+   * 직접 한 건 올리신 뒤에는 이 단추가 영영 아무 일도 하지 않는다. 제목으로
+   * 견주어 없는 것만 채우면, 몇 번을 누르셔도 같은 글이 쌓이지 않는다.
+   */
+  const have = await getDb().select({ title: qna.title }).from(qna).where(eq(qna.faq, true));
+  const known = new Set(have.map((r) => r.title.trim()));
+  const missing = defaults.filter((d) => !known.has(d.q.trim()));
+
+  const now = new Date();
+  const rows = missing.map((d) => ({
+    name: "㈜프론티어 M&A",
+    email: null,
+    title: d.q,
+    body: d.q,
+    answer: d.a,
+    answeredAt: now,
+    secret: false,
+    faq: true,
+    published: true,
+  }));
+  if (rows.length === 0) return 0;
+  await getDb().insert(qna).values(rows);
+  return rows.length;
+}
+
 /* ── 관리자 쪽 ───────────────────────────────────────────── */
 
 export const QNA_PAGE_SIZE = 20;
@@ -123,6 +223,7 @@ export type AdminQnaRow = {
   body: string;
   answer: string | null;
   secret: boolean;
+  faq: boolean;
   published: boolean;
   createdAt: string;
 };
@@ -148,6 +249,7 @@ export async function listQna(q: string, state: string, page: number): Promise<A
   if (state === "waiting") filters.push(sqlNoAnswer());
   if (state === "hidden") filters.push(eq(qna.published, false));
   if (state === "secret") filters.push(eq(qna.secret, true));
+  if (state === "faq") filters.push(eq(qna.faq, true));
   const where = filters.length ? and(...filters) : undefined;
 
   const [rows, [totals], [waitingRow], [hiddenRow]] = await Promise.all([
@@ -172,6 +274,7 @@ export async function listQna(q: string, state: string, page: number): Promise<A
       body: r.body,
       answer: r.answer,
       secret: r.secret,
+      faq: r.faq,
       published: r.published,
       createdAt: r.createdAt.toISOString().slice(0, 10),
     })),
@@ -193,7 +296,7 @@ function sqlNoAnswer(): SQL {
   return or(isNull(qna.answer), eq(qna.answer, "")) as SQL;
 }
 
-export type QnaPatch = { answer?: string | null; published?: boolean; secret?: boolean };
+export type QnaPatch = { answer?: string | null; published?: boolean; secret?: boolean; faq?: boolean };
 
 export async function updateQna(id: number, patch: QnaPatch): Promise<{ ok: boolean; error?: string }> {
   const set: {
@@ -201,6 +304,7 @@ export async function updateQna(id: number, patch: QnaPatch): Promise<{ ok: bool
     answeredAt?: Date | null;
     published?: boolean;
     secret?: boolean;
+    faq?: boolean;
     updatedAt: Date;
   } = { updatedAt: new Date() };
 
@@ -213,6 +317,11 @@ export async function updateQna(id: number, patch: QnaPatch): Promise<{ ok: bool
   }
   if (patch.published !== undefined) set.published = patch.published;
   if (patch.secret !== undefined) set.secret = patch.secret;
+  if (patch.faq !== undefined) {
+    set.faq = patch.faq;
+    // 자주 묻는 질문은 누구나 보는 자리다 — 비밀글이면서 거기 설 수는 없다
+    if (patch.faq) set.secret = false;
+  }
 
   const [row] = await getDb().update(qna).set(set).where(eq(qna.id, id)).returning({ id: qna.id });
   return { ok: Boolean(row) };

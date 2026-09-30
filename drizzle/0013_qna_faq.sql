@@ -1,0 +1,1 @@
+ALTER TABLE "qna" ADD COLUMN IF NOT EXISTS "faq" boolean DEFAULT false NOT NULL;

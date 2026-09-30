@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { COURSES, normalizeStage, normalizeTrack } from "@/lib/questions";
+import { COURSES, FORMATS, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { APPLY_STATUSES, RECRUIT_LABEL, RECRUIT_TRACK } from "@/lib/recruit";
 import { bodyToHtml, htmlToText, textLength } from "@/lib/rich-text";
 import RichEditor from "./rich-editor";
@@ -110,6 +110,7 @@ type QnaRow = {
   body: string;
   answer: string | null;
   secret: boolean;
+  faq: boolean;
   published: boolean;
   createdAt: string;
 };
@@ -322,6 +323,10 @@ export default function AdminClient({
   const [qnaPage, setQnaPage] = useState(1);
   /** 지금 답을 쓰고 있는 질문 — id 와 그 칸의 글 */
   const [qnaEdit, setQnaEdit] = useState<{ id: number; answer: string } | null>(null);
+  /** 회장이 직접 올리는 Q&A */
+  const [qnaNewTitle, setQnaNewTitle] = useState("");
+  const [qnaNewAnswer, setQnaNewAnswer] = useState("");
+  const [qnaNewFaq, setQnaNewFaq] = useState(true);
 
   // 비밀번호 변경
   const [pwCurrent, setPwCurrent] = useState("");
@@ -448,7 +453,7 @@ export default function AdminClient({
       setError("점수는 0에서 100 사이의 숫자로 적어 주십시오.");
       return;
     }
-    const data = await send("/api/admin/applications", {
+    const out = await send("/api/admin/applications", {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -458,7 +463,10 @@ export default function AdminClient({
         memo: gradeMemo,
       }),
     });
-    if (!data) return;
+    if (!out.ok) {
+      setError(out.error ?? "처리하지 못했습니다.");
+      return;
+    }
     setNotice("채점 결과를 저장했습니다.");
     await openApplication(openApplicant.id);
     await loadApplicants();
@@ -466,8 +474,11 @@ export default function AdminClient({
 
   async function removeApplication(id: number) {
     if (!confirm("이 지원서를 지울까요? 답안과 연락처가 함께 사라지며 되돌릴 수 없습니다.")) return;
-    const data = await send(`/api/admin/applications?id=${id}`, { method: "DELETE" });
-    if (!data) return;
+    const out = await send(`/api/admin/applications?id=${id}`, { method: "DELETE" });
+    if (!out.ok) {
+      setError(out.error ?? "처리하지 못했습니다.");
+      return;
+    }
     setNotice("지원서를 지웠습니다.");
     if (openApplicant?.id === id) setOpenApplicant(null);
     await loadApplicants();
@@ -491,32 +502,74 @@ export default function AdminClient({
 
   /** 답을 저장한다. 답을 다는 순간 게시판에 세울지도 함께 정한다. */
   async function saveQnaAnswer(id: number, answer: string, publish: boolean) {
-    const data = await send("/api/admin/qna", {
+    const out = await send("/api/admin/qna", {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ id, answer, ...(publish ? { published: true } : {}) }),
     });
-    if (!data) return;
+    if (!out.ok) {
+      setError(out.error ?? "처리하지 못했습니다.");
+      return;
+    }
     setNotice(publish ? "답변을 저장하고 게시판에 세웠습니다." : "답변을 저장했습니다.");
     setQnaEdit(null);
     await loadQna();
   }
 
   /** 게시판에 세우거나 내린다 */
-  async function toggleQna(id: number, field: "published" | "secret", value: boolean) {
-    const data = await send("/api/admin/qna", {
+  async function toggleQna(id: number, field: "published" | "secret" | "faq", value: boolean) {
+    const out = await send("/api/admin/qna", {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ id, [field]: value }),
     });
-    if (!data) return;
+    if (!out.ok) {
+      setError(out.error ?? "처리하지 못했습니다.");
+      return;
+    }
+    await loadQna();
+  }
+
+  /** 회장이 스스로 묻고 답하는 글을 올린다 — 올리는 즉시 화면에 선다 */
+  async function postQna(e: React.FormEvent) {
+    e.preventDefault();
+    const out = await send("/api/admin/qna", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: qnaNewTitle, answer: qnaNewAnswer, faq: qnaNewFaq }),
+    });
+    if (!out.ok) {
+      setError(out.error ?? "처리하지 못했습니다.");
+      return;
+    }
+    setNotice(qnaNewFaq ? "자주 묻는 질문에 올렸습니다." : "게시판에 올렸습니다.");
+    setQnaNewTitle("");
+    setQnaNewAnswer("");
+    await loadQna();
+  }
+
+  /** 코드에 박혀 있던 자주 묻는 질문 여섯을 표로 옮긴다 — 그래야 고치고 지울 수 있다 */
+  async function importFaqs() {
+    const out = await send("/api/admin/qna", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "import-faqs" }),
+    });
+    if (!out.ok) {
+      setError(out.error ?? "처리하지 못했습니다.");
+      return;
+    }
+    setNotice((out.data.message as string) ?? "옮겼습니다.");
     await loadQna();
   }
 
   async function removeQna(id: number) {
     if (!confirm("이 질문을 지울까요? 답변과 함께 사라지며 되돌릴 수 없습니다.")) return;
-    const data = await send(`/api/admin/qna?id=${id}`, { method: "DELETE" });
-    if (!data) return;
+    const out = await send(`/api/admin/qna?id=${id}`, { method: "DELETE" });
+    if (!out.ok) {
+      setError(out.error ?? "처리하지 못했습니다.");
+      return;
+    }
     setNotice("질문을 지웠습니다.");
     if (qnaEdit?.id === id) setQnaEdit(null);
     await loadQna();
@@ -852,6 +905,14 @@ export default function AdminClient({
         return;
       }
       setDraft(EMPTY);
+      /**
+       * 편집기도 함께 비운다.
+       *
+       * setDraft 만 부르면 상태만 비고 편집기 안의 글자는 그대로 남는다 —
+       * 편집기는 resetKey 가 바뀔 때만 다시 읽기 때문이다. 그래서 저장한 뒤
+       * 다음 문제를 내려면 세 칸을 손으로 지워야 했다.
+       */
+      setQEditor((ed) => ({ prompt: "", answer: "", explanation: "", key: ed.key + 1 }));
       setNotice(draft.id ? "수정했습니다." : "저장했습니다.");
       await loadQuestions();
     } finally {
@@ -1280,6 +1341,19 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     ))}
                     {/* 업무 분야가 아니다 — 채용시험 화면에만 서는 자리다 */}
                     <option value={RECRUIT_TRACK}>{RECRUIT_LABEL} (채용시험)</option>
+                  </select>
+                </label>
+                <label>
+                  유형 <small>홈페이지에 이대로 표시됩니다</small>
+                  <select
+                    value={draft.format}
+                    onChange={(e) => setDraft({ ...draft, format: e.target.value })}
+                  >
+                    {FORMATS.map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
@@ -2258,6 +2332,52 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         {/* ── Q&A ── */}
         {tab === "qna" && (
           <>
+            <form className="admin-card" onSubmit={postQna}>
+              <h2>직접 올리기</h2>
+              <p className="admin-note">
+                회장님이 스스로 묻고 답하는 글입니다. 올리시는 즉시 화면에 섭니다.
+              </p>
+              <label className="admin-field">
+                질문
+                <input
+                  value={qnaNewTitle}
+                  onChange={(e) => setQnaNewTitle(e.target.value)}
+                  placeholder="예) 업무 의뢰는 어떤 절차로 진행됩니까?"
+                  required
+                />
+              </label>
+              <label className="admin-field">
+                답변
+                <textarea
+                  rows={5}
+                  value={qnaNewAnswer}
+                  onChange={(e) => setQnaNewAnswer(e.target.value)}
+                  placeholder="답을 적어 주십시오."
+                  required
+                />
+              </label>
+              <label className="admin-check">
+                <input
+                  type="checkbox"
+                  checked={qnaNewFaq}
+                  onChange={(e) => setQnaNewFaq(e.target.checked)}
+                />
+                자주 묻는 질문으로 — 끄면 게시판에 섭니다
+              </label>
+              <div className="admin-actions">
+                <button className="admin-btn" disabled={!dbConfigured}>
+                  올리기
+                </button>
+                <button type="button" className="admin-btn admin-btn--quiet" onClick={importFaqs}>
+                  처음 여섯 질문 가져오기
+                </button>
+              </div>
+              <p className="admin-note">
+                「처음 여섯 질문 가져오기」는 코드에 적혀 있던 자주 묻는 질문을 이곳으로
+                옮깁니다. 옮겨야 고치고 지우실 수 있습니다. 한 번만 누르시면 됩니다.
+              </p>
+            </form>
+
             <section className="admin-card">
               <h2>Q&amp;A</h2>
               <p className="admin-note">
@@ -2272,6 +2392,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                     ["waiting", `답변대기 ${qnaWaiting}`],
                     ["hidden", `미게시 ${qnaHidden}`],
                     ["secret", "비밀글"],
+                    ["faq", "자주 묻는 질문"],
                   ] as const
                 ).map(([key, label]) => (
                   <button
@@ -2330,6 +2451,7 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                       <div className="admin-qna-head">
                         <b>{row.title}</b>
                         {row.secret && <span className="admin-qna-tag admin-qna-tag--secret">비밀글</span>}
+                        {row.faq && <span className="admin-qna-tag" data-on>자주 묻는 질문</span>}
                         <span className="admin-qna-tag" data-on={Boolean(row.answer)}>
                           {row.answer ? "답변완료" : "답변대기"}
                         </span>
@@ -2412,10 +2534,19 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                             <button
                               type="button"
                               className="admin-btn admin-btn--quiet"
-                              onClick={() => toggleQna(row.id, "secret", !row.secret)}
+                              onClick={() => toggleQna(row.id, "faq", !row.faq)}
                             >
-                              {row.secret ? "비밀글 풀기" : "비밀글로"}
+                              {row.faq ? "게시판으로 내리기" : "자주 묻는 질문으로"}
                             </button>
+                            {!row.faq && (
+                              <button
+                                type="button"
+                                className="admin-btn admin-btn--quiet"
+                                onClick={() => toggleQna(row.id, "secret", !row.secret)}
+                              >
+                                {row.secret ? "비밀글 풀기" : "비밀글로"}
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="admin-btn admin-btn--danger"

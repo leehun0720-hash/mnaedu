@@ -279,6 +279,14 @@ export const qna = pgTable(
     answeredAt: timestamp("answered_at", { withTimezone: true }),
     /** 참이면 게시판에 오르지 않고 회장만 본다 */
     secret: boolean("secret").notNull().default(false),
+    /**
+     * 참이면 「자주 묻는 질문」 자리에 선다.
+     *
+     * 회장 지시(2026-09-30): 자주 묻는 질문도 관리자 화면에서 직접 올리고
+     * 지울 수 있어야 한다. 전에는 코드에 박혀 있어 손댈 수 없었다.
+     * 표를 새로 만들지 않는다 — 묻고 답하는 것은 같은 일이고, 서는 자리만 다르다.
+     */
+    faq: boolean("faq").notNull().default(false),
     /** 회장이 켜야 게시판에 선다 */
     published: boolean("published").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

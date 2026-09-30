@@ -4,7 +4,9 @@ import { isDbConfigured } from "@/db";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
 import { readJsonBody, runQuery, storageFailure } from "@/lib/admin-api";
-import { deleteQna, listQna, updateQna } from "@/lib/qna-db";
+import { createAdminQna, deleteQna, importDefaultFaqs, listQna, updateQna } from "@/lib/qna-db";
+import { FAQS } from "@/lib/company";
+import { QNA_LIMITS, validateAnswer } from "@/lib/qna";
 
 /**
  * Q&A 관리 — 관리자 전용.
@@ -41,7 +43,64 @@ export async function GET(request: Request) {
   return NextResponse.json(listed.value);
 }
 
-type Patch = { id?: number; answer?: string | null; published?: boolean; secret?: boolean };
+type NewQna = { title?: string; body?: string; answer?: string; faq?: boolean; action?: string };
+
+/**
+ * 회장이 직접 올리는 Q&A, 그리고 코드에 있던 자주 묻는 질문 옮기기.
+ *
+ * 방문자가 쓰는 /api/qna 와 문이 다르다. 이쪽은 세션을 통과해야 하고,
+ * 처음부터 발행 상태로 선다.
+ */
+export async function POST(request: Request) {
+  if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const blocked = guardStorage();
+  if (blocked) return blocked;
+
+  const body = await readJsonBody<NewQna>(request);
+  if (!body) return NextResponse.json({ error: "요청을 읽을 수 없습니다." }, { status: 400 });
+
+  if (body.action === "import-faqs") {
+    try {
+      const added = await importDefaultFaqs(FAQS);
+      return NextResponse.json({
+        ok: true,
+        added,
+        message: added
+          ? `${added}건을 옮겼습니다. 이제 고치고 지우실 수 있습니다.`
+          : "옮길 것이 없습니다 — 여섯 질문이 이미 모두 들어와 있습니다.",
+      });
+    } catch (err) {
+      return storageFailure(err, "faq import");
+    }
+  }
+
+  const title = (body.title ?? "").trim();
+  if (title.length < 4) return NextResponse.json({ error: "질문을 네 글자 이상 적어 주십시오." }, { status: 400 });
+  if (title.length > QNA_LIMITS.title) return NextResponse.json({ error: "질문이 너무 깁니다." }, { status: 400 });
+
+  const parsedAnswer = validateAnswer(body.answer ?? "");
+  if ("error" in parsedAnswer) return NextResponse.json({ error: parsedAnswer.error }, { status: 400 });
+  if (!parsedAnswer.value) return NextResponse.json({ error: "답변을 적어 주십시오." }, { status: 400 });
+
+  // 본문을 따로 적지 않으셨으면 질문을 그대로 둔다 — 빈 본문은 화면에서 어색하다
+  const text = (body.body ?? "").trim() || title;
+  if (text.length > QNA_LIMITS.body) return NextResponse.json({ error: "내용이 너무 깁니다." }, { status: 400 });
+
+  try {
+    const id = await createAdminQna({
+      title,
+      body: text,
+      answer: parsedAnswer.value,
+      faq: Boolean(body.faq),
+    });
+    if (!id) return NextResponse.json({ error: "저장하지 못했습니다." }, { status: 503 });
+    return NextResponse.json({ ok: true, id }, { status: 201 });
+  } catch (err) {
+    return storageFailure(err, "qna insert (admin)");
+  }
+}
+
+type Patch = { id?: number; answer?: string | null; published?: boolean; secret?: boolean; faq?: boolean };
 
 export async function PUT(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -56,6 +115,7 @@ export async function PUT(request: Request) {
       answer: body.answer,
       published: body.published,
       secret: body.secret,
+      faq: body.faq,
     });
     if (result.error) return NextResponse.json({ error: result.error }, { status: 400 });
     if (!result.ok) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });

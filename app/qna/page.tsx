@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { CONTACT, FAQS } from "@/lib/company";
-import { countPublicQna, getPublicQna } from "@/lib/qna-db";
+import { countPublicQna, getPublicFaqs, getPublicQna } from "@/lib/qna-db";
 import { getCurrentMember } from "@/lib/members";
 import { answerState } from "@/lib/qna";
 import AdminLink from "../admin-link";
@@ -36,11 +36,21 @@ export default async function QnaPage({ searchParams }: { searchParams: Promise<
   const page = Math.max(1, Number(qp) || 1);
   const offset = (page - 1) * BOARD_PAGE_SIZE;
 
-  const [items, total, member] = await Promise.all([
+  const [items, total, faqRows, member] = await Promise.all([
     getPublicQna(BOARD_PAGE_SIZE, offset),
     countPublicQna(),
+    getPublicFaqs(),
     getCurrentMember(),
   ]);
+
+  /**
+   * 자주 묻는 질문은 이제 회장이 관리자 화면에서 올리신다(2026-09-30).
+   * 아직 하나도 올리지 않으셨으면 처음에 적어 둔 여섯을 그대로 세운다 —
+   * 옮기기 전에 이 자리가 비어 보이면 안 된다.
+   */
+  const faqs = faqRows.length
+    ? faqRows.map((f) => ({ q: f.question, a: f.answer }))
+    : FAQS.map((f) => ({ q: f.q, a: f.a }));
 
   return (
     <div className="co-page">
@@ -101,7 +111,7 @@ export default async function QnaPage({ searchParams }: { searchParams: Promise<
             <p className="co-section-note">먼저 여기부터 보십시오. 같은 질문이 가장 많습니다.</p>
           </div>
           <div className="co-faq">
-            {FAQS.map((f) => (
+            {faqs.map((f) => (
               <details key={f.q} className="co-faq-item">
                 <summary>
                   <span>{f.q}</span>
