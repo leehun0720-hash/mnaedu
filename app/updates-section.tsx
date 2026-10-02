@@ -33,7 +33,7 @@ export default function UpdatesSection({
       </div>
 
       <div className="co-updates co-reveal">
-        <div className="co-updates-col">
+        <div className="co-updates-col" id="updates-library">
           <div className="co-updates-head">
             <h3>업무자료</h3>
             <span className="co-updates-count">최근 {docs.length}건</span>
@@ -58,7 +58,7 @@ export default function UpdatesSection({
           )}
         </div>
 
-        <div className="co-updates-col">
+        <div className="co-updates-col" id="updates-questions">
           <div className="co-updates-head">
             <h3>평가문제</h3>
             <span className="co-updates-count">최근 {quiz.length}건</span>

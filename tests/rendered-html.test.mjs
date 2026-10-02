@@ -145,6 +145,28 @@ test("the page carries the right-hand rail", async () => {
   assert.match(html, /site-rail/);
 });
 
+test("오른쪽 바의 링크는 어느 화면에서나 실제로 있는 자리로 간다", async () => {
+  // 회장 지적(2026-10-02): "아직 연결 링크가 없습니다". 실무문제 · 업무정보실이
+  // 같은 화면 안의 #questions · #library 를 가리켰는데, 그 자리는 주요업무
+  // 화면에만 있었다 — 첫 화면 · Q&A · 채용 화면에서는 눌러도 아무 일이 없었다.
+  const cache = new Map();
+  const page = async (path) => {
+    if (!cache.has(path)) cache.set(path, await renderHtml(path));
+    return cache.get(path);
+  };
+  for (const path of ["/", "/qna", "/careers", "/insights", "/business/brokerage"]) {
+    const html = await page(path);
+    const rail = html.slice(html.indexOf('class="site-rail"'), html.indexOf("</nav>", html.indexOf('class="site-rail"')));
+    const hrefs = [...rail.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((h) => h.includes("#"));
+    assert.equal(hrefs.length, 3, `${path} 오른쪽 바에서 자리 링크 셋을 찾지 못했다`);
+    for (const href of hrefs) {
+      const [target = "", id] = href.split("#");
+      const html2 = await page(target || path);
+      assert.match(html2, new RegExp(`id="${id}"`), `${path} 의 ${href} 가 가리키는 자리가 없다`);
+    }
+  }
+});
+
 test("answers, intent and explanations never reach the public HTML", async () => {
   // 불변 원칙 (보고서 4.3 · 8장): 정답·출제 의도·해설은 공개 데이터에서
   // 원천 배제된다. 서버 컴포넌트가 행 전체를 클라이언트 컴포넌트에 넘기면

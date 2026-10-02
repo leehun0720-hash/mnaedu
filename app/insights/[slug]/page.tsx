@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getArticleBySlug, getPublishedArticles } from "@/lib/articles";
-import { CONTACT } from "@/lib/company";
+import { CONTACT, businessArea } from "@/lib/company";
 import AdminLink from "../../admin-link";
 import CopyGuard from "../../copy-guard";
 import ThemeToggle from "../../theme-toggle";
@@ -60,7 +60,7 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
     <div className="co-page">
       <CopyGuard />
       <ThemeToggle />
-      <SiteRail signedIn={member !== null} />
+      <SiteRail signedIn={member !== null} area={article.track ? businessArea(article.track)?.slug : null} />
 
       <header className="co-header">
         <Link className="co-brand" href="/" aria-label="㈜프론티어 M&A 처음으로">

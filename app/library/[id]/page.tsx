@@ -51,7 +51,7 @@ export default async function LibraryDocumentPage({ params }: { params: Promise<
     <div className="co-page">
       <CopyGuard />
       <ThemeToggle />
-      <SiteRail signedIn={member !== null} />
+      <SiteRail signedIn={member !== null} area={area?.slug} />
 
       <header className="co-header">
         <Link className="co-brand" href="/" aria-label="㈜프론티어 M&A 처음으로">
