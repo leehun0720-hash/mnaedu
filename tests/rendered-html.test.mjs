@@ -285,6 +285,12 @@ test("Q&A 는 묻고 답하는 게시판이다", async () => {
   const html = await renderHtml("/qna");
   assert.match(html, /묻고 답하기/);
   assert.match(html, /자주 묻는 질문/, "자주 묻는 질문을 없애지 않는다 — 같은 질문이 쌓이는 것을 막는다");
+  // 자주 묻는 질문은 게시판 모양이다 — 데이터베이스가 없는 검사 환경에서는 처음 여섯이 선다
+  for (const page of [html, home]) {
+    assert.match(page, /qa-list--faq/, "자주 묻는 질문이 게시판 모양이 아니다");
+    assert.match(page, /업무 의뢰는 어떤 절차로 진행됩니까\?/, "처음 질문이 사라졌다");
+    assert.match(page, /업무자료와 실무 문제는 어떻게 연결됩니까\?/, "처음 질문이 사라졌다");
+  }
   assert.match(html, /질문 남기기/);
   // 누구나 물을 수 있어야 게시판이다
   assert.match(html, /비밀글로 보내기/);

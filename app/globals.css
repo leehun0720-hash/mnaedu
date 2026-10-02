@@ -3232,26 +3232,6 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   .co-board-no { display: none; }
 }
 
-/* — faq — */
-.co-faq { display: flex; flex-direction: column; gap: 10px; }
-.co-faq-item { background: var(--white); border: 1px solid var(--co-line); }
-.co-faq-item summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  cursor: pointer;
-  list-style: none;
-  padding: 18px 22px;
-  font: 700 15px var(--font-sans);
-  color: var(--co-ink-strong);
-}
-.co-faq-item summary::-webkit-details-marker { display: none; }
-.co-faq-item summary i { font-style: normal; color: var(--co-navy); font-weight: 400; font-size: 20px; transition: transform 0.25s ease; flex: 0 0 auto; }
-.co-faq-item[open] summary i { transform: rotate(45deg); }
-.co-faq-item summary:hover { color: var(--co-navy); }
-.co-faq-item > p { margin: 0; padding: 0 22px 20px; font-size: 14px; line-height: 1.9; color: var(--co-muted); max-width: 82ch; }
-
 /* — careers — */
 .co-careers-lede { margin: 0 0 26px; font-size: 15.5px; color: var(--co-ink); }
 .co-careers-points {
@@ -5580,6 +5560,16 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 
 .qa-count { font: 600 13px var(--font-label); color: var(--co-muted); margin-left: 8px; }
 
+/* 첫 화면 자주 묻는 질문이 넘칠 때 Q&A 화면으로 잇는 줄 */
+.qa-more { margin: 14px 0 0; text-align: right; }
+.qa-more a {
+  font: 600 13.5px var(--font-label);
+  color: var(--co-navy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.qa-more a i { font-style: normal; }
+
 .qa-empty {
   margin: 0;
   padding: 22px 24px;
@@ -5665,6 +5655,27 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   margin: 12px 0 0;
   font-size: 13px;
   color: var(--co-muted);
+}
+
+/* — 게시판 줄 (묻고 답하기 · 자주 묻는 질문) —
+   .qa-list / .qa-item 은 실무문제 카드도 쓰는 이름이라, 그대로 두면 줄마다
+   큰 카드가 되어 게시판처럼 보이지 않는다. 게시판에서만 촘촘한 줄로 바꾼다. */
+.qa-list--board {
+  display: block;
+  background: var(--white);
+  border: 1px solid var(--co-line);
+  border-top: 2px solid var(--co-navy);
+}
+.qa-list--board > li { border-bottom: 1px solid var(--co-line); }
+.qa-list--board > li:last-child { border-bottom: 0; }
+.qa-list--board .qa-item { background: none; border: 0; padding: 0; }
+.qa-list--board .qa-item > summary { padding: 15px 18px; }
+.qa-list--board .qa-item[open] > summary { background: var(--paper-deep); }
+.qa-list--board .qa-body { padding: 14px 18px 20px 66px; }
+/* 좁은 화면의 줄 배치(제목 위, 번호·날짜 아래)는 아래 720px 규칙이 맡는다 */
+@media (max-width: 720px) {
+  .qa-list--board .qa-item > summary { padding: 14px; }
+  .qa-list--board .qa-body { padding: 12px 14px 18px; }
 }
 
 /* — 질문 남기기 — */

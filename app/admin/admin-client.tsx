@@ -561,7 +561,7 @@ export default function AdminClient({
     await loadQna();
   }
 
-  /** 코드에 박혀 있던 자주 묻는 질문 여섯을 표로 옮긴다 — 그래야 고치고 지울 수 있다 */
+  /** 처음 여섯 질문 가운데 지우신 것을 되살린다 — 처음 한 번 넣는 일은 서버가 스스로 한다 */
   async function importFaqs() {
     const out = await send("/api/admin/qna", {
       method: "POST",
@@ -572,7 +572,7 @@ export default function AdminClient({
       setError(out.error ?? "처리하지 못했습니다.");
       return;
     }
-    setNotice((out.data.message as string) ?? "옮겼습니다.");
+    setNotice((out.data.message as string) ?? "되살렸습니다.");
     await loadQna();
   }
 
@@ -2411,12 +2411,13 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   올리기
                 </button>
                 <button type="button" className="admin-btn admin-btn--quiet" onClick={importFaqs}>
-                  처음 여섯 질문 가져오기
+                  지운 처음 질문 되살리기
                 </button>
               </div>
               <p className="admin-note">
-                「처음 여섯 질문 가져오기」는 코드에 적혀 있던 자주 묻는 질문을 이곳으로
-                옮깁니다. 옮겨야 고치고 지우실 수 있습니다. 한 번만 누르시면 됩니다.
+                올리신 글은 자주 묻는 질문 게시판에 쌓입니다 — 새 글이 맨 위에 서고, 전에 올린
+                글과 처음 여섯 질문은 그 아래에 그대로 남습니다. 「지운 처음 질문 되살리기」는
+                처음 여섯 가운데 지우신 것을 다시 세울 때만 누르십시오.
               </p>
             </form>
 

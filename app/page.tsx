@@ -6,17 +6,17 @@ import {
   areasInOffice,
   CAREERS,
   CONTACT,
-  FAQS,
   PRINCIPLES,
   SLOGAN,
 } from "@/lib/company";
 import CopyGuard from "./copy-guard";
+import FaqBoardList from "./faq-board";
 import ThemeToggle from "./theme-toggle";
 import SiteRail from "./site-rail";
 import ContactForm from "./contact-form";
 import UpdatesSection from "./updates-section";
 import { getPublicQuestions } from "@/lib/questions-db";
-import { getPublicFaqs } from "@/lib/qna-db";
+import { fallbackFaqBoard, getFaqBoard } from "@/lib/qna-db";
 import { getPublicDocuments } from "@/lib/documents";
 import AdminLink from "./admin-link";
 import { getCurrentMember } from "@/lib/members";
@@ -43,20 +43,21 @@ export const dynamic = "force-dynamic";
 /** 첫 화면 기사·칼럼 게시판에 세우는 글 수 (회장 지시: 20개) */
 const HOME_BOARD_SIZE = 20;
 
+/** 첫 화면에 세우는 자주 묻는 질문 수 — 넘치면 Q&A 화면으로 이어 준다 */
+const HOME_FAQ_SIZE = 10;
+
 export default async function HomePage() {
-  const [questions, documents, member, latestArticles, articleCount, faqRows] = await Promise.all([
+  const [questions, documents, member, latestArticles, articleCount, faqBoard] = await Promise.all([
     getPublicQuestions(5),
     getPublicDocuments(5),
     getCurrentMember(),
     getPublishedArticles(HOME_BOARD_SIZE),
     countPublishedArticles(),
-    getPublicFaqs(),
+    getFaqBoard(HOME_FAQ_SIZE),
   ]);
   const signedIn = member !== null;
-  // 자주 묻는 질문은 회장이 올리신 것을 세우고, 아직 없으면 처음의 여섯을 쓴다
-  const faqs = faqRows.length
-    ? faqRows.map((f) => ({ q: f.question, a: f.answer }))
-    : FAQS.map((f) => ({ q: f.q, a: f.a }));
+  // 자주 묻는 질문은 표에서 최신 글부터 — 표를 읽지 못할 때만 처음의 여섯
+  const faq = faqBoard ?? fallbackFaqBoard(HOME_FAQ_SIZE);
 
   return (
     <div className="co-page">
@@ -288,16 +289,15 @@ export default async function HomePage() {
               여기에 없는 것은 직접 물어보실 수 있습니다. 답변은 회장이 직접 드립니다.
             </p>
           </div>
-          <div className="co-faq co-reveal">
-            {faqs.map((f) => (
-              <details key={f.q} className="co-faq-item">
-                <summary>
-                  <span>{f.q}</span>
-                  <i aria-hidden="true">+</i>
-                </summary>
-                <p>{f.a}</p>
-              </details>
-            ))}
+          <div className="co-reveal">
+            <FaqBoardList board={faq} />
+            {faq.total > faq.rows.length && (
+              <p className="qa-more">
+                <Link href="/qna#faq">
+                  자주 묻는 질문 전체 보기 ({faq.total}건) <i aria-hidden="true">→</i>
+                </Link>
+              </p>
+            )}
           </div>
           <div className="co-exam-board co-reveal">
             <div>

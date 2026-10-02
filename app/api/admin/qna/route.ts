@@ -4,7 +4,7 @@ import { isDbConfigured } from "@/db";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { verifySession } from "@/lib/admin-auth";
 import { readJsonBody, runQuery, storageFailure } from "@/lib/admin-api";
-import { createAdminQna, deleteQna, importDefaultFaqs, listQna, updateQna } from "@/lib/qna-db";
+import { createAdminQna, deleteQna, ensureDefaultFaqs, importDefaultFaqs, listQna, updateQna } from "@/lib/qna-db";
 import { FAQS } from "@/lib/company";
 import { QNA_LIMITS, validateAnswer } from "@/lib/qna";
 
@@ -38,6 +38,8 @@ export async function GET(request: Request) {
   const state = (params.get("state") ?? "").trim();
   const page = Math.max(1, Number(params.get("page")) || 1);
 
+  // 처음 여섯 질문이 아직 표에 없으면 넣어 둔다 — 목록에서 고치고 지우실 수 있게
+  await ensureDefaultFaqs().catch((err) => console.error("[admin] faq seed failed:", err));
   const listed = await runQuery(listQna(q, state, page), "Q&A 목록");
   if (!listed.ok) return listed.response;
   return NextResponse.json(listed.value);
@@ -46,7 +48,7 @@ export async function GET(request: Request) {
 type NewQna = { title?: string; body?: string; answer?: string; faq?: boolean; action?: string };
 
 /**
- * 회장이 직접 올리는 Q&A, 그리고 코드에 있던 자주 묻는 질문 옮기기.
+ * 회장이 직접 올리는 Q&A, 그리고 지운 처음 질문 되살리기.
  *
  * 방문자가 쓰는 /api/qna 와 문이 다르다. 이쪽은 세션을 통과해야 하고,
  * 처음부터 발행 상태로 선다.
@@ -66,8 +68,8 @@ export async function POST(request: Request) {
         ok: true,
         added,
         message: added
-          ? `${added}건을 옮겼습니다. 이제 고치고 지우실 수 있습니다.`
-          : "옮길 것이 없습니다 — 여섯 질문이 이미 모두 들어와 있습니다.",
+          ? `처음 질문 ${added}건을 되살렸습니다. 오늘 날짜로 맨 위에 섭니다.`
+          : "되살릴 것이 없습니다 — 처음 여섯 질문이 모두 그대로 있습니다.",
       });
     } catch (err) {
       return storageFailure(err, "faq import");
@@ -87,6 +89,8 @@ export async function POST(request: Request) {
   if (text.length > QNA_LIMITS.body) return NextResponse.json({ error: "내용이 너무 깁니다." }, { status: 400 });
 
   try {
+    // 첫 글을 올리시는 순간 처음 여섯이 자리를 내주던 일을 막는다 — 먼저 넣어 두고 올린다
+    await ensureDefaultFaqs().catch((err) => console.error("[admin] faq seed failed:", err));
     const id = await createAdminQna({
       title,
       body: text,

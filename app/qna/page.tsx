@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { CONTACT, FAQS } from "@/lib/company";
-import { countPublicQna, getPublicFaqs, getPublicQna } from "@/lib/qna-db";
+import { CONTACT } from "@/lib/company";
+import { countPublicQna, fallbackFaqBoard, getFaqBoard, getPublicQna } from "@/lib/qna-db";
 import { getCurrentMember } from "@/lib/members";
 import { answerState } from "@/lib/qna";
 import AdminLink from "../admin-link";
 import BoardPager, { BOARD_PAGE_SIZE } from "../board-pager";
 import CopyGuard from "../copy-guard";
+import FaqBoardList from "../faq-board";
 import ThemeToggle from "../theme-toggle";
 import SiteRail from "../site-rail";
 import AskForm from "./ask-form";
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     "㈜프론티어 M&A에 직접 질문하고 답변을 받는 게시판입니다. 자주 묻는 질문도 함께 보실 수 있습니다.",
 };
 
-type Search = { qp?: string };
+type Search = { qp?: string; fp?: string };
 
 /**
  * Q&A — 묻고 답하는 게시판.
@@ -32,25 +33,25 @@ type Search = { qp?: string };
  * 그래도 없으면 묻게 한다.
  */
 export default async function QnaPage({ searchParams }: { searchParams: Promise<Search> }) {
-  const { qp } = await searchParams;
+  const { qp, fp } = await searchParams;
   const page = Math.max(1, Number(qp) || 1);
   const offset = (page - 1) * BOARD_PAGE_SIZE;
+  const faqPage = Math.max(1, Number(fp) || 1);
+  const faqOffset = (faqPage - 1) * BOARD_PAGE_SIZE;
 
-  const [items, total, faqRows, member] = await Promise.all([
+  const [items, total, faqBoard, member] = await Promise.all([
     getPublicQna(BOARD_PAGE_SIZE, offset),
     countPublicQna(),
-    getPublicFaqs(),
+    getFaqBoard(BOARD_PAGE_SIZE, faqOffset),
     getCurrentMember(),
   ]);
 
   /**
-   * 자주 묻는 질문은 이제 회장이 관리자 화면에서 올리신다(2026-09-30).
-   * 아직 하나도 올리지 않으셨으면 처음에 적어 둔 여섯을 그대로 세운다 —
-   * 옮기기 전에 이 자리가 비어 보이면 안 된다.
+   * 자주 묻는 질문은 언제나 표에서 읽는다(2026-10-02). 처음 여섯도 표에 들어
+   * 있으므로, 회장이 올리시는 글은 그 위에 쌓인다. 표를 읽지 못할 때만
+   * 처음 여섯으로 물러난다.
    */
-  const faqs = faqRows.length
-    ? faqRows.map((f) => ({ q: f.question, a: f.answer }))
-    : FAQS.map((f) => ({ q: f.q, a: f.a }));
+  const faq = faqBoard ?? fallbackFaqBoard(BOARD_PAGE_SIZE, faqOffset);
 
   return (
     <div className="co-page">
@@ -107,20 +108,20 @@ export default async function QnaPage({ searchParams }: { searchParams: Promise<
         <section className="co-section co-section--tint" id="faq">
           <div className="co-section-head">
             <p className="co-section-index">FAQ</p>
-            <h2>자주 묻는 질문</h2>
+            <h2>
+              자주 묻는 질문 <small className="qa-count">{faq.total}건</small>
+            </h2>
             <p className="co-section-note">먼저 여기부터 보십시오. 같은 질문이 가장 많습니다.</p>
           </div>
-          <div className="co-faq">
-            {faqs.map((f) => (
-              <details key={f.q} className="co-faq-item">
-                <summary>
-                  <span>{f.q}</span>
-                  <i aria-hidden="true">+</i>
-                </summary>
-                <p>{f.a}</p>
-              </details>
-            ))}
-          </div>
+          <FaqBoardList board={faq} />
+          <BoardPager
+            page={faqPage}
+            total={faq.total}
+            param="fp"
+            basePath="/qna"
+            hash="faq"
+            keep={{ qp: page > 1 ? String(page) : undefined }}
+          />
         </section>
 
         {/* ── 게시판 ── */}
@@ -138,7 +139,7 @@ export default async function QnaPage({ searchParams }: { searchParams: Promise<
               함께 이 자리에 올립니다.
             </p>
           ) : (
-            <ol className="qa-list">
+            <ol className="qa-list qa-list--board">
               {items.map((item) => (
                 <li key={item.id}>
                   <details className="qa-item">
@@ -174,7 +175,14 @@ export default async function QnaPage({ searchParams }: { searchParams: Promise<
             </ol>
           )}
 
-          <BoardPager page={page} total={total} param="qp" basePath="/qna" hash="board" />
+          <BoardPager
+            page={page}
+            total={total}
+            param="qp"
+            basePath="/qna"
+            hash="board"
+            keep={{ fp: faqPage > 1 ? String(faqPage) : undefined }}
+          />
         </section>
 
         {/* ── 질문하기 ── */}
