@@ -143,8 +143,21 @@ type Diagnosis = {
   healthy: boolean;
   findings: string[];
   hasNote?: boolean;
+  /** 잠겨서 읽히지 않는 표 — 화면 이름(회원, Q&A …) */
+  frozen?: string[];
   sessions: { pid: number; state: string | null; age: number | null; query: string | null; blocked: boolean }[];
 };
+
+/**
+ * 데이터베이스가 멎었을 때 나오는 문장인가.
+ *
+ * 이 문장이 뜨면 화면 오류 줄 옆에 「무엇이 막혔는지 보기」를 둔다. 예전에는
+ * 진단 단추가 회원 탭 안에만 있어, Q&A 탭에서 같은 문장을 보신 회장은 어디를
+ * 눌러야 할지 알 길이 없었다.
+ */
+function isStall(message: string | null): boolean {
+  return Boolean(message && /답하지 않았습니다|응답하지 않아/.test(message));
+}
 
 /** 목록 불러오기 실패 — 응답 대신 이 값이 돌아오면 화면에 이유를 띄운다 */
 type FetchFailure = { failed: true; expired: boolean; message: string };
@@ -609,7 +622,17 @@ export default function AdminClient({
       setNotice(String(out.data.message ?? "끝났습니다."));
       const data = await readJson<Diagnosis>("/api/admin/diagnose");
       if (!isFailure(data)) setDiag(data);
-      await loadMembers();
+      // 고친 뒤에는 지금 보고 계신 탭을 다시 불러온다 — 회원 탭만이 아니다
+      const reload = {
+        questions: loadQuestions,
+        articles: loadArticles,
+        documents: loadDocuments,
+        members: loadMembers,
+        applicants: loadApplicants,
+        qna: loadQna,
+        settings: loadPasswordInfo,
+      }[tab];
+      await reload();
     } finally {
       setDiagBusy(false);
     }
@@ -1281,9 +1304,14 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
               발행한 문제와 자료는 홈페이지에 최신순으로 올라갑니다. 정답과 해설은 로그인한 회원에게만 열립니다.
             </p>
           </div>
-          <button className="admin-btn admin-btn--quiet" onClick={logout}>
-            로그아웃
-          </button>
+          <div className="admin-head-actions">
+            <button className="admin-btn admin-btn--quiet" onClick={runDiagnosis} disabled={diagBusy}>
+              {diagBusy ? "확인 중…" : "데이터베이스 진단"}
+            </button>
+            <button className="admin-btn admin-btn--quiet" onClick={logout}>
+              로그아웃
+            </button>
+          </div>
         </header>
 
         {!dbConfigured && (
@@ -1316,8 +1344,79 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           </button>
         </nav>
 
-        {error && <p className="admin-error">{error}</p>}
+        {error && (
+          <p className="admin-error">
+            {error}
+            {isStall(error) && !diag && (
+              <button
+                type="button"
+                className="admin-btn admin-error-btn"
+                onClick={runDiagnosis}
+                disabled={diagBusy}
+              >
+                {diagBusy ? "확인 중…" : "무엇이 막혔는지 보기"}
+              </button>
+            )}
+          </p>
+        )}
         {notice && <p className="admin-notice">{notice}</p>}
+
+        {/*
+          진단 판 — 어느 탭에서든 같은 자리에 선다. 예전에는 회원 탭 안에만 있었다.
+        */}
+        {diag && (
+          <section className="admin-card admin-diag">
+            <h2>데이터베이스 진단 {diag.healthy ? "— 정상" : "— 막힌 곳이 있습니다"}</h2>
+            <div className="admin-actions">
+              {!diag.healthy && (
+                <button
+                  type="button"
+                  className="admin-btn admin-btn--danger"
+                  onClick={() => repair("unlock")}
+                  disabled={diagBusy}
+                >
+                  잠금 풀기
+                </button>
+              )}
+              {diag.hasNote === false && (
+                <button
+                  type="button"
+                  className="admin-btn admin-btn--quiet"
+                  onClick={() => repair("note")}
+                  disabled={diagBusy}
+                >
+                  메모 열 만들기
+                </button>
+              )}
+              <button type="button" className="admin-btn admin-btn--quiet" onClick={runDiagnosis} disabled={diagBusy}>
+                {diagBusy ? "확인 중…" : "다시 진단"}
+              </button>
+              <button type="button" className="admin-btn admin-btn--quiet" onClick={() => setDiag(null)}>
+                닫기
+              </button>
+            </div>
+            <ul className="admin-list">
+              {diag.findings.map((f) => (
+                <li key={f} className={diag.healthy ? "" : "admin-diag-item"}>
+                  <p className="admin-list-prompt">{f}</p>
+                </li>
+              ))}
+              {diag.sessions.length > 0 && (
+                <li>
+                  <div className="admin-list-meta">
+                    <span>지금 돌고 있는 접속 {diag.sessions.length}개</span>
+                  </div>
+                  {diag.sessions.map((x) => (
+                    <p key={x.pid} className="admin-legacy">
+                      <strong>{x.state ?? "?"}</strong> · {x.age ?? 0}초
+                      {x.blocked ? " · 막혀 있음" : ""} — <code>{x.query ?? ""}</code>
+                    </p>
+                  ))}
+                </li>
+              )}
+            </ul>
+          </section>
+        )}
 
         {/* ── 문제 출제 ── */}
         {tab === "questions" && (
@@ -1938,63 +2037,6 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                 </div>
               </form>
             )}
-
-            <section className="admin-card">
-              <h2>회원 목록이 안 보일 때 — 진단</h2>
-              <p className="admin-note">
-                목록이 비거나 「답하지 않았습니다」가 뜨면 먼저 여기를 누르십시오. 데이터베이스에
-                직접 물어 무엇이 막혔는지 사람 말로 보여 주고, 그 자리에서 고칩니다.
-              </p>
-              <div className="admin-actions">
-                <button type="button" className="admin-btn" onClick={runDiagnosis} disabled={diagBusy}>
-                  {diagBusy ? "확인 중…" : "진단"}
-                </button>
-                {diag && !diag.healthy && (
-                  <>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn--danger"
-                      onClick={() => repair("unlock")}
-                      disabled={diagBusy}
-                    >
-                      잠금 풀기
-                    </button>
-                    {diag.hasNote === false && (
-                      <button
-                        type="button"
-                        className="admin-btn admin-btn--quiet"
-                        onClick={() => repair("note")}
-                        disabled={diagBusy}
-                      >
-                        메모 열 만들기
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-              {diag && (
-                <ul className="admin-list">
-                  {diag.findings.map((f) => (
-                    <li key={f} className={diag.healthy ? "" : "admin-diag-item"}>
-                      <p className="admin-list-prompt">{f}</p>
-                    </li>
-                  ))}
-                  {diag.sessions.length > 0 && (
-                    <li>
-                      <div className="admin-list-meta">
-                        <span>지금 돌고 있는 접속 {diag.sessions.length}개</span>
-                      </div>
-                      {diag.sessions.map((x) => (
-                        <p key={x.pid} className="admin-legacy">
-                          <strong>{x.state ?? "?"}</strong> · {x.age ?? 0}초
-                          {x.blocked ? " · 막혀 있음" : ""} — <code>{x.query ?? ""}</code>
-                        </p>
-                      ))}
-                    </li>
-                  )}
-                </ul>
-              )}
-            </section>
 
             <section className="admin-card">
               <h2>회원 ({memberTotal}명)</h2>

@@ -2172,6 +2172,10 @@ textarea:focus-visible {
 .admin-btn--danger { background: transparent; color: var(--ember-ink); border-color: var(--ember-ink); }
 .admin-btn--danger:hover { background: var(--ember-ink); color: var(--white); }
 .admin-error { color: var(--ember-ink); font-size: 13.5px; font-weight: 600; margin: 12px 0 0; }
+/* 데이터베이스가 멎었을 때 오류 줄 옆에 서는 단추 — 어느 탭에서든 */
+.admin-error-btn { margin-left: 12px; min-height: 32px; padding: 6px 12px; vertical-align: middle; }
+.admin-head-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.admin-diag { margin-top: 16px; border-left: 3px solid var(--ember); }
 .admin-ok { color: #2F6B45; font-size: 13.5px; font-weight: 600; margin: 12px 0 0; }
 .admin-warn {
   background: var(--ember-soft);
