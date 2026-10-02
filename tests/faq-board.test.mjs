@@ -50,3 +50,12 @@ test("관리자가 첫 글을 올리기 전에 여섯을 먼저 넣는다", () =
   const post = route.slice(route.indexOf("export async function POST"), route.indexOf("export async function PUT"));
   assert.ok(post.indexOf("ensureDefaultFaqs()") > -1 && post.indexOf("ensureDefaultFaqs()") < post.indexOf("createAdminQna("));
 });
+
+test("올릴 곳은 둘 중 하나를 고르고, 단추 이름이 고른 곳을 말한다", () => {
+  // 회장 질문(2026-10-02): 「자주 묻는 질문으로 — 끄면 게시판에 섭니다」 상태에서
+  // 올리기를 누르면 어디로 가느냐. 체크 칸 하나로는 답이 화면에 없었다.
+  const client = read("app/admin/admin-client.tsx");
+  assert.doesNotMatch(client, /끄면 게시판에 섭니다/);
+  assert.equal((client.match(/name="qna-place"/g) ?? []).length, 2);
+  assert.match(client, /qnaNewFaq \? "자주 묻는 질문에 올리기" : "게시판에 올리기"/);
+});

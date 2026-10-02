@@ -2398,26 +2398,51 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
                   required
                 />
               </label>
-              <label className="admin-check">
-                <input
-                  type="checkbox"
-                  checked={qnaNewFaq}
-                  onChange={(e) => setQnaNewFaq(e.target.checked)}
-                />
-                자주 묻는 질문으로 — 끄면 게시판에 섭니다
-              </label>
+              {/*
+                올릴 곳은 둘 중 하나를 고르게 한다. 전에는 체크 칸 하나에 「끄면 게시판에
+                섭니다」라고 적어 두었는데, 켠 채로 누르면 어디로 가는지 회장도 헷갈리셨다
+                (2026-10-02). 단추 이름에도 고르신 곳을 그대로 적는다.
+              */}
+              <fieldset className="admin-place">
+                <legend>올릴 곳</legend>
+                <label className="admin-place-option">
+                  <input
+                    type="radio"
+                    name="qna-place"
+                    checked={qnaNewFaq}
+                    onChange={() => setQnaNewFaq(true)}
+                  />
+                  <span>
+                    <b>자주 묻는 질문</b>
+                    <i>첫 화면과 Q&amp;A 화면 위쪽 「자주 묻는 질문」에 섭니다</i>
+                  </span>
+                </label>
+                <label className="admin-place-option">
+                  <input
+                    type="radio"
+                    name="qna-place"
+                    checked={!qnaNewFaq}
+                    onChange={() => setQnaNewFaq(false)}
+                  />
+                  <span>
+                    <b>묻고 답하기 게시판</b>
+                    <i>Q&amp;A 화면 아래쪽, 방문자 질문과 같은 게시판에 섭니다</i>
+                  </span>
+                </label>
+              </fieldset>
               <div className="admin-actions">
                 <button className="admin-btn" disabled={!dbConfigured}>
-                  올리기
+                  {qnaNewFaq ? "자주 묻는 질문에 올리기" : "게시판에 올리기"}
                 </button>
                 <button type="button" className="admin-btn admin-btn--quiet" onClick={importFaqs}>
                   지운 처음 질문 되살리기
                 </button>
               </div>
               <p className="admin-note">
-                올리신 글은 자주 묻는 질문 게시판에 쌓입니다 — 새 글이 맨 위에 서고, 전에 올린
-                글과 처음 여섯 질문은 그 아래에 그대로 남습니다. 「지운 처음 질문 되살리기」는
-                처음 여섯 가운데 지우신 것을 다시 세울 때만 누르십시오.
+                어느 쪽이든 새 글이 맨 위에 서고, 전에 올린 글은 그 아래에 그대로 남습니다.
+                올린 뒤에도 아래 목록의 「자주 묻는 질문으로」 · 「게시판으로 내리기」로 자리를
+                옮기실 수 있습니다. 「지운 처음 질문 되살리기」는 처음 여섯 질문 가운데 지우신
+                것을 다시 세울 때만 누르십시오.
               </p>
             </form>
 
