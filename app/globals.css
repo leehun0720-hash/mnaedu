@@ -5932,3 +5932,131 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 /* 편집기 아닌 입력칸(메모·답변)도 넉넉히 — 끌어 키우는 것은 이미 된다 */
 .admin textarea { min-height: 7em; }
 .admin-field textarea { min-height: 8em; }
+
+/* ── 관리자 · 사용 안내 ─────────────────────────────────────
+   저장소의 안내서(ADMIN.md · MANUAL.md · SUPABASE.md)를 관리자 화면 안에서
+   읽는다. 글은 82자 폭으로 묶고, 표는 넘치면 옆으로 밀어 읽게 한다. */
+.admin-manual-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+.admin-manual-tools h2 { margin-bottom: 6px; }
+.admin-manual-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 16px;
+}
+.admin-manual-switch button {
+  min-height: 38px;
+  padding: 0 14px;
+  font: 600 13.5px var(--font-sans);
+  color: var(--ink);
+  background: var(--warm-white);
+  border: 1px solid var(--line-color);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.admin-manual-switch button[data-on="true"] {
+  color: var(--white);
+  background: var(--ember);
+  border-color: var(--ember);
+}
+.admin-manual-toc {
+  margin: 0 0 26px;
+  padding: 14px 18px;
+  background: var(--warm-white);
+  border-left: 3px solid var(--ember);
+}
+.admin-manual-toc > p {
+  margin: 0 0 6px;
+  font: 700 11px var(--font-label);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.admin-manual-toc ol {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  columns: 2 260px;
+  column-gap: 28px;
+}
+.admin-manual-toc li { break-inside: avoid; padding: 3px 0; font-size: 13.5px; line-height: 1.6; }
+.admin-manual-toc a { color: var(--ink-strong); text-decoration: none; }
+.admin-manual-toc a:hover { color: var(--ember-ink); text-decoration: underline; }
+
+.manual-body {
+  max-width: 82ch;
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.manual-body h1 { margin: 0 0 18px; font: 700 24px/1.4 var(--font-sans); color: var(--ink-strong); }
+.manual-body h2 {
+  margin: 40px 0 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-color);
+  font: 700 20px/1.45 var(--font-sans);
+  color: var(--ink-strong);
+  scroll-margin-top: 16px;
+}
+.manual-body h3 { margin: 28px 0 10px; font: 700 16.5px/1.5 var(--font-sans); color: var(--ink-strong); scroll-margin-top: 16px; }
+.manual-body h4 { margin: 22px 0 8px; font: 700 15px/1.5 var(--font-sans); color: var(--ink-strong); }
+.manual-body p { margin: 0 0 14px; }
+.manual-body ul,
+.manual-body ol { margin: 0 0 16px; padding-left: 22px; }
+.manual-body ul { list-style: disc; }
+.manual-body ol { list-style: decimal; }
+.manual-body li { margin: 4px 0; }
+.manual-body li > p { margin: 0 0 6px; }
+.manual-body a { color: var(--ember-ink); text-decoration: underline; text-underline-offset: 3px; }
+.manual-body strong { color: var(--ink-strong); }
+.manual-body hr { margin: 30px 0; border: 0; border-top: 1px solid var(--line-color); }
+.manual-body code {
+  padding: 1px 6px;
+  font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--paper-deep);
+  border-radius: 2px;
+}
+.manual-body pre {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: var(--paper-deep);
+  border-left: 3px solid var(--line-color);
+}
+.manual-body pre code { padding: 0; background: none; font-size: 12.5px; white-space: pre; }
+.manual-body blockquote {
+  margin: 0 0 18px;
+  padding: 12px 18px;
+  background: var(--warm-white);
+  border-left: 3px solid var(--ember);
+}
+.manual-body blockquote > :last-child { margin-bottom: 0; }
+.manual-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0 0 18px;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.manual-body th,
+.manual-body td { padding: 8px 12px; border: 1px solid var(--line-color); text-align: left; vertical-align: top; }
+.manual-body th { background: var(--warm-white); color: var(--ink-strong); font-weight: 700; white-space: nowrap; }
+
+/* 「인쇄 · PDF로 저장」 — 안내서만 찍는다. 관리자 머리와 탭, 고르는 단추는 뺀다 */
+@media print {
+  .admin-shell:has(> .admin-manual) > :not(.admin-manual) { display: none !important; }
+  .admin-manual .admin-manual-tools button,
+  .admin-manual-switch { display: none !important; }
+  .admin-manual { border: 0 !important; padding: 0 !important; }
+  .manual-body { max-width: none; font-size: 11pt; }
+  .manual-body h2 { break-after: avoid; }
+  .manual-body table, .manual-body pre { break-inside: avoid; }
+}

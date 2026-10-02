@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ManualTab from "./manual-tab";
 import { COURSES, FORMATS, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { APPLY_STATUSES, RECRUIT_LABEL, RECRUIT_TRACK } from "@/lib/recruit";
 import { bodyToHtml, htmlToText, textLength } from "@/lib/rich-text";
@@ -185,7 +186,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-type Tab = "questions" | "articles" | "documents" | "members" | "applicants" | "qna" | "settings";
+type Tab = "questions" | "articles" | "documents" | "members" | "applicants" | "qna" | "settings" | "manual";
 
 type ArticleRow = {
   id: number;
@@ -631,6 +632,7 @@ export default function AdminClient({
         applicants: loadApplicants,
         qna: loadQna,
         settings: loadPasswordInfo,
+        manual: async () => undefined,
       }[tab];
       await reload();
     } finally {
@@ -764,7 +766,9 @@ export default function AdminClient({
                 ? loadApplicants
                 : tab === "qna"
                   ? loadQna
-                  : loadMembers;
+                  : tab === "manual"
+                    ? async () => undefined // 안내서는 데이터베이스를 묻지 않는다
+                    : loadMembers;
     Promise.resolve()
       .then(() => {
         if (!alive) return undefined;
@@ -1341,6 +1345,9 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           </button>
           <button data-on={tab === "settings"} onClick={() => goTab("settings")}>
             비밀번호
+          </button>
+          <button data-on={tab === "manual"} onClick={() => goTab("manual")}>
+            사용 안내
           </button>
         </nav>
 
@@ -2650,6 +2657,8 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
             </section>
           </>
         )}
+
+        {tab === "manual" && <ManualTab />}
 
         {tab === "settings" && (
           <section className="admin-card">
