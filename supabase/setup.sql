@@ -167,6 +167,24 @@ CREATE TABLE IF NOT EXISTS "qna" (
 );
 CREATE INDEX IF NOT EXISTS "qna_published_idx" ON "qna" USING btree ("published","created_at");
 
+-- 상담 신청. 성함·연락처·이메일과 거래 이야기가 담깁니다.
+-- (앱도 이 표가 없으면 스스로 같은 모양으로 만들고 아래 2부와 같은 잠금을 겁니다.)
+CREATE TABLE IF NOT EXISTS "inquiries" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"area" text NOT NULL,
+	"name" text NOT NULL,
+	"org" text,
+	"phone" text,
+	"email" text NOT NULL,
+	"message" text NOT NULL,
+	"source" text,
+	"status" text DEFAULT '접수' NOT NULL,
+	"memo" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "inquiries_status_idx" ON "inquiries" USING btree ("status","created_at");
+
 -- ─────────────────────────────────────────────────────────────
 -- 1-2부. 예전에 만든 데이터베이스 손보기 — 반드시 함께 실행하십시오
 -- ─────────────────────────────────────────────────────────────
@@ -225,6 +243,8 @@ ALTER TABLE "admin_credentials" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "applications" ENABLE ROW LEVEL SECURITY;
 -- 질문자의 이름과 이메일, 그리고 비밀글이 담깁니다.
 ALTER TABLE "qna" ENABLE ROW LEVEL SECURITY;
+-- 상담 신청자의 성함·연락처와 거래 이야기가 담깁니다.
+ALTER TABLE "inquiries" ENABLE ROW LEVEL SECURITY;
 
 -- 권한 자체도 회수합니다 (이중 방어).
 REVOKE ALL ON TABLE "questions" FROM anon, authenticated;
@@ -235,6 +255,7 @@ REVOKE ALL ON TABLE "admin_login_attempts" FROM anon, authenticated;
 REVOKE ALL ON TABLE "admin_credentials" FROM anon, authenticated;
 REVOKE ALL ON TABLE "applications" FROM anon, authenticated;
 REVOKE ALL ON TABLE "qna" FROM anon, authenticated;
+REVOKE ALL ON TABLE "inquiries" FROM anon, authenticated;
 
 -- 앞으로 만들어질 테이블에도 같은 기본값을 적용합니다.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;

@@ -297,3 +297,39 @@ export const qna = pgTable(
 
 export type Qna = typeof qna.$inferSelect;
 export type NewQna = typeof qna.$inferInsert;
+
+/**
+ * 상담 신청.
+ *
+ * 회장 지적(2026-10-08): 상담 신청을 했더니 화면이 첫 화면으로 빠져나가고,
+ * 보낸 내용을 확인할 길이 없었다. 전에는 양식이 메일 프로그램을 여는 것으로
+ * 끝났으므로, 보낸 사람 컴퓨터에 메일 프로그램이 없으면 그대로 사라졌다.
+ * 이제 이 표에 쌓이고 관리자 화면 「상담 신청」 탭에서 처리한다.
+ *
+ * 성함·연락처·이메일·거래 이야기가 담기는 표다. RLS 로 잠그고 권한을 모두
+ * 회수한다(supabase/setup.sql 2부, lib/inquiries-db.ts 의 자동 생성도 같다).
+ */
+export const inquiries = pgTable(
+  "inquiries",
+  {
+    id: serial("id").primaryKey(),
+    /** 문의 분야 — M&A 중개, 경영권 분쟁 … */
+    area: text("area").notNull(),
+    name: text("name").notNull(),
+    org: text("org"),
+    phone: text("phone"),
+    email: text("email").notNull(),
+    message: text("message").notNull(),
+    /** 보낸 화면 — /business/brokerage 처럼 사이트 안의 경로만 */
+    source: text("source"),
+    /** 접수 | 연락함 | 상담중 | 종료 */
+    status: text("status").notNull().default("접수"),
+    /** 회장 메모 — 신청자에게는 어느 경로로도 나가지 않는다 */
+    memo: text("memo"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("inquiries_status_idx").on(t.status, t.createdAt)]
+);
+
+export type Inquiry = typeof inquiries.$inferSelect;

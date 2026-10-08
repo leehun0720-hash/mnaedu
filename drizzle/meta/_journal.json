@@ -99,6 +99,13 @@
       "when": 1790200000000,
       "tag": "0013_qna_faq",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791400000000,
+      "tag": "0014_inquiries",
+      "breakpoints": true
     }
   ]
 }

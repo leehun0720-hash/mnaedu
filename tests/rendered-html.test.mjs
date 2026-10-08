@@ -145,6 +145,13 @@ test("the page carries the right-hand rail", async () => {
   assert.match(html, /site-rail/);
 });
 
+test("주요업무 화면에서 그 자리에서 상담을 신청한다", async () => {
+  // 회장 지적(2026-10-08): 문제를 읽다 상담 신청을 하면 첫 화면으로 빠져나갔다
+  const html = await renderHtml("/business/brokerage");
+  assert.match(html, /id="cf-message"/, "주요업무 화면에 상담 양식이 없다");
+  assert.match(html, /<option value="M&amp;A 중개" selected="">/, "그 화면의 분야가 미리 골라져 있지 않다");
+});
+
 test("오른쪽 바의 링크는 어느 화면에서나 실제로 있는 자리로 간다", async () => {
   // 회장 지적(2026-10-02): "아직 연결 링크가 없습니다". 실무문제 · 업무정보실이
   // 같은 화면 안의 #questions · #library 를 가리켰는데, 그 자리는 주요업무

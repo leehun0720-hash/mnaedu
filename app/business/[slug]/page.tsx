@@ -17,6 +17,7 @@ import CopyGuard from "../../copy-guard";
 import ThemeToggle from "../../theme-toggle";
 import SiteRail from "../../site-rail";
 import QuestionsSection from "../../questions-section";
+import ContactForm from "../../contact-form";
 import LibrarySection from "../../library-section";
 import BoardPager, { BOARD_PAGE_SIZE } from "../../board-pager";
 import { getCurrentMember } from "@/lib/members";
@@ -210,22 +211,28 @@ export default async function BusinessDetailPage({
           }
         />
 
+        {/*
+          상담 신청은 이 화면 안에서 받는다(2026-10-08). 전에는 첫 화면의 양식으로
+          보냈으므로, 문제를 읽다가 신청하면 화면이 첫 화면으로 빠져나갔다.
+          이제 보낸 뒤에도 이 자리에 남아 문제를 계속 보실 수 있다.
+        */}
         <section className="co-section co-section--contact" id="contact">
-          <div className="co-contact co-contact--slim">
-            <div className="co-contact-copy">
-              <h2>이 업무를 의뢰하시겠습니까?</h2>
-              <p>
-                검토 단계부터 비밀유지약정(NDA) 체결을 원칙으로 합니다. 아래 문의처로 연락을
-                주시면 개별 상담 일정을 안내드립니다.
-              </p>
+          <div className="co-section-head">
+            <p className="co-section-index">CONTACT</p>
+            <h2>이 업무를 의뢰하시겠습니까?</h2>
+            <p className="co-section-note">
+              검토 단계부터 비밀유지약정(NDA) 체결을 원칙으로 합니다. 아래에 적어 보내 주시면
+              확인 후 개별 상담 일정을 안내드립니다. 보내신 뒤에도 이 화면에 그대로 남습니다.
+            </p>
+          </div>
+          <div className="co-contact">
+            <ContactForm defaultArea={area.name} source={`/business/${area.slug}`} />
+            <div className="co-contact-side">
               <p className="co-contact-line">
-                <a href={CONTACT.telHref}>{CONTACT.tel}</a>
-                <span aria-hidden="true"> · </span>
-                <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+                전화 <a href={CONTACT.telHref}>{CONTACT.tel}</a>
+                <br />
+                이메일 <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
               </p>
-              <Link className="co-btn co-btn--primary" href="/#contact">
-                상담 신청하기 <i aria-hidden="true">→</i>
-              </Link>
             </div>
           </div>
         </section>

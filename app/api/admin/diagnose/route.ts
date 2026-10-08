@@ -45,6 +45,7 @@ const TABLES: readonly { name: string; label: string }[] = [
   { name: "questions", label: "문제" },
   { name: "documents", label: "업무정보실" },
   { name: "articles", label: "칼럼" },
+  { name: "inquiries", label: "상담 신청" },
 ];
 
 type Holder = { pid: number; table: string; state: string | null; age: number | null; query: string | null };
@@ -91,7 +92,22 @@ export async function GET() {
    */
   const frozen: string[] = [];
   const readable: string[] = [];
+  // 아직 만들어지지 않은 표는 읽어 보지 않는다 — 없는 것을 「잠김」으로 잘못 말하지 않게.
+  // (상담 신청 표는 첫 신청이나 관리자 탭을 열 때 앱이 스스로 만든다.)
+  const existing = await runQuery(
+    db.execute(sql`select relname from pg_class where relkind = 'r' and relnamespace = 'public'::regnamespace`),
+    "표 목록",
+    5_000
+  );
+  const have = existing.ok
+    ? new Set((existing.value as unknown as { relname: string }[]).map((r) => r.relname))
+    : null;
+  const missing: string[] = [];
   for (const t of TABLES) {
+    if (have && !have.has(t.name)) {
+      missing.push(t.label);
+      continue;
+    }
     const read = await runQuery(
       db.transaction(async (tx) => {
         await tx.execute(sql`set local lock_timeout = '1s'`);
@@ -115,6 +131,9 @@ export async function GET() {
     );
   } else {
     findings.push(`표 읽기: 모두 정상 (${readable.join(" · ")}건)`);
+  }
+  if (missing.length) {
+    findings.push(`아직 만들어지지 않은 표: ${missing.join(", ")} — 처음 쓸 때 자동으로 만들어집니다.`);
   }
 
   /**

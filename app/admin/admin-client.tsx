@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import ManualTab from "./manual-tab";
+import InquiriesTab from "./inquiries-tab";
 import { COURSES, FORMATS, normalizeStage, normalizeTrack } from "@/lib/questions";
 import { APPLY_STATUSES, RECRUIT_LABEL, RECRUIT_TRACK } from "@/lib/recruit";
 import { bodyToHtml, htmlToText, textLength } from "@/lib/rich-text";
@@ -186,7 +187,16 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-type Tab = "questions" | "articles" | "documents" | "members" | "applicants" | "qna" | "settings" | "manual";
+type Tab =
+  | "questions"
+  | "articles"
+  | "documents"
+  | "members"
+  | "inquiries"
+  | "applicants"
+  | "qna"
+  | "settings"
+  | "manual";
 
 type ArticleRow = {
   id: number;
@@ -309,6 +319,10 @@ export default function AdminClient({
   /** 데이터베이스 진단 결과 — 무엇이 막혔는지 사람 말로 */
   const [diag, setDiag] = useState<Diagnosis | null>(null);
   const [diagBusy, setDiagBusy] = useState(false);
+
+  // 상담 신청 — 아직 손대지 않은(「접수」) 건수를 탭 이름 옆에 띄운다
+  const [freshInquiries, setFreshInquiries] = useState(0);
+  const [inquiryKey, setInquiryKey] = useState(0);
 
   // 지원자 (직원채용)
   const [applicants, setApplicants] = useState<ApplicantRow[]>([]);
@@ -633,6 +647,8 @@ export default function AdminClient({
         qna: loadQna,
         settings: loadPasswordInfo,
         manual: async () => undefined,
+        // 상담 신청 탭은 스스로 불러온다 — 탭을 다시 그려 새로 읽게 한다
+        inquiries: async () => setInquiryKey((k) => k + 1),
       }[tab];
       await reload();
     } finally {
@@ -748,6 +764,21 @@ export default function AdminClient({
     }
   }, []);
 
+  // 들어오시자마자 새 상담 신청이 있는지 알린다 — 어느 탭에 계시든 탭 이름 옆에 뜬다
+  useEffect(() => {
+    if (!loggedIn || !dbConfigured) return;
+    let alive = true;
+    fetch("/api/admin/inquiries?count=new", { cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<{ fresh?: number }>) : null))
+      .then((data) => {
+        if (alive && data && typeof data.fresh === "number") setFreshInquiries(data.fresh);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [loggedIn, dbConfigured]);
+
   // 상태 갱신은 반드시 await 뒤에서 일어나야 한다 — 탭을 빠르게 오갈 때
   // 먼저 띄운 요청이 나중에 도착해 화면을 덮어쓰지 않도록 alive로 막는다.
   useEffect(() => {
@@ -766,8 +797,8 @@ export default function AdminClient({
                 ? loadApplicants
                 : tab === "qna"
                   ? loadQna
-                  : tab === "manual"
-                    ? async () => undefined // 안내서는 데이터베이스를 묻지 않는다
+                  : tab === "manual" || tab === "inquiries"
+                    ? async () => undefined // 안내서는 묻지 않고, 상담 신청 탭은 스스로 불러온다
                     : loadMembers;
     Promise.resolve()
       .then(() => {
@@ -1336,6 +1367,14 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
           </button>
           <button data-on={tab === "members"} onClick={() => goTab("members")}>
             회원
+          </button>
+          <button data-on={tab === "inquiries"} onClick={() => goTab("inquiries")}>
+            상담 신청
+            {freshInquiries > 0 && (
+              <span className="admin-tab-badge" aria-label={`새 신청 ${freshInquiries}건`}>
+                {freshInquiries}
+              </span>
+            )}
           </button>
           <button data-on={tab === "applicants"} onClick={() => goTab("applicants")}>
             지원자
@@ -2659,6 +2698,8 @@ ADMIN_SESSION_SECRET    아무 긴 임의 문자열 (32자 이상 권장)`}
         )}
 
         {tab === "manual" && <ManualTab />}
+
+        {tab === "inquiries" && <InquiriesTab key={inquiryKey} onFresh={setFreshInquiries} />}
 
         {tab === "settings" && (
           <section className="admin-card">
