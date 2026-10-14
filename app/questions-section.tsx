@@ -125,13 +125,13 @@ export default function QuestionsSection({
                   <div className="qa-answer">
                     {shown.answer && (
                       <>
-                        <h3>정답</h3>
+                        <h3 className="qa-answer-label">정답</h3>
                         <div dangerouslySetInnerHTML={{ __html: shown.answer }} />
                       </>
                     )}
                     {shown.explanation && (
                       <>
-                        <h3>해설</h3>
+                        <h3 className="qa-answer-label">해설</h3>
                         <div dangerouslySetInnerHTML={{ __html: shown.explanation }} />
                       </>
                     )}

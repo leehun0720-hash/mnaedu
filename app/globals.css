@@ -4884,9 +4884,12 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   background: var(--co-tint);
   border-left: 3px solid var(--co-navy);
 }
-.qa-answer h3 {
+/* 「정답」 「해설」 머리표 — 본문 속 소제목(h3)과 이름을 나눈다(2026-10-14).
+   전에는 .qa-answer h3 로 걸어, 회장이 편집기에서 「소제목」을 고른 줄까지
+   12px 머리표 글씨가 되었다 — 키우려고 고른 것이 오히려 작아졌다. */
+.qa-answer-label {
   margin: 0 0 10px;
-  font: 700 12px var(--font-label);
+  font: 700 12.5px var(--font-label);
   letter-spacing: 0.14em;
   color: var(--co-navy);
 }
@@ -4895,7 +4898,7 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   font: 400 14.5px/1.92 var(--font-sans);
   color: var(--co-ink-strong);
 }
-.qa-answer p + h3 { margin-top: 20px; }
+.qa-answer > div + .qa-answer-label { margin-top: 24px; }
 
 .qa-error {
   margin: 18px 0 0;
@@ -5932,8 +5935,6 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
 .qa-answer ul,
 .qa-answer ol { padding-left: 20px; }
 .qa-answer li { font: 400 14.5px/1.92 var(--font-sans); color: var(--co-ink-strong); margin-bottom: 4px; }
-.qa-answer h2,
-.qa-answer h3:not(:first-child) { margin-top: 20px; }
 .qa-answer blockquote {
   margin-left: 0;
   padding-left: 14px;
@@ -5941,7 +5942,6 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   color: var(--co-muted);
 }
 .qa-answer a { color: var(--co-navy); text-decoration: underline; }
-.qa-answer div + h3 { margin-top: 20px; }
 
 .rc-q-prompt > * { margin: 0 0 10px; }
 .rc-q-prompt > *:last-child { margin-bottom: 0; }
@@ -6124,3 +6124,38 @@ body.studio-editing button [data-studio-edit] { pointer-events: auto; }
   .manual-body h2 { break-after: avoid; }
   .manual-body table, .manual-body pre { break-inside: avoid; }
 }
+
+/* ── 문제 · 정답 · 해설 글자 크기 (회장 지시 2026-10-14) ─────────────
+   "글자들이 너무 작다 — 기본을 조금 더 크게." 본문을 한 단계씩 키우고,
+   편집기의 「소제목」(h2 · h3)은 본문보다 분명히 크게 선다. 휴대폰에서는
+   한 단계 덜 키운다 — 좁은 화면에서 줄이 너무 자주 꺾이지 않게. */
+.qa-prompt,
+.qa-prompt p,
+.qa-prompt li { font-size: clamp(16px, 1.6vw, 17.5px); line-height: 1.85; }
+.qa-prompt h2 { font: 700 clamp(19px, 2vw, 21px)/1.5 var(--font-sans); color: var(--co-ink-strong); margin: 1.2em 0 0.5em; }
+.qa-prompt h3 { font: 700 clamp(17.5px, 1.8vw, 19px)/1.5 var(--font-sans); color: var(--co-ink-strong); margin: 1.1em 0 0.45em; }
+.qa-prompt > h2:first-child,
+.qa-prompt > h3:first-child { margin-top: 0; }
+
+.qa-answer p,
+.qa-answer li { font-size: clamp(15.5px, 1.5vw, 16.5px); line-height: 1.9; }
+.qa-answer > div h2 { font: 700 clamp(18.5px, 1.9vw, 20px)/1.5 var(--font-sans); color: var(--co-ink-strong); letter-spacing: 0; margin: 1.3em 0 0.5em; }
+.qa-answer > div h3 { font: 700 clamp(17px, 1.7vw, 18px)/1.5 var(--font-sans); color: var(--co-ink-strong); letter-spacing: 0; margin: 1.2em 0 0.45em; }
+.qa-answer > div > h2:first-child,
+.qa-answer > div > h3:first-child { margin-top: 0; }
+.qa-choice { font-size: clamp(15.5px, 1.5vw, 16.5px); }
+
+/* 채용시험 문제도 같은 결 */
+.rc-q-prompt,
+.rc-q-prompt p,
+.rc-q-prompt li { font-size: clamp(16px, 1.6vw, 17px); line-height: 1.85; }
+.rc-q-prompt h2 { font: 700 clamp(19px, 2vw, 21px)/1.5 var(--font-sans); margin: 1.2em 0 0.5em; }
+.rc-q-prompt h3 { font: 700 clamp(17.5px, 1.8vw, 19px)/1.5 var(--font-sans); margin: 1.1em 0 0.45em; }
+
+/* 편집기 안에서도 화면과 같은 비율로 보이게 — 고르신 「소제목」이 크게 보인다 */
+.rte-body { font-size: 16px; }
+.rte-body h2 { font-size: 1.3em; font-weight: 700; line-height: 1.5; }
+.rte-body h3 { font-size: 1.15em; font-weight: 700; line-height: 1.5; }
+/* 번호 · 점 목록이 보이게 — 바탕 초기화가 목록 표시를 지워 두었다 */
+.qa-prompt ul, .qa-answer ul, .rc-q-prompt ul { list-style: disc; }
+.qa-prompt ol, .qa-answer ol, .rc-q-prompt ol { list-style: decimal; }
